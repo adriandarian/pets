@@ -1,7 +1,8 @@
+import AppKit
 import SwiftUI
 import PetsCore
 
-private struct PetSettingsView: View {
+struct PetSettingsView: View {
     @ObservedObject var store: PetStore
     let toggleOpenAtLogin: (Bool) -> Void
     let respawnSelectedPet: () -> Void
@@ -749,4 +750,3 @@ private struct SpritePickerCard: View {
         }
     }
 }
-
