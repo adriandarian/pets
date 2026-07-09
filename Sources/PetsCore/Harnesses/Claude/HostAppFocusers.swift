@@ -129,7 +129,7 @@ public struct AccessibilityHostFocuser: HostAppFocusing {
     public func focus(session: ClaudeSession, host: ClaudeHostApp) throws -> ClaudeSessionActivationResult? {
         guard permissionChecker.isProcessTrusted(promptIfNeeded: true) else {
             return .permissionDenied(
-                reason: "Enable Accessibility permission for ClaudePet to inspect \(host.appName) windows."
+                reason: "Enable Accessibility permission for Pets to inspect \(host.appName) windows."
             )
         }
 

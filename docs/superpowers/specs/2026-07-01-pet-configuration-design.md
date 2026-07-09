@@ -1,8 +1,8 @@
-# ClaudePet Configuration Design
+# Pets Configuration Design
 
 ## Goal
 
-ClaudePet should move from a Claude-specific single-pet utility toward a configurable desktop pet system.
+Pets should move from a Claude-specific single-pet utility toward a configurable desktop pet system.
 
 This first step should:
 
@@ -13,10 +13,10 @@ This first step should:
 
 ## Current Context
 
-ClaudePet is a Swift Package with:
+Pets is a Swift Package with:
 
-- `ClaudePetCore`, which owns pet catalog types, sprite pixelation, session context line count, and Claude session scanning.
-- `ClaudePet`, which owns the menu bar extra, settings scene, AppKit overlay panel, and SwiftUI overlay views.
+- `PetsCore`, which owns pet catalog types, sprite pixelation, session context line count, and Claude session scanning.
+- `Pets`, which owns the menu bar extra, settings scene, AppKit overlay panel, and SwiftUI overlay views.
 
 The current menu bar menu includes both commands and detailed preferences:
 
@@ -27,9 +27,9 @@ The current menu bar menu includes both commands and detailed preferences:
 - Pixelation selection
 - Context line slider
 - Configure Pets
-- Quit Claude Pet
+- Quit Pets
 
-The current app has one `NSPanel`, one shared `ClaudePetStore`, and one selected pet configuration. Multiple pets will require the overlay/window layer and store state to move from one global pet to a list of pet instances.
+The current app has one `NSPanel`, one shared `PetStore`, and one selected pet configuration. Multiple pets will require the overlay/window layer and store state to move from one global pet to a list of pet instances.
 
 ## Visual Direction
 
@@ -38,13 +38,13 @@ The current app has one `NSPanel`, one shared `ClaudePetStore`, and one selected
 The menu bar menu should only expose the four top-level commands requested by the user:
 
 ```text
-Claude Pet
+Pets
 ┌──────────────────────────┐
 │ ↻  Respawn Pet           │
 │ ◐  Hide Pet              │
 │ ⚙  Configure...          │
 │ ──────────────────────── │
-│ ⏻  Quit Claude Pet       │
+│ ⏻  Quit Pets       │
 └──────────────────────────┘
 ```
 
@@ -56,7 +56,7 @@ Settings should be a native macOS settings scene, not a custom full-screen app w
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ Claude Pet Settings                                          │
+│ Pets Settings                                          │
 ├───────────────┬──────────────────────────────────────────────┤
 │ General       │ Pets                                         │
 │ Pets          │ ┌────────────────────┐ ┌───────────────────┐ │
@@ -121,7 +121,7 @@ This preserves quick access, but the current menu is already too crowded. More p
 
 ### Separate Pet Manager Window
 
-Instead of Settings, ClaudePet could open a custom "Pet Manager" window.
+Instead of Settings, Pets could open a custom "Pet Manager" window.
 
 This would give more layout freedom, but it fights the user's request for configuration setup and duplicates native macOS settings behavior. A dedicated Settings scene is the better first step.
 
@@ -137,7 +137,7 @@ Suggested core model:
 struct PetInstance: Identifiable, Equatable, Sendable {
     var id: UUID
     var name: String
-    var petID: ClaudePetID
+    var petID: PetID
     var pixelation: PetSpritePixelation
     var sessionContextLineCount: Int
     var animationSettings: PetAnimationSettings
@@ -151,7 +151,7 @@ struct PetAnimationSettings: Equatable, Sendable {
 }
 ```
 
-`ClaudePetStore` should publish:
+`PetStore` should publish:
 
 - `petInstances`
 - `selectedPetInstanceID`
@@ -183,7 +183,7 @@ Each panel hosts a `PetOverlayView` bound to one pet instance. The overlay shoul
 
 ### Settings Views
 
-Split settings into focused views rather than growing `ClaudePetApp.swift`:
+Split settings into focused views rather than growing `PetsApp.swift`:
 
 - `PetSettingsView`: root settings layout.
 - `GeneralSettingsPane`: Open at Login and launch behavior.
@@ -196,7 +196,7 @@ The menu bar view should stay small and only own menu commands.
 ## Data Flow
 
 1. The menu bar `Configure...` item opens the Settings scene.
-2. Settings reads and mutates `ClaudePetStore`.
+2. Settings reads and mutates `PetStore`.
 3. Store changes update persisted defaults.
 4. AppDelegate observes pet instance visibility and creates, closes, or respawns panels.
 5. Each panel renders `PetOverlayView` for one pet instance.

@@ -1,9 +1,9 @@
-import ClaudePetCore
+import PetsCore
 import CoreGraphics
 import Foundation
 
 @MainActor
-final class ClaudePetStore: ObservableObject {
+final class PetStore: ObservableObject {
     private enum DefaultsKey {
         static let petInstances = "petInstances"
         static let selectedPetInstanceID = "selectedPetInstanceID"
@@ -37,9 +37,9 @@ final class ClaudePetStore: ObservableObject {
         self.replySender = replySender
         self.sessionActivator = sessionActivator
         self.defaults = defaults
-        let persistedPetID = defaults.string(forKey: DefaultsKey.selectedPetID).map(ClaudePetID.init(rawValue:))
-        let selectedPetID = persistedPetID ?? ClaudePetCatalog.defaultPetID
-        let migratedPixelation = ClaudePetCatalog.pixelation(
+        let persistedPetID = defaults.string(forKey: DefaultsKey.selectedPetID).map(PetID.init(rawValue:))
+        let selectedPetID = persistedPetID ?? PetCatalog.defaultPetID
+        let migratedPixelation = PetCatalog.pixelation(
             PetSpritePixelation.persisted(rawValue: defaults.string(forKey: DefaultsKey.spritePixelation)),
             allowedFor: selectedPetID
         )
@@ -122,7 +122,7 @@ final class ClaudePetStore: ObservableObject {
         return petInstance(for: selectedPetInstanceID)
     }
 
-    var selectedPetID: ClaudePetID? {
+    var selectedPetID: PetID? {
         selectedPetInstance?.petID
     }
 
@@ -192,7 +192,7 @@ final class ClaudePetStore: ObservableObject {
         isOpenAtLoginEnabled = isEnabled
     }
 
-    func selectPet(_ petID: ClaudePetID) {
+    func selectPet(_ petID: PetID) {
         updateSelectedPetID(petID)
     }
 
@@ -224,16 +224,16 @@ final class ClaudePetStore: ObservableObject {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         updateSelectedPet { pet in
             pet.name = trimmedName.isEmpty
-                ? ClaudePetCatalog.displayName(for: pet.petID)
+                ? PetCatalog.displayName(for: pet.petID)
                 : trimmedName
         }
     }
 
-    func updateSelectedPetID(_ petID: ClaudePetID) {
+    func updateSelectedPetID(_ petID: PetID) {
         updateSelectedPet { pet in
             pet.updatePetID(petID)
             if pet.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                pet.name = ClaudePetCatalog.displayName(for: petID)
+                pet.name = PetCatalog.displayName(for: petID)
             }
         }
     }
@@ -350,7 +350,7 @@ final class ClaudePetStore: ObservableObject {
 
     private static func loadPetInstances(
         from defaults: UserDefaults,
-        migratedPetID: ClaudePetID,
+        migratedPetID: PetID,
         migratedPixelation: PetSpritePixelation,
         migratedContextLineCount: Int
     ) -> (instances: [PetInstance], error: String?) {
@@ -371,7 +371,7 @@ final class ClaudePetStore: ObservableObject {
 
     private static func normalizedCloudFamilyInstance(_ instance: PetInstance) -> PetInstance {
         guard instance.petID == .classicClaude,
-              instance.name == ClaudePetCatalog.displayName(for: .classicClaude)
+              instance.name == PetCatalog.displayName(for: .classicClaude)
         else { return instance }
 
         var normalized = instance

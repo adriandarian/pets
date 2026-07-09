@@ -1,5 +1,5 @@
 import AppKit
-import ClaudePetCore
+import PetsCore
 import QuartzCore
 import SwiftUI
 
@@ -30,7 +30,7 @@ private enum PetOverlayPalette {
 }
 
 struct PetOverlayView: View {
-    @ObservedObject var store: ClaudePetStore
+    @ObservedObject var store: PetStore
     let petInstanceID: PetInstance.ID
     @State private var areChatsExpanded = true
     @State private var isPetHovered = false
@@ -78,13 +78,13 @@ struct PetOverlayView: View {
                                     isPetHovered = petInstance.animationSettings.isHoverBounceEnabled && hovering
                                 }
                                 .contextMenu {
-                                    ForEach(ClaudePetCatalog.builtInPetIDs, id: \.self) { petID in
+                                    ForEach(PetCatalog.builtInPetIDs, id: \.self) { petID in
                                         Button {
                                             store.selectPetInstance(petInstance.id)
                                             store.selectPet(petID)
                                         } label: {
                                             Label(
-                                                ClaudePetCatalog.displayName(for: petID),
+                                                PetCatalog.displayName(for: petID),
                                                 systemImage: petInstance.petID == petID ? "checkmark" : "face.smiling"
                                             )
                                         }
@@ -166,7 +166,7 @@ struct PetOverlayView: View {
 }
 
 private struct SessionBubble: View {
-    @ObservedObject var store: ClaudePetStore
+    @ObservedObject var store: PetStore
     let contextLineCount: Int
 
     var body: some View {
@@ -875,21 +875,21 @@ private struct RunningStatusSpinner: View {
 }
 
 struct PetSprite: View {
-    let petID: ClaudePetID
+    let petID: PetID
     let status: ClaudeDisplayStatus
     let isExcited: Bool
     let pixelation: PetSpritePixelation
 
     var body: some View {
         Group {
-            if ClaudePetCatalog.category(for: petID)?.id == "cloud-pets" {
+            if PetCatalog.category(for: petID)?.id == "cloud-pets" {
                 CloudFamilySprite(
                     petID: petID,
                     status: status,
                     isExcited: isExcited
                 )
             } else {
-                switch ClaudePetCatalog.category(for: petID)?.id {
+                switch PetCatalog.category(for: petID)?.id {
                 case "workspace-pets":
                     WorkspacePetSprite(petID: petID, status: status, isExcited: isExcited)
                 case "nature-pets":
@@ -906,7 +906,7 @@ struct PetSprite: View {
 }
 
 private struct CloudFamilySprite: View {
-    let petID: ClaudePetID
+    let petID: PetID
     let status: ClaudeDisplayStatus
     let isExcited: Bool
     private static let animationFrameInterval = 1.0 / 12.0
@@ -934,7 +934,7 @@ private struct CloudFamilySprite: View {
 }
 
 private struct ScaledCloudFamilySprite: View {
-    let petID: ClaudePetID
+    let petID: PetID
     let status: ClaudeDisplayStatus
     let isExcited: Bool
     let date: Date
@@ -1066,7 +1066,7 @@ private struct ScaledCloudFamilySprite: View {
 }
 
 private struct WorkspacePetSprite: View {
-    let petID: ClaudePetID
+    let petID: PetID
     let status: ClaudeDisplayStatus
     let isExcited: Bool
 
@@ -1234,7 +1234,7 @@ private struct WorkspacePetSprite: View {
 }
 
 private struct NaturePetSprite: View {
-    let petID: ClaudePetID
+    let petID: PetID
     let status: ClaudeDisplayStatus
     let isExcited: Bool
 
@@ -1385,7 +1385,7 @@ private struct NaturePetSprite: View {
 }
 
 private struct CozyPetSprite: View {
-    let petID: ClaudePetID
+    let petID: PetID
     let status: ClaudeDisplayStatus
     let isExcited: Bool
 

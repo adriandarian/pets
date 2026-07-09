@@ -13,15 +13,15 @@
 ### Task 1: Core Pet Instance Model
 
 **Files:**
-- Create: `Sources/ClaudePetCore/PetInstance.swift`
-- Test: `Tests/ClaudePetCoreTests/PetInstanceTests.swift`
+- Create: `Sources/PetsCore/PetInstance.swift`
+- Test: `Tests/PetsCoreTests/PetInstanceTests.swift`
 
 - [ ] **Step 1: Write failing tests for default instance creation, clamping, and final-pet removal policy**
 
 ```swift
 import Foundation
 import Testing
-@testable import ClaudePetCore
+@testable import PetsCore
 
 @Suite
 struct PetInstanceTests {
@@ -69,7 +69,7 @@ Expected: fail because `PetInstance` does not exist.
 
 - [ ] **Step 3: Implement the core model**
 
-Create `PetInstance`, `PetAnimationSettings`, and `PetOverlayPosition` in `Sources/ClaudePetCore/PetInstance.swift`. Make them `Codable`, `Equatable`, and `Sendable`; use `ClaudePetCatalog` and `PetSessionContextLineCount` to clamp values.
+Create `PetInstance`, `PetAnimationSettings`, and `PetOverlayPosition` in `Sources/PetsCore/PetInstance.swift`. Make them `Codable`, `Equatable`, and `Sendable`; use `PetCatalog` and `PetSessionContextLineCount` to clamp values.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -80,8 +80,8 @@ Expected: pass.
 ### Task 2: Store Persistence And Operations
 
 **Files:**
-- Modify: `Sources/ClaudePet/ClaudePetStore.swift`
-- Test: `Tests/ClaudePetCoreTests/PetInstanceTests.swift`
+- Modify: `Sources/Pets/PetStore.swift`
+- Test: `Tests/PetsCoreTests/PetInstanceTests.swift`
 
 - [ ] **Step 1: Add tests for collection encoding and migration helper behavior**
 
@@ -115,14 +115,14 @@ Expected: fail until migration helper exists.
 
 - [ ] **Step 3: Add store state and mutation APIs**
 
-In `ClaudePetStore`, replace global `selectedPetID`, `spritePixelation`, and `sessionContextLineCount` storage with persisted `petInstances` and `selectedPetInstanceID`. Add APIs:
+In `PetStore`, replace global `selectedPetID`, `spritePixelation`, and `sessionContextLineCount` storage with persisted `petInstances` and `selectedPetInstanceID`. Add APIs:
 
 ```swift
 func addPet()
 func removeSelectedPet()
 func selectPetInstance(_ id: PetInstance.ID)
 func updateSelectedPetName(_ name: String)
-func updateSelectedPetID(_ petID: ClaudePetID)
+func updateSelectedPetID(_ petID: PetID)
 func updateSelectedPetPixelation(_ pixelation: PetSpritePixelation)
 func updateSelectedPetContextLineCount(_ lineCount: Int)
 func updateSelectedPetAnimationSettings(_ settings: PetAnimationSettings)
@@ -133,7 +133,7 @@ func updatePetOverlayPosition(_ id: PetInstance.ID, origin: CGPoint, placement: 
 Keep compatibility computed properties for current overlay code until it is updated:
 
 ```swift
-var selectedPetID: ClaudePetID
+var selectedPetID: PetID
 var spritePixelation: PetSpritePixelation
 var sessionContextLineCount: Int
 ```
@@ -147,8 +147,8 @@ Expected: pass after source-string tests are adjusted in later tasks.
 ### Task 3: Multiple Panel Ownership
 
 **Files:**
-- Modify: `Sources/ClaudePet/ClaudePetApp.swift`
-- Modify: `Sources/ClaudePet/PetOverlayView.swift`
+- Modify: `Sources/Pets/PetsApp.swift`
+- Modify: `Sources/Pets/PetOverlayView.swift`
 
 - [ ] **Step 1: Update `PetOverlayView` to accept a pet instance ID**
 
@@ -173,7 +173,7 @@ Expected: build succeeds.
 ### Task 4: Menu And Settings UI
 
 **Files:**
-- Modify: `Sources/ClaudePet/ClaudePetApp.swift`
+- Modify: `Sources/Pets/PetsApp.swift`
 
 - [ ] **Step 1: Simplify menu**
 
@@ -184,7 +184,7 @@ Button("Respawn Pet") { ... }
 Button(store.areAnyPetsVisible ? "Hide Pet" : "Show Pet") { ... }
 SettingsLink { Label("Configure...", systemImage: "slider.horizontal.3") }
 Divider()
-Button("Quit Claude Pet") { NSApplication.shared.terminate(nil) }
+Button("Quit Pets") { NSApplication.shared.terminate(nil) }
 ```
 
 - [ ] **Step 2: Build full settings view**

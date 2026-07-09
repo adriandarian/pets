@@ -3,8 +3,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APP_NAME="ClaudePet"
-BUNDLE_ID="local.claudepet.ClaudePet"
+APP_NAME="Pets"
+BUNDLE_ID="local.pets.Pets"
 BUNDLE_PATH="dist/${APP_NAME}.app"
 EXECUTABLE_PATH="${BUNDLE_PATH}/Contents/MacOS/${APP_NAME}"
 PLIST_PATH="${BUNDLE_PATH}/Contents/Info.plist"

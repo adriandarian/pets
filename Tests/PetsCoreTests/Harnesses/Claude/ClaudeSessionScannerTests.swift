@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 import Testing
-@testable import ClaudePetCore
+@testable import PetsCore
 
 @Suite
 struct ClaudeSessionScannerTests {
@@ -79,18 +79,18 @@ struct ClaudeSessionScannerTests {
 
     @Test
     func cuteCloudPetIsDefaultWhileClassicPetStaysAvailable() {
-        #expect(ClaudePetCatalog.defaultPetID == .cuteCloud)
-        #expect(ClaudePetCatalog.builtInPetIDs.first == .cuteCloud)
-        #expect(ClaudePetCatalog.builtInPetIDs.contains(.classicClaude))
-        #expect(ClaudePetCatalog.builtInPetIDs.contains(.helperCloud))
-        #expect(ClaudePetCatalog.builtInPetIDs.contains(.sleepCloud))
-        #expect(ClaudePetCatalog.builtInPetIDs.contains(.focusCloud))
-        #expect(ClaudePetCatalog.displayName(for: .classicClaude) == "Classic Cloud")
+        #expect(PetCatalog.defaultPetID == .cuteCloud)
+        #expect(PetCatalog.builtInPetIDs.first == .cuteCloud)
+        #expect(PetCatalog.builtInPetIDs.contains(.classicClaude))
+        #expect(PetCatalog.builtInPetIDs.contains(.helperCloud))
+        #expect(PetCatalog.builtInPetIDs.contains(.sleepCloud))
+        #expect(PetCatalog.builtInPetIDs.contains(.focusCloud))
+        #expect(PetCatalog.displayName(for: .classicClaude) == "Classic Cloud")
     }
 
     @Test
     func builtInPetsAreGroupedIntoPickerCategories() {
-        let categories = ClaudePetCatalog.builtInCategories
+        let categories = PetCatalog.builtInCategories
 
         #expect(categories.first?.id == "cloud-pets")
         #expect(categories.first?.displayName == "Cloud Pets")
@@ -104,8 +104,8 @@ struct ClaudeSessionScannerTests {
         #expect(categories.count >= 4)
 
         let categorizedPetIDs = categories.flatMap(\.petIDs)
-        #expect(categorizedPetIDs == ClaudePetCatalog.builtInPetIDs)
-        #expect(Set(categorizedPetIDs).count == ClaudePetCatalog.builtInPetIDs.count)
+        #expect(categorizedPetIDs == PetCatalog.builtInPetIDs)
+        #expect(Set(categorizedPetIDs).count == PetCatalog.builtInPetIDs.count)
 
         let nonCloudCategories = categories.dropFirst()
         #expect(nonCloudCategories.allSatisfy { !$0.petIDs.isEmpty })
@@ -116,17 +116,17 @@ struct ClaudeSessionScannerTests {
 
     @Test
     func customPetIDsPreserveStableUserProvidedName() throws {
-        let customID = ClaudePetID.custom("tiny-bot")
+        let customID = PetID.custom("tiny-bot")
 
         #expect(customID.rawValue == "custom:tiny-bot")
-        #expect(ClaudePetID(rawValue: customID.rawValue) == customID)
+        #expect(PetID(rawValue: customID.rawValue) == customID)
     }
 
     @Test
     func petPixelationClampsToSpriteCapability() {
-        #expect(ClaudePetCatalog.pixelation(.chunky, allowedFor: .cuteCloud) == .medium)
-        #expect(ClaudePetCatalog.pixelation(.chunky, allowedFor: .classicClaude) == .chunky)
-        #expect(ClaudePetCatalog.pixelation(.medium, allowedFor: ClaudePetID.custom("future")) == .off)
+        #expect(PetCatalog.pixelation(.chunky, allowedFor: .cuteCloud) == .medium)
+        #expect(PetCatalog.pixelation(.chunky, allowedFor: .classicClaude) == .chunky)
+        #expect(PetCatalog.pixelation(.medium, allowedFor: PetID.custom("future")) == .off)
     }
 
     @Test
@@ -320,7 +320,7 @@ struct ClaudeSessionScannerTests {
             in: sessionsDirectory,
             pid: 404,
             sessionId: "statusless-session",
-            cwd: "/Users/dariana/personal/ClaudePet",
+            cwd: "/Users/dariana/personal/Pets",
             startedAt: 100,
             kind: "interactive",
             entrypoint: "cli",
@@ -810,7 +810,7 @@ struct ClaudeSessionScannerTests {
         let session = ClaudeSession(
             pid: 808,
             sessionId: "terminal-session",
-            cwd: "/Users/dariana/personal/ClaudePet",
+            cwd: "/Users/dariana/personal/Pets",
             title: "Terminal test",
             kind: "interactive",
             entrypoint: "cli",
@@ -862,7 +862,7 @@ struct ClaudeSessionScannerTests {
             host: .vscode(pid: 20)
         )
 
-        #expect(result == .permissionDenied(reason: "Enable Accessibility permission for ClaudePet to inspect Visual Studio Code windows."))
+        #expect(result == .permissionDenied(reason: "Enable Accessibility permission for Pets to inspect Visual Studio Code windows."))
         #expect(permissionChecker.promptRequests == [true])
     }
 
@@ -910,7 +910,7 @@ struct ClaudeSessionScannerTests {
         ClaudeSession(
             pid: 1,
             sessionId: sessionId,
-            cwd: "/Users/dariana/personal/ClaudePet",
+            cwd: "/Users/dariana/personal/Pets",
             title: title ?? sessionId,
             chatPreview: chatPreview,
             dismissalToken: dismissalToken ?? sessionId,
@@ -1041,7 +1041,7 @@ private struct TemporaryDirectory {
 
     init() throws {
         url = FileManager.default.temporaryDirectory
-            .appending(path: "ClaudePetTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+            .appending(path: "PetsTests-\(UUID().uuidString)", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     }
 }

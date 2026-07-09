@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Clicking a ClaudePet session bubble activates the app that owns that live Claude session and focuses the exact tab or window when it can be identified.
+**Goal:** Clicking a Pets session bubble activates the app that owns that live Claude session and focuses the exact tab or window when it can be identified.
 
-**Architecture:** Add a testable activation layer to `ClaudePetCore` that resolves host apps by walking the Claude process tree, routes to host-specific focusers, and falls back to app activation. Wire `ClaudePetStore` and `SessionRow` so row clicks call the activator while reply and dismiss controls keep their current behavior.
+**Architecture:** Add a testable activation layer to `PetsCore` that resolves host apps by walking the Claude process tree, routes to host-specific focusers, and falls back to app activation. Wire `PetStore` and `SessionRow` so row clicks call the activator while reply and dismiss controls keep their current behavior.
 
 **Tech Stack:** Swift 6, Swift Package Manager, AppKit, SwiftUI, Swift Testing, macOS Accessibility/Automation APIs, `NSRunningApplication`, `osascript` for Terminal-specific scripting.
 
@@ -12,15 +12,15 @@
 
 ## File Structure
 
-- Create `Sources/ClaudePetCore/ClaudeSessionActivator.swift`
+- Create `Sources/PetsCore/ClaudeSessionActivator.swift`
   - Owns public activation result types, host app model, process-tree resolver, generic activator orchestration, and default macOS app activation.
-- Create `Sources/ClaudePetCore/HostAppFocusers.swift`
+- Create `Sources/PetsCore/HostAppFocusers.swift`
   - Owns host-specific exact focus attempts for Terminal.app, Ghostty, VS Code, VS Code Insiders, and cmux.
-- Modify `Sources/ClaudePet/ClaudePetStore.swift`
+- Modify `Sources/Pets/PetStore.swift`
   - Injects `SessionActivating`, exposes `activateSession(_:)`, and maps activation failures to `lastError`.
-- Modify `Sources/ClaudePet/PetOverlayView.swift`
+- Modify `Sources/Pets/PetOverlayView.swift`
   - Adds row activation callbacks and prevents reply/dismiss controls from accidentally activating the row.
-- Modify `Tests/ClaudePetCoreTests/ClaudeSessionScannerTests.swift`
+- Modify `Tests/PetsCoreTests/ClaudeSessionScannerTests.swift`
   - Adds activation core tests using local stubs. Existing test file already houses core behavior tests.
 - Modify `README.md`
   - Documents click-to-activate behavior and required macOS permissions.
@@ -30,8 +30,8 @@ This workspace is not currently a git repository. Skip commit commands here; if 
 ## Task 1: Host App Resolution Core
 
 **Files:**
-- Create: `Sources/ClaudePetCore/ClaudeSessionActivator.swift`
-- Test: `Tests/ClaudePetCoreTests/ClaudeSessionScannerTests.swift`
+- Create: `Sources/PetsCore/ClaudeSessionActivator.swift`
+- Test: `Tests/PetsCoreTests/ClaudeSessionScannerTests.swift`
 
 - [ ] **Step 1: Add failing tests for process-tree host resolution**
 
@@ -132,7 +132,7 @@ Expected: fail to compile because `ClaudeHostAppResolver`, `ActivationProcessSna
 
 - [ ] **Step 3: Implement host app resolution**
 
-Create `Sources/ClaudePetCore/ClaudeSessionActivator.swift`:
+Create `Sources/PetsCore/ClaudeSessionActivator.swift`:
 
 ```swift
 import AppKit
@@ -343,8 +343,8 @@ Expected: both host resolver tests pass.
 ## Task 2: Activation Orchestrator and Fallback Semantics
 
 **Files:**
-- Modify: `Sources/ClaudePetCore/ClaudeSessionActivator.swift`
-- Test: `Tests/ClaudePetCoreTests/ClaudeSessionScannerTests.swift`
+- Modify: `Sources/PetsCore/ClaudeSessionActivator.swift`
+- Test: `Tests/PetsCoreTests/ClaudeSessionScannerTests.swift`
 
 - [ ] **Step 1: Add failing tests for exact focus and app fallback**
 
@@ -441,7 +441,7 @@ Expected: fail to compile because `ClaudeSessionActivator`, `HostAppResolving`, 
 
 - [ ] **Step 3: Implement orchestrator protocols and fallback activation**
 
-Append this code to `Sources/ClaudePetCore/ClaudeSessionActivator.swift`:
+Append this code to `Sources/PetsCore/ClaudeSessionActivator.swift`:
 
 ```swift
 public protocol SessionActivating: Sendable {
@@ -531,7 +531,7 @@ public struct ClaudeSessionActivator: SessionActivating {
 
 - [ ] **Step 4: Fix `ClaudeHostAppResolver` access for `processName(for:)`**
 
-Change `ClaudeHostAppResolver` in `Sources/ClaudePetCore/ClaudeSessionActivator.swift` so `processInspector` is visible to the extension:
+Change `ClaudeHostAppResolver` in `Sources/PetsCore/ClaudeSessionActivator.swift` so `processInspector` is visible to the extension:
 
 ```swift
 public struct ClaudeHostAppResolver: Sendable {
@@ -552,8 +552,8 @@ Expected: all three activation orchestrator tests pass.
 ## Task 3: Host-Specific Focusers
 
 **Files:**
-- Create: `Sources/ClaudePetCore/HostAppFocusers.swift`
-- Test: `Tests/ClaudePetCoreTests/ClaudeSessionScannerTests.swift`
+- Create: `Sources/PetsCore/HostAppFocusers.swift`
+- Test: `Tests/PetsCoreTests/ClaudeSessionScannerTests.swift`
 
 - [ ] **Step 1: Add tests for host routing and Terminal TTY script construction**
 
@@ -570,7 +570,7 @@ func compositeHostFocuserRoutesSupportedHosts() throws {
     let session = ClaudeSession(
         pid: 808,
         sessionId: "terminal-session",
-        cwd: "/Users/dariana/personal/ClaudePet",
+        cwd: "/Users/dariana/personal/Pets",
         title: "Terminal test",
         kind: "interactive",
         entrypoint: "cli",
@@ -651,7 +651,7 @@ Expected: fail to compile because focusers do not exist.
 
 - [ ] **Step 3: Implement host focusers**
 
-Create `Sources/ClaudePetCore/HostAppFocusers.swift`:
+Create `Sources/PetsCore/HostAppFocusers.swift`:
 
 ```swift
 import ApplicationServices
@@ -840,12 +840,12 @@ Expected: focuser tests pass.
 ## Task 4: Store Integration
 
 **Files:**
-- Modify: `Sources/ClaudePet/ClaudePetStore.swift`
+- Modify: `Sources/Pets/PetStore.swift`
 - Test: build-level verification with `swift test`
 
 - [ ] **Step 1: Modify store initializer and add activation method**
 
-Edit `Sources/ClaudePet/ClaudePetStore.swift`:
+Edit `Sources/Pets/PetStore.swift`:
 
 ```swift
 private let scanner: ClaudeSessionScanner
@@ -916,7 +916,7 @@ Expected: tests and build pass.
 ## Task 5: SwiftUI Row Click Wiring
 
 **Files:**
-- Modify: `Sources/ClaudePet/PetOverlayView.swift`
+- Modify: `Sources/Pets/PetOverlayView.swift`
 
 - [ ] **Step 1: Thread activation callbacks through session bubble views**
 
@@ -1001,7 +1001,7 @@ Add this section after `What It Reads`:
 
 Click a visible session bubble to jump to that Claude session.
 
-ClaudePet supports app activation for:
+Pets supports app activation for:
 
 - Terminal.app
 - Ghostty
@@ -1009,7 +1009,7 @@ ClaudePet supports app activation for:
 - Visual Studio Code Insiders
 - cmux
 
-When ClaudePet can identify the owning app but cannot identify the exact tab or window, it still brings that app forward. Exact tab/window focusing may require macOS Accessibility or Automation permission.
+When Pets can identify the owning app but cannot identify the exact tab or window, it still brings that app forward. Exact tab/window focusing may require macOS Accessibility or Automation permission.
 ```
 
 - [ ] **Step 2: Run project check script**

@@ -6,7 +6,7 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
 
     public var id: ID
     public var name: String
-    public var petID: ClaudePetID
+    public var petID: PetID
     public var pixelation: PetSpritePixelation
     public var sessionContextLineCount: Int
     public var animationSettings: PetAnimationSettings
@@ -16,7 +16,7 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
     public init(
         id: ID = UUID(),
         name: String,
-        petID: ClaudePetID,
+        petID: PetID,
         pixelation: PetSpritePixelation,
         sessionContextLineCount: Int,
         animationSettings: PetAnimationSettings = .default,
@@ -26,7 +26,7 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
         self.id = id
         self.name = name
         self.petID = petID
-        self.pixelation = ClaudePetCatalog.pixelation(pixelation, allowedFor: petID)
+        self.pixelation = PetCatalog.pixelation(pixelation, allowedFor: petID)
         self.sessionContextLineCount = PetSessionContextLineCount.clamped(sessionContextLineCount)
         self.animationSettings = animationSettings
         self.isVisible = isVisible
@@ -36,7 +36,7 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
     public static func defaultInstance(id: ID = UUID()) -> PetInstance {
         migratedDefault(
             id: id,
-            petID: ClaudePetCatalog.defaultPetID,
+            petID: PetCatalog.defaultPetID,
             pixelation: .off,
             sessionContextLineCount: PetSessionContextLineCount.defaultValue
         )
@@ -44,26 +44,26 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
 
     public static func migratedDefault(
         id: ID = UUID(),
-        petID: ClaudePetID,
+        petID: PetID,
         pixelation: PetSpritePixelation,
         sessionContextLineCount: Int
     ) -> PetInstance {
         PetInstance(
             id: id,
-            name: petID == .classicClaude ? "Classic Claude" : ClaudePetCatalog.displayName(for: petID),
+            name: petID == .classicClaude ? "Classic Claude" : PetCatalog.displayName(for: petID),
             petID: petID,
             pixelation: pixelation,
             sessionContextLineCount: sessionContextLineCount
         )
     }
 
-    public mutating func updatePetID(_ petID: ClaudePetID) {
+    public mutating func updatePetID(_ petID: PetID) {
         self.petID = petID
-        pixelation = ClaudePetCatalog.pixelation(pixelation, allowedFor: petID)
+        pixelation = PetCatalog.pixelation(pixelation, allowedFor: petID)
     }
 
     public mutating func updatePixelation(_ pixelation: PetSpritePixelation) {
-        self.pixelation = ClaudePetCatalog.pixelation(pixelation, allowedFor: petID)
+        self.pixelation = PetCatalog.pixelation(pixelation, allowedFor: petID)
     }
 
     public mutating func updateSessionContextLineCount(_ lineCount: Int) {

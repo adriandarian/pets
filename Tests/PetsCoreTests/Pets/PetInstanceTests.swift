@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ClaudePetCore
+@testable import PetsCore
 
 @Suite
 struct PetInstanceTests {

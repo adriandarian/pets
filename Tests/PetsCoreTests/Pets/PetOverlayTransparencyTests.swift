@@ -5,11 +5,7 @@ import Testing
 struct PetOverlayTransparencyTests {
     @Test
     func scrollableSessionBubbleDoesNotUseTintedBackgroundForHitTesting() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/PetOverlayView.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(!source.contains(".background(Color.black.opacity("))
@@ -17,11 +13,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func appKitHostingViewRoutesWheelEventsInsideTransparentScrollableGaps() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/ClaudePetApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("override func hitTest(_ point: NSPoint) -> NSView?"))
@@ -31,11 +23,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func scrollableSessionBubbleOverlaysWheelOnlyEventCapture() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/PetOverlayView.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains(".overlay(SessionScrollWheelCapture())"))
@@ -45,11 +33,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func collapsedChatBadgeUsesCompactVisualSize() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/PetOverlayView.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("static let collapsedChatBadgeSize: CGFloat = expandedChatControlSize"))
@@ -59,11 +43,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func collapsedChatBadgeUsesStatusTintInsteadOfAlwaysGreen() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/PetOverlayView.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
         let badgeSource = try #require(source.range(of: "private struct CollapsedChatBadge: View"))
         let nextStruct = try #require(source.range(of: "private struct SessionCardStack", range: badgeSource.upperBound..<source.endIndex))
@@ -76,11 +56,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func appKitHostingViewIsTransparent() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/ClaudePetApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("override var isOpaque: Bool"))
@@ -90,11 +66,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func inlineReplyEditorUsesReplyLabelAndEscapeToCancel() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/PetOverlayView.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
         let rowStart = try #require(source.range(of: "private struct SessionRow: View"))
         let rowEnd = try #require(source.range(of: "private struct SessionBubbleTopHighlight", range: rowStart.upperBound..<source.endIndex))
@@ -108,25 +80,17 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func appDefinesMenuBarExtraForPetControls() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/ClaudePetApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("MenuBarExtra(\"Claude Pet\", systemImage: \"pawprint.circle\")"))
+        #expect(source.contains("MenuBarExtra(\"Pets\", systemImage: \"pawprint.circle\")"))
         #expect(source.contains(".menuBarExtraStyle(.menu)"))
         #expect(source.contains("PetMenuView("))
     }
 
     @Test
     func menuLinksToPetConfigurationAndFutureCreationSurface() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/ClaudePetApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("@Environment(\\.openSettings)"))
@@ -138,23 +102,19 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("window.styleMask.contains(.closable)"))
         #expect(!source.contains("for window in NSApp.windows where !(window is PetPanel)"))
         #expect(source.contains("PetSettingsView("))
-        #expect(source.contains("ClaudePetCatalog.builtInCategories"))
+        #expect(source.contains("PetCatalog.builtInCategories"))
         #expect(!source.contains("PetConfigurationRow"))
     }
 
     @Test
     func menuKeepsOnlyTopLevelPetCommands() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/ClaudePetApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("Button(\"Respawn Pet\")"))
         #expect(source.contains("\"Hide Pet\" : \"Show Pet\""))
         #expect(source.contains("Label(\"Configure...\", systemImage: \"slider.horizontal.3\")"))
-        #expect(source.contains("Button(\"Quit Claude Pet\")"))
+        #expect(source.contains("Button(\"Quit Pets\")"))
 
         let menuStart = try #require(source.range(of: "private struct PetMenuView: View"))
         let menuEnd = try #require(source.range(of: "private struct PetSettingsView: View", range: menuStart.upperBound..<source.endIndex))
@@ -168,11 +128,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func overlayPassesPixelationPreferenceToSprite() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/PetOverlayView.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("PetSprite("))
@@ -187,16 +143,8 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func menuAndOverlayExposeSessionContextLineCount() throws {
-        let appSourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/ClaudePetApp.swift")
-        let overlaySourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/PetOverlayView.swift")
+        let appSourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
+        let overlaySourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let appSource = try String(contentsOf: appSourceURL, encoding: .utf8)
         let overlaySource = try String(contentsOf: overlaySourceURL, encoding: .utf8)
 
@@ -214,11 +162,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petSettingsUseContainedCarouselAndTwoColumnControls() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/ClaudePetApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("PetInstanceCarouselView("))
@@ -227,7 +171,7 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("PetCarouselArrow(systemName: \"chevron.right\")"))
         #expect(source.contains("SpritePreviewGridBackground()"))
         #expect(source.contains("SettingsDesignPalette.root"))
-        #expect(source.contains("ClaudePetCatalog.category(for: pet.petID)?.displayName"))
+        #expect(source.contains("PetCatalog.category(for: pet.petID)?.displayName"))
         #expect(source.contains("SpriteSummaryPanel("))
         #expect(source.contains("Button(\"Change Sprite...\")"))
         #expect(source.contains("Button(\"Delete Pet\", role: .destructive)"))
@@ -250,11 +194,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petCarouselAffordancesOnlyShowWhenContentOverflows() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/ClaudePetApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("let isOverflowing = carouselContentWidth > proxy.size.width"))
@@ -268,11 +208,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petSpriteUsesScalableCloudFamilyRenderer() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/PetOverlayView.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("CloudFamilySprite("))
@@ -288,30 +224,22 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func spritePickerUsesCatalogTabs() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/ClaudePetApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("@State private var selectedCategoryID = ClaudePetCatalog.builtInCategories.first?.id"))
-        #expect(source.contains("ForEach(ClaudePetCatalog.builtInCategories, id: \\.id) { category in"))
+        #expect(source.contains("@State private var selectedCategoryID = PetCatalog.builtInCategories.first?.id"))
+        #expect(source.contains("ForEach(PetCatalog.builtInCategories, id: \\.id) { category in"))
         #expect(source.contains(".pickerStyle(.segmented)"))
         #expect(source.contains("selectedCategory.petIDs"))
-        #expect(source.contains("ClaudePetCatalog.category(for: pet.petID)?.displayName"))
+        #expect(source.contains("PetCatalog.category(for: pet.petID)?.displayName"))
     }
 
     @Test
     func petSpriteRoutesNonCloudPetsToDistinctRenderers() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/PetOverlayView.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("if ClaudePetCatalog.category(for: petID)?.id == \"cloud-pets\""))
+        #expect(source.contains("if PetCatalog.category(for: petID)?.id == \"cloud-pets\""))
         #expect(source.contains("WorkspacePetSprite("))
         #expect(source.contains("NaturePetSprite("))
         #expect(source.contains("CozyPetSprite("))
@@ -322,11 +250,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petStoreDoesNotSeedPetsOnFirstLaunchOrAfterDeletion() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "Sources/ClaudePet/ClaudePetStore.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetStore.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("return ([], nil)"))
@@ -334,5 +258,20 @@ struct PetOverlayTransparencyTests {
         #expect(!source.contains("cloudFamilyCollection(from:"))
         #expect(!source.contains("starterCloudFamilyInstances"))
         #expect(source.contains("@Published private(set) var selectedPetInstanceID: PetInstance.ID?"))
+    }
+
+    private func sourceFile(_ path: String) throws -> URL {
+        try repositoryRoot().appending(path: path)
+    }
+
+    private func repositoryRoot() throws -> URL {
+        var currentURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        while currentURL.path != "/" {
+            if FileManager.default.fileExists(atPath: currentURL.appending(path: "Package.swift").path) {
+                return currentURL
+            }
+            currentURL.deleteLastPathComponent()
+        }
+        throw CocoaError(.fileNoSuchFile)
     }
 }

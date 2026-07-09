@@ -2,7 +2,7 @@
 
 ## Goal
 
-ClaudePet should add a small built-in voxel pet family that feels distinct from the existing cloud, workspace, nature, and cozy pets while using the same catalog, settings, overlay, and persistence paths.
+Pets should add a small built-in voxel pet family that feels distinct from the existing cloud, workspace, nature, and cozy pets while using the same catalog, settings, overlay, and persistence paths.
 
 This feature should:
 
@@ -14,10 +14,10 @@ This feature should:
 
 ## Current Context
 
-ClaudePet is a Swift Package with:
+Pets is a Swift Package with:
 
-- `ClaudePetCore`, which owns `ClaudePetID`, `ClaudePetCatalog`, `PetInstance`, pixelation options, and catalog tests.
-- `ClaudePet`, which owns SwiftUI rendering for the overlay, settings window, sprite picker, and pet previews.
+- `PetsCore`, which owns `PetID`, `PetCatalog`, `PetInstance`, pixelation options, and catalog tests.
+- `Pets`, which owns SwiftUI rendering for the overlay, settings window, sprite picker, and pet previews.
 
 The current working tree already has an expanded catalog and several SwiftUI-drawn pet families:
 
@@ -26,13 +26,13 @@ The current working tree already has an expanded catalog and several SwiftUI-dra
 - `nature-pets`
 - `cozy-pets`
 
-`PetSprite` routes non-cloud categories to family-specific SwiftUI renderers based on `ClaudePetCatalog.category(for:)?.id`. The voxel family should follow that pattern.
+`PetSprite` routes non-cloud categories to family-specific SwiftUI renderers based on `PetCatalog.category(for:)?.id`. The voxel family should follow that pattern.
 
 ## Recommended Approach
 
 Build voxel pets as a new built-in SwiftUI sprite family.
 
-Add three IDs to `ClaudePetID`:
+Add three IDs to `PetID`:
 
 - `voxelCat`
 - `voxelSlime`
@@ -41,7 +41,7 @@ Add three IDs to `ClaudePetID`:
 Add one catalog category:
 
 ```swift
-ClaudePetCatalogCategory(
+PetCatalogCategory(
     id: "voxel-pets",
     displayName: "Voxel Pets",
     petIDs: [
@@ -72,20 +72,20 @@ This might allow richer texture detail, but it introduces asset storage, transpa
 
 The app could define each pet from a reusable grid or pseudo-isometric block map.
 
-This would be useful if ClaudePet planned to support dozens of voxel pets or user-authored voxel pets, but it is more abstraction than three built-in sprites need. A small set of reusable SwiftUI block helpers is enough.
+This would be useful if Pets planned to support dozens of voxel pets or user-authored voxel pets, but it is more abstraction than three built-in sprites need. A small set of reusable SwiftUI block helpers is enough.
 
 ## Architecture
 
 ### Catalog
 
-`ClaudePetCatalog` should expose the voxel pets like every other built-in category:
+`PetCatalog` should expose the voxel pets like every other built-in category:
 
 - `builtInCategories` includes `Voxel Pets`.
 - `builtInPetIDs` automatically includes the new IDs.
 - `displayName(for:)` returns the three user-facing names.
 - `maximumPixelation(for:)` allows `.chunky` for each voxel pet.
 
-No persistence migration is required because pet instances store `ClaudePetID` raw values and the new IDs are additive.
+No persistence migration is required because pet instances store `PetID` raw values and the new IDs are additive.
 
 ### Rendering
 
@@ -109,7 +109,7 @@ The voxel family should remain code-native and should not add new image files.
 
 No settings layout changes are required.
 
-The existing picker and carousel read from `ClaudePetCatalog.builtInCategories` and render previews through `PetSprite`, so the new category should appear automatically once the catalog and renderer are updated.
+The existing picker and carousel read from `PetCatalog.builtInCategories` and render previews through `PetSprite`, so the new category should appear automatically once the catalog and renderer are updated.
 
 ### Tests
 

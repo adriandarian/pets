@@ -1,4 +1,4 @@
-# ClaudePet Session Activation Design
+# Pets Session Activation Design
 
 ## Goal
 
@@ -12,14 +12,14 @@ The feature must support sessions hosted in:
 - Visual Studio Code Insiders (`com.microsoft.VSCodeInsiders`)
 - cmux (`com.cmuxterm.app`)
 
-When ClaudePet can identify the host app but cannot identify the exact tab or window, it must still activate the host app. It should not silently do nothing.
+When Pets can identify the host app but cannot identify the exact tab or window, it must still activate the host app. It should not silently do nothing.
 
 ## Current Context
 
-ClaudePet is a Swift Package with:
+Pets is a Swift Package with:
 
-- `ClaudePetCore`, which scans `~/.claude/sessions/*.json`, filters dead PIDs, summarizes transcript metadata, and exposes `ClaudeSession` values.
-- `ClaudePet`, a thin AppKit and SwiftUI overlay executable.
+- `PetsCore`, which scans `~/.claude/sessions/*.json`, filters dead PIDs, summarizes transcript metadata, and exposes `ClaudeSession` values.
+- `Pets`, a thin AppKit and SwiftUI overlay executable.
 - Existing session rows in `PetOverlayView` that have visible row content, hover dismiss controls, and reply controls, but no row activation action.
 
 `ClaudeSession` already contains useful activation signals:
@@ -38,7 +38,7 @@ The existing reply path uses TTY targeting for terminal sessions. Activation is 
 
 Add app-specific activators behind one common interface.
 
-A new `ClaudeSessionActivator` in `ClaudePetCore` will expose a single activation entry point:
+A new `ClaudeSessionActivator` in `PetsCore` will expose a single activation entry point:
 
 ```swift
 public func activate(_ session: ClaudeSession) throws -> ClaudeSessionActivationResult
@@ -58,13 +58,13 @@ This approach is preferred because macOS app activation is common, but tab selec
 
 ### Generic Accessibility Search
 
-ClaudePet could inspect all visible windows and tabs through Accessibility APIs and focus the best title match.
+Pets could inspect all visible windows and tabs through Accessibility APIs and focus the best title match.
 
 This keeps the implementation smaller, but it is less reliable. It depends heavily on UI titles, which may not contain enough session-specific information.
 
 ### URL or CLI Reopen
 
-For VS Code-style apps, ClaudePet could use URL schemes or CLI commands to open the workspace directory. For terminals, it could activate the app.
+For VS Code-style apps, Pets could use URL schemes or CLI commands to open the workspace directory. For terminals, it could activate the app.
 
 This is reliable for opening the right app or workspace, but it usually does not select the existing tab that owns the Claude session. It should only be used as a fallback or later enhancement.
 
@@ -72,7 +72,7 @@ This is reliable for opening the right app or workspace, but it usually does not
 
 ### Core Types
 
-Add these types to `ClaudePetCore`:
+Add these types to `PetsCore`:
 
 ```swift
 public enum ClaudeSessionActivationResult: Equatable, Sendable {
@@ -87,7 +87,7 @@ public protocol SessionActivating: Sendable {
 }
 ```
 
-`ClaudePetStore` will depend on `SessionActivating`, similar to how it already depends on `ClaudeSessionScanner` and `ClaudeReplySender`.
+`PetStore` will depend on `SessionActivating`, similar to how it already depends on `ClaudeSessionScanner` and `ClaudeReplySender`.
 
 ### Host App Resolution
 
@@ -177,7 +177,7 @@ Unit tests should cover:
 - Supported bundle routing for Terminal, Ghostty, VS Code, VS Code Insiders, and cmux.
 - Fallback result when exact tab/window focus fails.
 - Permission-denied result when exact targeting is blocked.
-- `ClaudePetStore.activateSession(_:)` updates `lastError` only for actionable failures.
+- `PetStore.activateSession(_:)` updates `lastError` only for actionable failures.
 
 SwiftUI click behavior does not need deep view testing in the first pass. The row should be wired through callbacks and manually verified.
 

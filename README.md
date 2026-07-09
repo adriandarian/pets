@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/assets/claudepet-voxel-hero.png" alt="Voxel art banner showing a small cloud-like desktop pet floating over terminal windows, chat bubbles, and a cozy developer desk." width="100%">
+<img src="docs/assets/pets-voxel-hero.png" alt="Voxel art banner showing a small cloud-like desktop pet floating over terminal windows, chat bubbles, and a cozy developer desk." width="100%">
 
-# ClaudePet
+# Pets
 
 ### A tiny macOS desk companion for Claude Code sessions.
 
@@ -10,7 +10,7 @@
 
 </div>
 
-ClaudePet keeps a small, friendly watch over local Claude Code sessions. It floats above your desktop, shows live sessions as pet-side bubbles, and helps you jump back to the right host app without hunting through windows.
+Pets keeps a small, friendly watch over local Claude Code sessions. It floats above your desktop, shows live sessions as pet-side bubbles, and helps you jump back to the right host app without hunting through windows.
 
 ## What Makes It Cute and Useful
 
@@ -26,18 +26,18 @@ ClaudePet keeps a small, friendly watch over local Claude Code sessions. It floa
 
 <div align="center">
 
-<img src="docs/assets/claudepet-session-orbit.png" alt="Voxel art diagram of ClaudePet orbiting terminal sessions and sending status bubbles toward an overlay panel." width="92%">
+<img src="docs/assets/pets-session-orbit.png" alt="Voxel art diagram of Pets orbiting terminal sessions and sending status bubbles toward an overlay panel." width="92%">
 
 </div>
 
-1. ClaudePet scans local Claude session records.
+1. Pets scans local Claude session records.
 2. It filters out stale sessions by checking live process IDs.
 3. Waiting, busy, and completed sessions appear in the overlay.
 4. A click on a session bubble brings the owning app forward.
 
 ## What It Reads
 
-ClaudePet reads:
+Pets reads:
 
 ```text
 ~/.claude/sessions/*.json
@@ -50,7 +50,7 @@ It uses session metadata such as PID, working directory, entrypoint, kind, statu
 
 Click a visible session bubble to jump back to that Claude session.
 
-ClaudePet currently knows how to activate sessions hosted by:
+Pets currently knows how to activate sessions hosted by:
 
 | Host app | Supported |
 | --- | --- |
@@ -60,7 +60,7 @@ ClaudePet currently knows how to activate sessions hosted by:
 | Visual Studio Code Insiders | Yes |
 | cmux | Yes |
 
-When ClaudePet can identify the owning app but cannot identify the exact tab or window, it still brings that app forward. Exact tab or window focusing may require macOS Accessibility or Automation permission. If Accessibility permission is missing, ClaudePet asks macOS to show the permission prompt and shows an error bubble until access is granted.
+When Pets can identify the owning app but cannot identify the exact tab or window, it still brings that app forward. Exact tab or window focusing may require macOS Accessibility or Automation permission. If Accessibility permission is missing, Pets asks macOS to show the permission prompt and shows an error bubble until access is granted.
 
 ## Run It
 
@@ -76,7 +76,7 @@ When ClaudePet can identify the owning app but cannot identify the exact tab or 
 
 ## Tiny Details
 
-- ClaudePet is an accessory app, so it does not show in the Dock.
+- Pets is an accessory app, so it does not show in the Dock.
 - The overlay starts near the bottom-right of the main screen.
 - Session state refreshes every two seconds.
 - Claude sessions with dead PIDs are hidden.

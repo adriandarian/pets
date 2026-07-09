@@ -1,11 +1,11 @@
 import AppKit
-import ClaudePetCore
+import PetsCore
 import Combine
 import ServiceManagement
 import SwiftUI
 
 @main
-struct ClaudePetApp: App {
+struct PetsApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
@@ -21,7 +21,7 @@ struct ClaudePetApp: App {
             )
         }
 
-        MenuBarExtra("Claude Pet", systemImage: "pawprint.circle") {
+        MenuBarExtra("Pets", systemImage: "pawprint.circle") {
             PetMenuView(
                 store: appDelegate.store,
                 togglePetVisibility: {
@@ -42,7 +42,7 @@ struct ClaudePetApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panels: [PetInstance.ID: PetPanel] = [:]
-    let store = ClaudePetStore()
+    let store = PetStore()
     private var isAdjustingPanelFrame = false
     private var isSyncingPetPanels = false
     private var cancellables: Set<AnyCancellable> = []
@@ -208,7 +208,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 private struct PetMenuView: View {
     @Environment(\.openSettings) private var openSettings
 
-    @ObservedObject var store: ClaudePetStore
+    @ObservedObject var store: PetStore
     let togglePetVisibility: () -> Void
     let respawnPet: () -> Void
     let bringConfigurationToFront: () -> Void
@@ -233,14 +233,14 @@ private struct PetMenuView: View {
 
         Divider()
 
-        Button("Quit Claude Pet") {
+        Button("Quit Pets") {
             NSApplication.shared.terminate(nil)
         }
     }
 }
 
 private struct PetSettingsView: View {
-    @ObservedObject var store: ClaudePetStore
+    @ObservedObject var store: PetStore
     let toggleOpenAtLogin: (Bool) -> Void
     let respawnSelectedPet: () -> Void
 
@@ -283,7 +283,7 @@ private enum SettingsDesignPalette {
 }
 
 private struct GeneralSettingsPane: View {
-    @ObservedObject var store: ClaudePetStore
+    @ObservedObject var store: PetStore
     let toggleOpenAtLogin: (Bool) -> Void
 
     var body: some View {
@@ -303,7 +303,7 @@ private struct GeneralSettingsPane: View {
 }
 
 private struct PetConfigurationPane: View {
-    @ObservedObject var store: ClaudePetStore
+    @ObservedObject var store: PetStore
     let respawnSelectedPet: () -> Void
     @State private var isSpritePickerPresented = false
     @State private var isDeleteConfirmationPresented = false
@@ -396,8 +396,8 @@ private struct PetConfigurationPane: View {
         }
     }
 
-    private func petFamilyName(for petID: ClaudePetID) -> String {
-        ClaudePetCatalog.category(for: petID)?.displayName ?? "Custom Pet"
+    private func petFamilyName(for petID: PetID) -> String {
+        PetCatalog.category(for: petID)?.displayName ?? "Custom Pet"
     }
 }
 
@@ -435,7 +435,7 @@ private struct EmptyPetCollectionView: View {
 }
 
 private struct PetInstanceCarouselView: View {
-    @ObservedObject var store: ClaudePetStore
+    @ObservedObject var store: PetStore
 
     var body: some View {
         GeometryReader { proxy in
@@ -555,7 +555,7 @@ private struct PetCarouselCard: View {
     }
 
     private var carouselSubtitle: String {
-        ClaudePetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
+        PetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
     }
 }
 
@@ -612,7 +612,7 @@ private struct SpriteSummaryPanel: View {
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
 
-                Text(ClaudePetCatalog.displayName(for: pet.petID))
+                Text(PetCatalog.displayName(for: pet.petID))
                     .font(.title3.bold())
 
                 Text("Current sprite in \(petFamilyName). Open the picker to switch variants or choose another family.")
@@ -644,7 +644,7 @@ private struct SpriteSummaryPanel: View {
     }
 
     private var petFamilyName: String {
-        ClaudePetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
+        PetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
     }
 }
 
@@ -692,7 +692,7 @@ private struct SpriteCapabilityTag: View {
 }
 
 private struct BehaviorSettingsPanel: View {
-    @ObservedObject var store: ClaudePetStore
+    @ObservedObject var store: PetStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -795,7 +795,7 @@ private struct GradientSettingsToggleStyle: ToggleStyle {
 }
 
 private struct PetDetailsSettingsPanel: View {
-    @ObservedObject var store: ClaudePetStore
+    @ObservedObject var store: PetStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -819,7 +819,7 @@ private struct PetDetailsSettingsPanel: View {
                         ForEach(PetSpritePixelation.allCases, id: \.self) { pixelation in
                             Text(pixelation.displayName)
                                 .tag(pixelation)
-                                .disabled(pixelation > ClaudePetCatalog.maximumPixelation(for: selectedPet.petID))
+                                .disabled(pixelation > PetCatalog.maximumPixelation(for: selectedPet.petID))
                         }
                     }
                     .labelsHidden()
@@ -884,9 +884,9 @@ private struct PetDetailsSettingsPanel: View {
 }
 
 private struct SpritePickerSheet: View {
-    @ObservedObject var store: ClaudePetStore
+    @ObservedObject var store: PetStore
     @Binding var isPresented: Bool
-    @State private var selectedCategoryID = ClaudePetCatalog.builtInCategories.first?.id
+    @State private var selectedCategoryID = PetCatalog.builtInCategories.first?.id
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -903,7 +903,7 @@ private struct SpritePickerSheet: View {
             }
 
             Picker("Pet family", selection: $selectedCategoryID) {
-                ForEach(ClaudePetCatalog.builtInCategories, id: \.id) { category in
+                ForEach(PetCatalog.builtInCategories, id: \.id) { category in
                     Text(category.displayName)
                         .tag(Optional(category.id))
                 }
@@ -935,19 +935,19 @@ private struct SpritePickerSheet: View {
         .frame(width: 680, height: 520)
         .onAppear {
             selectedCategoryID = store.selectedPetInstance
-                .flatMap { ClaudePetCatalog.category(for: $0.petID)?.id }
+                .flatMap { PetCatalog.category(for: $0.petID)?.id }
                 ?? selectedCategoryID
         }
     }
 
-    private var selectedCategory: ClaudePetCatalogCategory {
-        ClaudePetCatalog.builtInCategories.first { $0.id == selectedCategoryID }
-            ?? ClaudePetCatalog.builtInCategories[0]
+    private var selectedCategory: PetCatalogCategory {
+        PetCatalog.builtInCategories.first { $0.id == selectedCategoryID }
+            ?? PetCatalog.builtInCategories[0]
     }
 }
 
 private struct SpritePickerCard: View {
-    let petID: ClaudePetID
+    let petID: PetID
     let isSelected: Bool
     let action: () -> Void
 
@@ -968,7 +968,7 @@ private struct SpritePickerCard: View {
                 }
                 .frame(height: 116)
 
-                Text(ClaudePetCatalog.displayName(for: petID))
+                Text(PetCatalog.displayName(for: petID))
                     .font(.headline)
                     .lineLimit(1)
             }
