@@ -217,7 +217,7 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("case .helperCloud"))
         #expect(source.contains("case .sleepCloud"))
         #expect(source.contains("case .focusCloud"))
-        #expect(!source.contains("if petID == .classicClaude {\n                ClaudeSprite"))
+        #expect(!source.contains("if petID == .classicCloud {\n                ClassicCloudSprite"))
         #expect(!source.contains("showsStatusDot"))
         #expect(!source.contains("statusDotColor"))
     }
@@ -239,7 +239,7 @@ struct PetOverlayTransparencyTests {
         let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("if PetCatalog.category(for: petID)?.id == \"cloud-pets\""))
+        #expect(source.contains("switch PetCatalog.renderFamily(for: petID)"))
         #expect(source.contains("WorkspacePetSprite("))
         #expect(source.contains("NaturePetSprite("))
         #expect(source.contains("CozyPetSprite("))
@@ -251,13 +251,29 @@ struct PetOverlayTransparencyTests {
     @Test
     func petStoreDoesNotSeedPetsOnFirstLaunchOrAfterDeletion() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetStore.swift")
+        let persistenceSourceURL = try sourceFile("Sources/Pets/PetSettingsPersistence.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let persistenceSource = try String(contentsOf: persistenceSourceURL, encoding: .utf8)
 
-        #expect(source.contains("return ([], nil)"))
-        #expect(source.contains("return (decoded.map(normalizedCloudFamilyInstance), nil)"))
+        #expect(persistenceSource.contains("return ([], nil)"))
+        #expect(persistenceSource.contains("return (decoded.map(normalizedCloudFamilyInstance), nil)"))
         #expect(!source.contains("cloudFamilyCollection(from:"))
         #expect(!source.contains("starterCloudFamilyInstances"))
         #expect(source.contains("@Published private(set) var selectedPetInstanceID: PetInstance.ID?"))
+    }
+
+    @Test
+    func petStoreDependsOnGenericHarnessBoundary() throws {
+        let sourceURL = try sourceFile("Sources/Pets/PetStore.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+
+        #expect(source.contains("@Published private(set) var sessions: [HarnessSession]"))
+        #expect(source.contains("private let harness: any PetHarness"))
+        #expect(source.contains("harness: any PetHarness = ClaudeHarness()"))
+        #expect(!source.contains("ClaudeSessionScanner"))
+        #expect(!source.contains("ClaudeReplySender"))
+        #expect(!source.contains("SessionActivating"))
+        #expect(!source.contains("[ClaudeSession]"))
     }
 
     private func sourceFile(_ path: String) throws -> URL {

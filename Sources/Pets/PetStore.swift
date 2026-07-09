@@ -4,15 +4,7 @@ import Foundation
 
 @MainActor
 final class PetStore: ObservableObject {
-    private enum DefaultsKey {
-        static let petInstances = "petInstances"
-        static let selectedPetInstanceID = "selectedPetInstanceID"
-        static let selectedPetID = "selectedPetID"
-        static let spritePixelation = "spritePixelation"
-        static let sessionContextLineCount = "sessionContextLineCount"
-    }
-
-    @Published private(set) var sessions: [ClaudeSession] = []
+    @Published private(set) var sessions: [HarnessSession] = []
     @Published private(set) var lastError: String?
     private(set) var lastUpdated: Date?
     @Published private(set) var isOpenAtLoginEnabled = false
@@ -20,51 +12,21 @@ final class PetStore: ObservableObject {
     @Published private(set) var selectedPetInstanceID: PetInstance.ID?
     @Published private var dismissedSessions: Set<PetDismissedSession> = []
 
-    private let scanner: ClaudeSessionScanner
-    private let replySender: ClaudeReplySender
-    private let sessionActivator: any SessionActivating
-    private let defaults: UserDefaults
+    private let harness: any PetHarness
+    private let settingsPersistence: PetSettingsPersistence
     private var refreshTask: Task<Void, Never>?
     private static let refreshInterval: Duration = .seconds(5)
 
     init(
-        scanner: ClaudeSessionScanner = ClaudeSessionScanner(),
-        replySender: ClaudeReplySender = ClaudeReplySender(),
-        sessionActivator: any SessionActivating = ClaudeSessionActivator(),
+        harness: any PetHarness = ClaudeHarness(),
         defaults: UserDefaults = .standard
     ) {
-        self.scanner = scanner
-        self.replySender = replySender
-        self.sessionActivator = sessionActivator
-        self.defaults = defaults
-        let persistedPetID = defaults.string(forKey: DefaultsKey.selectedPetID).map(PetID.init(rawValue:))
-        let selectedPetID = persistedPetID ?? PetCatalog.defaultPetID
-        let migratedPixelation = PetCatalog.pixelation(
-            PetSpritePixelation.persisted(rawValue: defaults.string(forKey: DefaultsKey.spritePixelation)),
-            allowedFor: selectedPetID
-        )
-        let persistedContextLineCount = defaults.integer(forKey: DefaultsKey.sessionContextLineCount)
-        let migratedContextLineCount = PetSessionContextLineCount.clamped(
-            persistedContextLineCount == 0
-                ? PetSessionContextLineCount.defaultValue
-                : persistedContextLineCount
-        )
-        let loadedPetConfiguration = Self.loadPetInstances(
-            from: defaults,
-            migratedPetID: selectedPetID,
-            migratedPixelation: migratedPixelation,
-            migratedContextLineCount: migratedContextLineCount
-        )
+        self.harness = harness
+        self.settingsPersistence = PetSettingsPersistence(defaults: defaults)
+        let loadedPetConfiguration = settingsPersistence.loadPetConfiguration()
         let loadedInstances = loadedPetConfiguration.instances
         self.petInstances = loadedInstances
-
-        let persistedSelectedID = defaults.string(forKey: DefaultsKey.selectedPetInstanceID)
-            .flatMap(UUID.init(uuidString:))
-        if let persistedSelectedID, loadedInstances.contains(where: { $0.id == persistedSelectedID }) {
-            self.selectedPetInstanceID = persistedSelectedID
-        } else {
-            self.selectedPetInstanceID = loadedInstances.first?.id
-        }
+        self.selectedPetInstanceID = loadedPetConfiguration.selectedID
         self.lastError = loadedPetConfiguration.error
     }
 
@@ -89,11 +51,11 @@ final class PetStore: ObservableObject {
         }
     }
 
-    var dominantStatus: ClaudeDisplayStatus {
-        if visibleSessions.contains(where: { $0.displayStatus == .waiting }) {
+    var dominantStatus: HarnessSessionStatus {
+        if visibleSessions.contains(where: { $0.status == .waiting }) {
             return .waiting
         }
-        if visibleSessions.contains(where: { $0.displayStatus == .busy }) {
+        if visibleSessions.contains(where: { $0.status == .busy }) {
             return .busy
         }
         if visibleSessions.isEmpty {
@@ -103,14 +65,14 @@ final class PetStore: ObservableObject {
     }
 
     var unreadChatCount: Int {
-        ClaudeSession.unreadChatCount(in: visibleSessions)
+        HarnessSession.unreadChatCount(in: visibleSessions)
     }
 
     var collapsedChatCount: Int {
-        ClaudeSession.collapsedChatCount(in: visibleSessions)
+        HarnessSession.collapsedChatCount(in: visibleSessions)
     }
 
-    var visibleSessions: [ClaudeSession] {
+    var visibleSessions: [HarnessSession] {
         PetDismissedSessionFilter.visibleSessions(
             sessions,
             dismissedSessions: dismissedSessions
@@ -274,16 +236,16 @@ final class PetStore: ObservableObject {
         lastUpdated = Date()
     }
 
-    func dismissSession(_ session: ClaudeSession) {
+    func dismissSession(_ session: HarnessSession) {
         dismissedSessions.insert(PetDismissedSession(session: session))
     }
 
-    func activateSession(_ session: ClaudeSession) {
-        let sessionActivator = self.sessionActivator
+    func activateSession(_ session: HarnessSession) {
+        let harness = self.harness
         Task {
             do {
                 let result = try await Task.detached {
-                    try sessionActivator.activate(session)
+                    try harness.activate(session)
                 }.value
                 applyActivationResult(result)
             } catch {
@@ -293,12 +255,12 @@ final class PetStore: ObservableObject {
         }
     }
 
-    func sendReply(_ message: String, to session: ClaudeSession) {
-        let replySender = self.replySender
+    func sendReply(_ message: String, to session: HarnessSession) {
+        let harness = self.harness
         Task {
             do {
                 try await Task.detached {
-                    try replySender.send(message, to: session)
+                    try harness.sendReply(message, to: session)
                 }.value
                 lastError = nil
                 await refresh()
@@ -310,10 +272,10 @@ final class PetStore: ObservableObject {
     }
 
     private func refresh() async {
-        let scanner = scanner
+        let harness = harness
         do {
             let scannedSessions = try await Task.detached(priority: .utility) {
-                try scanner.scan()
+                try harness.scan()
             }.value
             guard !Task.isCancelled else { return }
             applyRefreshResult(sessions: scannedSessions, error: nil)
@@ -325,7 +287,7 @@ final class PetStore: ObservableObject {
         }
     }
 
-    private func applyRefreshResult(sessions scannedSessions: [ClaudeSession]?, error: String?) {
+    private func applyRefreshResult(sessions scannedSessions: [HarnessSession]?, error: String?) {
         if let scannedSessions, sessions != scannedSessions {
             sessions = scannedSessions
             dismissedSessions.formIntersection(scannedSessions.map(PetDismissedSession.init))
@@ -336,47 +298,16 @@ final class PetStore: ObservableObject {
         lastUpdated = Date()
     }
 
-    private func applyActivationResult(_ result: ClaudeSessionActivationResult) {
+    private func applyActivationResult(_ result: HarnessActivationResult) {
         switch result {
         case .focusedExactTarget, .activatedApp:
             lastError = nil
         case let .unsupportedHost(processName):
-            lastError = "Could not find a supported app for \(processName ?? "this Claude session")."
+            lastError = "Could not find a supported app for \(processName ?? "this session")."
         case let .permissionDenied(reason):
             lastError = reason
         }
         lastUpdated = Date()
-    }
-
-    private static func loadPetInstances(
-        from defaults: UserDefaults,
-        migratedPetID: PetID,
-        migratedPixelation: PetSpritePixelation,
-        migratedContextLineCount: Int
-    ) -> (instances: [PetInstance], error: String?) {
-        if let data = defaults.data(forKey: DefaultsKey.petInstances) {
-            do {
-                let decoded = try JSONDecoder().decode([PetInstance].self, from: data)
-                return (decoded.map(normalizedCloudFamilyInstance), nil)
-            } catch {
-                return (
-                    [],
-                    "Pet settings could not be loaded. Defaults were restored."
-                )
-            }
-        }
-
-        return ([], nil)
-    }
-
-    private static func normalizedCloudFamilyInstance(_ instance: PetInstance) -> PetInstance {
-        guard instance.petID == .classicClaude,
-              instance.name == PetCatalog.displayName(for: .classicClaude)
-        else { return instance }
-
-        var normalized = instance
-        normalized.name = "Classic Claude"
-        return normalized
     }
 
     private func updateSelectedPet(_ mutate: (inout PetInstance) -> Void) {
@@ -399,16 +330,11 @@ final class PetStore: ObservableObject {
     }
 
     private func persistPetInstances() {
-        guard let data = try? JSONEncoder().encode(petInstances) else { return }
-        defaults.set(data, forKey: DefaultsKey.petInstances)
+        settingsPersistence.persistPetInstances(petInstances)
     }
 
     private func persistSelectedPetInstanceID() {
-        if let selectedPetInstanceID {
-            defaults.set(selectedPetInstanceID.uuidString, forKey: DefaultsKey.selectedPetInstanceID)
-        } else {
-            defaults.removeObject(forKey: DefaultsKey.selectedPetInstanceID)
-        }
+        settingsPersistence.persistSelectedPetInstanceID(selectedPetInstanceID)
     }
 
     private func uniquePetName(baseName: String) -> String {

@@ -1,24 +1,7 @@
 import Foundation
 
-public enum ClaudeDisplayStatus: String, CaseIterable, Equatable, Sendable {
-    case busy
-    case waiting
-    case idle
-    case unknown
-
-    public var isRunning: Bool {
-        self == .busy
-    }
-
-    public var usesContinuousSpriteMotion: Bool {
-        self == .busy || self == .waiting
-    }
-}
-
-public enum ClaudeReplyTarget: Equatable, Sendable {
-    case background(id: String)
-    case terminal(tty: String)
-}
+public typealias ClaudeDisplayStatus = HarnessSessionStatus
+public typealias ClaudeReplyTarget = HarnessReplyTarget
 
 public struct ClaudeSession: Identifiable, Equatable, Sendable {
     public let id: String
@@ -77,5 +60,44 @@ public extension ClaudeSession {
         sessions.reduce(0) { count, session in
             session.displayStatus == .waiting ? count + 1 : count
         }
+    }
+
+    func harnessSession(
+        harnessID: String = ClaudeHarness.defaultID,
+        harnessDisplayName: String = ClaudeHarness.defaultDisplayName
+    ) -> HarnessSession {
+        HarnessSession(
+            harnessID: harnessID,
+            harnessDisplayName: harnessDisplayName,
+            sessionID: sessionId,
+            processID: pid,
+            cwd: cwd,
+            title: title,
+            chatPreview: chatPreview,
+            dismissalToken: dismissalToken,
+            kind: kind,
+            entrypoint: entrypoint,
+            status: displayStatus,
+            replyTarget: replyTarget,
+            updatedAt: updatedAt,
+            startedAt: startedAt
+        )
+    }
+
+    init(harnessSession session: HarnessSession) {
+        self.init(
+            pid: session.processID ?? 0,
+            sessionId: session.sessionID,
+            cwd: session.cwd,
+            title: session.title,
+            chatPreview: session.chatPreview,
+            dismissalToken: session.dismissalToken,
+            kind: session.kind,
+            entrypoint: session.entrypoint,
+            displayStatus: session.status,
+            replyTarget: session.replyTarget,
+            updatedAt: session.updatedAt,
+            startedAt: session.startedAt
+        )
     }
 }

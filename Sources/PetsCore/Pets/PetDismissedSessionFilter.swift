@@ -7,23 +7,23 @@ public struct PetDismissedSession: Hashable, Sendable {
         self.dismissalToken = dismissalToken
     }
 
-    public init(session: ClaudeSession) {
-        self.init(sessionID: session.sessionId, dismissalToken: session.dismissalToken)
+    public init(session: HarnessSession) {
+        self.init(sessionID: session.id, dismissalToken: session.dismissalToken)
     }
 }
 
 public enum PetDismissedSessionFilter {
     public static func visibleSessions(
-        _ sessions: [ClaudeSession],
+        _ sessions: [HarnessSession],
         dismissedSessions: Set<PetDismissedSession>
-    ) -> [ClaudeSession] {
+    ) -> [HarnessSession] {
         sessions.filter { session in
             !isEmptyUntitledSession(session)
                 && !dismissedSessions.contains(PetDismissedSession(session: session))
         }
     }
 
-    private static func isEmptyUntitledSession(_ session: ClaudeSession) -> Bool {
+    private static func isEmptyUntitledSession(_ session: HarnessSession) -> Bool {
         let title = session.title.trimmingCharacters(in: .whitespacesAndNewlines)
         let chatPreview = session.chatPreview?.trimmingCharacters(in: .whitespacesAndNewlines)
         return title == "Untitled chat" && (chatPreview?.isEmpty ?? true)

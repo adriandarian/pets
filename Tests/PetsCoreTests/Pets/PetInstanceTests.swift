@@ -44,7 +44,7 @@ struct PetInstanceTests {
             PetInstance(
                 id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
                 name: "Classic",
-                petID: .classicClaude,
+                petID: .classicCloud,
                 pixelation: .chunky,
                 sessionContextLineCount: 4,
                 animationSettings: PetAnimationSettings(
@@ -69,14 +69,22 @@ struct PetInstanceTests {
     @Test
     func migratedDefaultUsesExistingPreferenceValues() {
         let migrated = PetInstance.migratedDefault(
-            petID: .classicClaude,
+            petID: .classicCloud,
             pixelation: .chunky,
             sessionContextLineCount: 3
         )
 
-        #expect(migrated.name == "Classic Claude")
-        #expect(migrated.petID == .classicClaude)
+        #expect(migrated.name == "Classic Cloud")
+        #expect(migrated.petID == .classicCloud)
         #expect(migrated.pixelation == .chunky)
         #expect(migrated.sessionContextLineCount == 3)
+    }
+
+    @Test
+    func legacyClassicClaudeIDDecodesAsClassicCloud() throws {
+        let id = PetID(rawValue: "classic-claude")
+
+        #expect(id == .classicCloud)
+        #expect(id.rawValue == "classic-cloud")
     }
 }

@@ -50,18 +50,18 @@ struct ClaudeSessionScannerTests {
 
     @Test
     func busyStatusIsMarkedAsRunningForAnimatedUI() {
-        #expect(ClaudeDisplayStatus.busy.isRunning)
-        #expect(!ClaudeDisplayStatus.waiting.isRunning)
-        #expect(!ClaudeDisplayStatus.idle.isRunning)
-        #expect(!ClaudeDisplayStatus.unknown.isRunning)
+        #expect(HarnessSessionStatus.busy.isRunning)
+        #expect(!HarnessSessionStatus.waiting.isRunning)
+        #expect(!HarnessSessionStatus.idle.isRunning)
+        #expect(!HarnessSessionStatus.unknown.isRunning)
     }
 
     @Test
     func onlyActiveStatusesRequestContinuousSpriteMotion() {
-        #expect(ClaudeDisplayStatus.busy.usesContinuousSpriteMotion)
-        #expect(ClaudeDisplayStatus.waiting.usesContinuousSpriteMotion)
-        #expect(!ClaudeDisplayStatus.idle.usesContinuousSpriteMotion)
-        #expect(!ClaudeDisplayStatus.unknown.usesContinuousSpriteMotion)
+        #expect(HarnessSessionStatus.busy.usesContinuousSpriteMotion)
+        #expect(HarnessSessionStatus.waiting.usesContinuousSpriteMotion)
+        #expect(!HarnessSessionStatus.idle.usesContinuousSpriteMotion)
+        #expect(!HarnessSessionStatus.unknown.usesContinuousSpriteMotion)
     }
 
     @Test
@@ -81,11 +81,12 @@ struct ClaudeSessionScannerTests {
     func cuteCloudPetIsDefaultWhileClassicPetStaysAvailable() {
         #expect(PetCatalog.defaultPetID == .cuteCloud)
         #expect(PetCatalog.builtInPetIDs.first == .cuteCloud)
-        #expect(PetCatalog.builtInPetIDs.contains(.classicClaude))
+        #expect(PetCatalog.builtInPetIDs.contains(.classicCloud))
         #expect(PetCatalog.builtInPetIDs.contains(.helperCloud))
         #expect(PetCatalog.builtInPetIDs.contains(.sleepCloud))
         #expect(PetCatalog.builtInPetIDs.contains(.focusCloud))
-        #expect(PetCatalog.displayName(for: .classicClaude) == "Classic Cloud")
+        #expect(PetCatalog.displayName(for: .classicCloud) == "Classic Cloud")
+        #expect(PetCatalog.renderFamily(for: .classicCloud) == .cloud)
     }
 
     @Test
@@ -96,7 +97,7 @@ struct ClaudeSessionScannerTests {
         #expect(categories.first?.displayName == "Cloud Pets")
         #expect(categories.first?.petIDs == [
             .cuteCloud,
-            .classicClaude,
+            .classicCloud,
             .helperCloud,
             .sleepCloud,
             .focusCloud
@@ -125,7 +126,7 @@ struct ClaudeSessionScannerTests {
     @Test
     func petPixelationClampsToSpriteCapability() {
         #expect(PetCatalog.pixelation(.chunky, allowedFor: .cuteCloud) == .medium)
-        #expect(PetCatalog.pixelation(.chunky, allowedFor: .classicClaude) == .chunky)
+        #expect(PetCatalog.pixelation(.chunky, allowedFor: .classicCloud) == .chunky)
         #expect(PetCatalog.pixelation(.medium, allowedFor: PetID.custom("future")) == .off)
     }
 
@@ -202,14 +203,14 @@ struct ClaudeSessionScannerTests {
             makeSession(sessionId: "first", displayStatus: .waiting, dismissalToken: "first-prompt"),
             makeSession(sessionId: "second", displayStatus: .busy, dismissalToken: "old-prompt"),
             makeSession(sessionId: "third", displayStatus: .idle, dismissalToken: "third-prompt")
-        ]
+        ].map { $0.harnessSession() }
 
         let visibleSessions = PetDismissedSessionFilter.visibleSessions(
             sessions,
             dismissedSessions: [PetDismissedSession(session: sessions[1])]
         )
 
-        #expect(visibleSessions.map(\.sessionId) == ["first", "third"])
+        #expect(visibleSessions.map(\.sessionID) == ["first", "third"])
     }
 
     @Test
@@ -218,19 +219,19 @@ struct ClaudeSessionScannerTests {
             sessionId: "same-session",
             displayStatus: .idle,
             dismissalToken: "old-prompt"
-        )
+        ).harnessSession()
         let refreshedSession = makeSession(
             sessionId: "same-session",
             displayStatus: .busy,
             dismissalToken: "new-prompt"
-        )
+        ).harnessSession()
 
         let visibleSessions = PetDismissedSessionFilter.visibleSessions(
             [refreshedSession],
             dismissedSessions: [PetDismissedSession(session: dismissedSession)]
         )
 
-        #expect(visibleSessions.map(\.sessionId) == ["same-session"])
+        #expect(visibleSessions.map(\.sessionID) == ["same-session"])
     }
 
     @Test
@@ -239,14 +240,14 @@ struct ClaudeSessionScannerTests {
             makeSession(sessionId: "empty", title: "Untitled chat", chatPreview: nil),
             makeSession(sessionId: "titled", title: "Review failing CI", chatPreview: nil),
             makeSession(sessionId: "content", title: "Untitled chat", chatPreview: "Please check this build")
-        ]
+        ].map { $0.harnessSession() }
 
         let visibleSessions = PetDismissedSessionFilter.visibleSessions(
             sessions,
             dismissedSessions: []
         )
 
-        #expect(visibleSessions.map(\.sessionId) == ["titled", "content"])
+        #expect(visibleSessions.map(\.sessionID) == ["titled", "content"])
     }
 
     @Test

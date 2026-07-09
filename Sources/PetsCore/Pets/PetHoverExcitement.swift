@@ -1,7 +1,7 @@
 import CoreGraphics
 
 public enum PetHoverExcitement {
-    public static func usesContinuousSpriteMotion(status: ClaudeDisplayStatus, isHovered: Bool) -> Bool {
+    public static func usesContinuousSpriteMotion(status: HarnessSessionStatus, isHovered: Bool) -> Bool {
         status.usesContinuousSpriteMotion || isHovered
     }
 

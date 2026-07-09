@@ -50,7 +50,7 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
     ) -> PetInstance {
         PetInstance(
             id: id,
-            name: petID == .classicClaude ? "Classic Claude" : PetCatalog.displayName(for: petID),
+            name: PetCatalog.displayName(for: petID),
             petID: petID,
             pixelation: pixelation,
             sessionContextLineCount: sessionContextLineCount

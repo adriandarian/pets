@@ -2,11 +2,11 @@ public struct PetID: RawRepresentable, Equatable, Hashable, Codable, Sendable {
     public let rawValue: String
 
     public init(rawValue: String) {
-        self.rawValue = rawValue
+        self.rawValue = rawValue == "classic-claude" ? "classic-cloud" : rawValue
     }
 
     public static let cuteCloud = PetID(rawValue: "cute-cloud")
-    public static let classicClaude = PetID(rawValue: "classic-claude")
+    public static let classicCloud = PetID(rawValue: "classic-cloud")
     public static let helperCloud = PetID(rawValue: "helper-cloud")
     public static let sleepCloud = PetID(rawValue: "sleep-cloud")
     public static let focusCloud = PetID(rawValue: "focus-cloud")
@@ -25,6 +25,36 @@ public struct PetID: RawRepresentable, Equatable, Hashable, Codable, Sendable {
     }
 }
 
+public enum PetRenderFamily: Equatable, Hashable, Sendable {
+    case cuteCloud
+    case cloud
+    case workspace
+    case nature
+    case cozy
+}
+
+public struct PetCatalogEntry: Equatable, Hashable, Sendable {
+    public let id: PetID
+    public let displayName: String
+    public let categoryID: String
+    public let renderFamily: PetRenderFamily
+    public let maximumPixelation: PetSpritePixelation
+
+    public init(
+        id: PetID,
+        displayName: String,
+        categoryID: String,
+        renderFamily: PetRenderFamily,
+        maximumPixelation: PetSpritePixelation
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.categoryID = categoryID
+        self.renderFamily = renderFamily
+        self.maximumPixelation = maximumPixelation
+    }
+}
+
 public struct PetCatalogCategory: Equatable, Hashable, Sendable {
     public let id: String
     public let displayName: String
@@ -39,13 +69,114 @@ public struct PetCatalogCategory: Equatable, Hashable, Sendable {
 
 public enum PetCatalog {
     public static let defaultPetID = PetID.cuteCloud
+    public static let entries: [PetCatalogEntry] = [
+        PetCatalogEntry(
+            id: .cuteCloud,
+            displayName: "Cute Cloud",
+            categoryID: "cloud-pets",
+            renderFamily: .cuteCloud,
+            maximumPixelation: .medium
+        ),
+        PetCatalogEntry(
+            id: .classicCloud,
+            displayName: "Classic Cloud",
+            categoryID: "cloud-pets",
+            renderFamily: .cloud,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .helperCloud,
+            displayName: "Helper Cloud",
+            categoryID: "cloud-pets",
+            renderFamily: .cloud,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .sleepCloud,
+            displayName: "Sleep Cloud",
+            categoryID: "cloud-pets",
+            renderFamily: .cloud,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .focusCloud,
+            displayName: "Focus Cloud",
+            categoryID: "cloud-pets",
+            renderFamily: .cloud,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .codeBot,
+            displayName: "Code Bot",
+            categoryID: "workspace-pets",
+            renderFamily: .workspace,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .terminalCube,
+            displayName: "Terminal Cube",
+            categoryID: "workspace-pets",
+            renderFamily: .workspace,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .bookstackBuddy,
+            displayName: "Bookstack Buddy",
+            categoryID: "workspace-pets",
+            renderFamily: .workspace,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .sproutBuddy,
+            displayName: "Sprout Buddy",
+            categoryID: "nature-pets",
+            renderFamily: .nature,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .pebblePal,
+            displayName: "Pebble Pal",
+            categoryID: "nature-pets",
+            renderFamily: .nature,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .pocketStar,
+            displayName: "Pocket Star",
+            categoryID: "nature-pets",
+            renderFamily: .nature,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .teaCup,
+            displayName: "Tea Cup",
+            categoryID: "cozy-pets",
+            renderFamily: .cozy,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .nightLamp,
+            displayName: "Night Lamp",
+            categoryID: "cozy-pets",
+            renderFamily: .cozy,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .tinyRocket,
+            displayName: "Tiny Rocket",
+            categoryID: "cozy-pets",
+            renderFamily: .cozy,
+            maximumPixelation: .chunky
+        )
+    ]
+
     public static let builtInCategories: [PetCatalogCategory] = [
         PetCatalogCategory(
             id: "cloud-pets",
             displayName: "Cloud Pets",
             petIDs: [
                 .cuteCloud,
-                .classicClaude,
+                .classicCloud,
                 .helperCloud,
                 .sleepCloud,
                 .focusCloud
@@ -82,41 +213,13 @@ public enum PetCatalog {
     public static let builtInPetIDs: [PetID] = builtInCategories.flatMap(\.petIDs)
 
     public static func displayName(for petID: PetID) -> String {
-        switch petID {
-        case .cuteCloud:
-            return "Cute Cloud"
-        case .classicClaude:
-            return "Classic Cloud"
-        case .helperCloud:
-            return "Helper Cloud"
-        case .sleepCloud:
-            return "Sleep Cloud"
-        case .focusCloud:
-            return "Focus Cloud"
-        case .codeBot:
-            return "Code Bot"
-        case .terminalCube:
-            return "Terminal Cube"
-        case .bookstackBuddy:
-            return "Bookstack Buddy"
-        case .sproutBuddy:
-            return "Sprout Buddy"
-        case .pebblePal:
-            return "Pebble Pal"
-        case .pocketStar:
-            return "Pocket Star"
-        case .teaCup:
-            return "Tea Cup"
-        case .nightLamp:
-            return "Night Lamp"
-        case .tinyRocket:
-            return "Tiny Rocket"
-        default:
-            if petID.rawValue.hasPrefix("custom:") {
-                return String(petID.rawValue.dropFirst("custom:".count))
-            }
-            return petID.rawValue
+        if let entry = entry(for: petID) {
+            return entry.displayName
         }
+        if petID.rawValue.hasPrefix("custom:") {
+            return String(petID.rawValue.dropFirst("custom:".count))
+        }
+        return petID.rawValue
     }
 
     public static func category(for petID: PetID) -> PetCatalogCategory? {
@@ -124,17 +227,15 @@ public enum PetCatalog {
     }
 
     public static func maximumPixelation(for petID: PetID) -> PetSpritePixelation {
-        switch petID {
-        case .cuteCloud:
-            return .medium
-        case .classicClaude, .helperCloud, .sleepCloud, .focusCloud,
-             .codeBot, .terminalCube, .bookstackBuddy,
-             .sproutBuddy, .pebblePal, .pocketStar,
-             .teaCup, .nightLamp, .tinyRocket:
-            return .chunky
-        default:
-            return .off
-        }
+        entry(for: petID)?.maximumPixelation ?? .off
+    }
+
+    public static func renderFamily(for petID: PetID) -> PetRenderFamily? {
+        entry(for: petID)?.renderFamily
+    }
+
+    public static func entry(for petID: PetID) -> PetCatalogEntry? {
+        entries.first { $0.id == petID }
     }
 
     public static func pixelation(

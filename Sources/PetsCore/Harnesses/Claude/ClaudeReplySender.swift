@@ -60,6 +60,8 @@ public struct ClaudeReplySender: Sendable {
             )
         case let .terminal(tty):
             try terminalWriter.submit(message, toTTY: tty)
+        case .harnessSpecific:
+            throw ClaudeReplyError.unavailable
         }
     }
 
