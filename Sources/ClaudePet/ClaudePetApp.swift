@@ -75,11 +75,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await Task.yield()
             NSApp.activate(ignoringOtherApps: true)
 
-            for window in NSApp.windows where !(window is PetPanel) {
+            if let window = NSApp.windows.reversed().first(where: Self.isConfigurationWindow) {
                 window.makeKeyAndOrderFront(nil)
                 window.orderFrontRegardless()
             }
         }
+    }
+
+    private static func isConfigurationWindow(_ window: NSWindow) -> Bool {
+        !(window is PetPanel)
+            && window.canBecomeKey
+            && window.styleMask.contains(.titled)
+            && window.styleMask.contains(.closable)
     }
 
     func respawnSelectedPet() {
