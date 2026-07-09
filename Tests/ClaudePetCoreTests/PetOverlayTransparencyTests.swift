@@ -138,7 +138,7 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("window.styleMask.contains(.closable)"))
         #expect(!source.contains("for window in NSApp.windows where !(window is PetPanel)"))
         #expect(source.contains("PetSettingsView("))
-        #expect(source.contains("ClaudePetCatalog.builtInPetIDs"))
+        #expect(source.contains("ClaudePetCatalog.builtInCategories"))
         #expect(!source.contains("PetConfigurationRow"))
     }
 
@@ -227,7 +227,7 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("PetCarouselArrow(systemName: \"chevron.right\")"))
         #expect(source.contains("SpritePreviewGridBackground()"))
         #expect(source.contains("SettingsDesignPalette.root"))
-        #expect(source.contains("Clouds - Classic"))
+        #expect(source.contains("ClaudePetCatalog.category(for: pet.petID)?.displayName"))
         #expect(source.contains("SpriteSummaryPanel("))
         #expect(source.contains("Button(\"Change Sprite...\")"))
         #expect(source.contains("Button(\"Delete Pet\", role: .destructive)"))
@@ -284,6 +284,40 @@ struct PetOverlayTransparencyTests {
         #expect(!source.contains("if petID == .classicClaude {\n                ClaudeSprite"))
         #expect(!source.contains("showsStatusDot"))
         #expect(!source.contains("statusDotColor"))
+    }
+
+    @Test
+    func spritePickerUsesCatalogTabs() throws {
+        let sourceURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appending(path: "Sources/ClaudePet/ClaudePetApp.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+
+        #expect(source.contains("@State private var selectedCategoryID = ClaudePetCatalog.builtInCategories.first?.id"))
+        #expect(source.contains("ForEach(ClaudePetCatalog.builtInCategories, id: \\.id) { category in"))
+        #expect(source.contains(".pickerStyle(.segmented)"))
+        #expect(source.contains("selectedCategory.petIDs"))
+        #expect(source.contains("ClaudePetCatalog.category(for: pet.petID)?.displayName"))
+    }
+
+    @Test
+    func petSpriteRoutesNonCloudPetsToDistinctRenderers() throws {
+        let sourceURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appending(path: "Sources/ClaudePet/PetOverlayView.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+
+        #expect(source.contains("if ClaudePetCatalog.category(for: petID)?.id == \"cloud-pets\""))
+        #expect(source.contains("WorkspacePetSprite("))
+        #expect(source.contains("NaturePetSprite("))
+        #expect(source.contains("CozyPetSprite("))
+        #expect(source.contains("case .codeBot"))
+        #expect(source.contains("case .sproutBuddy"))
+        #expect(source.contains("case .teaCup"))
     }
 
     @Test

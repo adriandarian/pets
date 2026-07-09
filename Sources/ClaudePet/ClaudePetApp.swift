@@ -369,7 +369,7 @@ private struct PetConfigurationPane: View {
                 Text(selectedPet.name)
                     .font(.title2.bold())
 
-                Text(selectedPet.isVisible ? "Visible - Cloud family - active session aware" : "Hidden - Cloud family - active session aware")
+                Text("\(selectedPet.isVisible ? "Visible" : "Hidden") - \(petFamilyName(for: selectedPet.petID)) - active session aware")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -394,6 +394,10 @@ private struct PetConfigurationPane: View {
                 isDeleteConfirmationPresented = true
             }
         }
+    }
+
+    private func petFamilyName(for petID: ClaudePetID) -> String {
+        ClaudePetCatalog.category(for: petID)?.displayName ?? "Custom Pet"
     }
 }
 
@@ -551,18 +555,7 @@ private struct PetCarouselCard: View {
     }
 
     private var carouselSubtitle: String {
-        switch pet.petID {
-        case .classicClaude:
-            return "Clouds - Classic"
-        case .helperCloud:
-            return "Clouds - Cute"
-        case .sleepCloud:
-            return "Clouds - Sleep"
-        case .focusCloud:
-            return "Clouds - Focus"
-        default:
-            return "Clouds"
-        }
+        ClaudePetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
     }
 }
 
@@ -622,13 +615,13 @@ private struct SpriteSummaryPanel: View {
                 Text(ClaudePetCatalog.displayName(for: pet.petID))
                     .font(.title3.bold())
 
-                Text("Current sprite in the Cloud family. Open the picker to switch to another Cloud variant or another family.")
+                Text("Current sprite in \(petFamilyName). Open the picker to switch variants or choose another family.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 6) {
-                    SpriteCapabilityTag("Cloud family")
+                    SpriteCapabilityTag(petFamilyName)
                     SpriteCapabilityTag(pet.pixelation.displayName)
                     SpriteCapabilityTag("Moods")
                 }
@@ -648,6 +641,10 @@ private struct SpriteSummaryPanel: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(SettingsDesignPalette.border)
         }
+    }
+
+    private var petFamilyName: String {
+        ClaudePetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
     }
 }
 
@@ -889,6 +886,7 @@ private struct PetDetailsSettingsPanel: View {
 private struct SpritePickerSheet: View {
     @ObservedObject var store: ClaudePetStore
     @Binding var isPresented: Bool
+    @State private var selectedCategoryID = ClaudePetCatalog.builtInCategories.first?.id
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -904,8 +902,16 @@ private struct SpritePickerSheet: View {
                 Spacer()
             }
 
+            Picker("Pet family", selection: $selectedCategoryID) {
+                ForEach(ClaudePetCatalog.builtInCategories, id: \.id) { category in
+                    Text(category.displayName)
+                        .tag(Optional(category.id))
+                }
+            }
+            .pickerStyle(.segmented)
+
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-                ForEach(ClaudePetCatalog.builtInPetIDs, id: \.self) { petID in
+                ForEach(selectedCategory.petIDs, id: \.self) { petID in
                     SpritePickerCard(
                         petID: petID,
                         isSelected: petID == store.selectedPetInstance?.petID
@@ -926,7 +932,17 @@ private struct SpritePickerSheet: View {
             }
         }
         .padding(22)
-        .frame(width: 560, height: 420)
+        .frame(width: 680, height: 520)
+        .onAppear {
+            selectedCategoryID = store.selectedPetInstance
+                .flatMap { ClaudePetCatalog.category(for: $0.petID)?.id }
+                ?? selectedCategoryID
+        }
+    }
+
+    private var selectedCategory: ClaudePetCatalogCategory {
+        ClaudePetCatalog.builtInCategories.first { $0.id == selectedCategoryID }
+            ?? ClaudePetCatalog.builtInCategories[0]
     }
 }
 

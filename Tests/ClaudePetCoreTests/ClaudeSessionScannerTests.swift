@@ -89,6 +89,32 @@ struct ClaudeSessionScannerTests {
     }
 
     @Test
+    func builtInPetsAreGroupedIntoPickerCategories() {
+        let categories = ClaudePetCatalog.builtInCategories
+
+        #expect(categories.first?.id == "cloud-pets")
+        #expect(categories.first?.displayName == "Cloud Pets")
+        #expect(categories.first?.petIDs == [
+            .cuteCloud,
+            .classicClaude,
+            .helperCloud,
+            .sleepCloud,
+            .focusCloud
+        ])
+        #expect(categories.count >= 4)
+
+        let categorizedPetIDs = categories.flatMap(\.petIDs)
+        #expect(categorizedPetIDs == ClaudePetCatalog.builtInPetIDs)
+        #expect(Set(categorizedPetIDs).count == ClaudePetCatalog.builtInPetIDs.count)
+
+        let nonCloudCategories = categories.dropFirst()
+        #expect(nonCloudCategories.allSatisfy { !$0.petIDs.isEmpty })
+        #expect(nonCloudCategories.allSatisfy { category in
+            category.petIDs.allSatisfy { !categories[0].petIDs.contains($0) }
+        })
+    }
+
+    @Test
     func customPetIDsPreserveStableUserProvidedName() throws {
         let customID = ClaudePetID.custom("tiny-bot")
 

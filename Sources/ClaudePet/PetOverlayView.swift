@@ -881,11 +881,26 @@ struct PetSprite: View {
     let pixelation: PetSpritePixelation
 
     var body: some View {
-        CloudFamilySprite(
-            petID: petID,
-            status: status,
-            isExcited: isExcited
-        )
+        Group {
+            if ClaudePetCatalog.category(for: petID)?.id == "cloud-pets" {
+                CloudFamilySprite(
+                    petID: petID,
+                    status: status,
+                    isExcited: isExcited
+                )
+            } else {
+                switch ClaudePetCatalog.category(for: petID)?.id {
+                case "workspace-pets":
+                    WorkspacePetSprite(petID: petID, status: status, isExcited: isExcited)
+                case "nature-pets":
+                    NaturePetSprite(petID: petID, status: status, isExcited: isExcited)
+                case "cozy-pets":
+                    CozyPetSprite(petID: petID, status: status, isExcited: isExcited)
+                default:
+                    WorkspacePetSprite(petID: .codeBot, status: status, isExcited: isExcited)
+                }
+            }
+        }
         .pixelatedSpriteEffect(pixelation)
     }
 }
@@ -1047,6 +1062,501 @@ private struct ScaledCloudFamilySprite: View {
 
     private func wave(speed: Double, amplitude: CGFloat) -> CGFloat {
         CGFloat(sin(seconds * speed)) * amplitude
+    }
+}
+
+private struct WorkspacePetSprite: View {
+    let petID: ClaudePetID
+    let status: ClaudeDisplayStatus
+    let isExcited: Bool
+
+    var body: some View {
+        GeometryReader { proxy in
+            let unit = min(proxy.size.width, proxy.size.height) / 128
+
+            ZStack {
+                petShadow(unit: unit)
+
+                switch petID {
+                case .terminalCube:
+                    terminalCube(unit: unit)
+                case .bookstackBuddy:
+                    bookstackBuddy(unit: unit)
+                case .codeBot:
+                    codeBot(unit: unit)
+                default:
+                    codeBot(unit: unit)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .offset(y: isExcited ? -4 * unit : 0)
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+
+    private func codeBot(unit: CGFloat) -> some View {
+        ZStack {
+            Capsule()
+                .fill(statusTint.opacity(0.52))
+                .frame(width: 4 * unit, height: 18 * unit)
+                .offset(y: -49 * unit)
+
+            Circle()
+                .fill(statusTint)
+                .frame(width: 9 * unit, height: 9 * unit)
+                .offset(y: -61 * unit)
+
+            RoundedRectangle(cornerRadius: 20 * unit, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.38, green: 0.77, blue: 0.77),
+                            Color(red: 0.15, green: 0.40, blue: 0.47)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 70 * unit, height: 68 * unit)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20 * unit, style: .continuous)
+                        .stroke(Color(red: 0.05, green: 0.13, blue: 0.16), lineWidth: 3 * unit)
+                )
+
+            RoundedRectangle(cornerRadius: 10 * unit, style: .continuous)
+                .fill(Color(red: 0.06, green: 0.12, blue: 0.16))
+                .frame(width: 48 * unit, height: 28 * unit)
+                .overlay(eyes(unit: unit, color: statusTint))
+                .offset(y: -5 * unit)
+
+            HStack(spacing: 34 * unit) {
+                botArm(unit: unit)
+                botArm(unit: unit)
+            }
+            .offset(y: 8 * unit)
+
+            HStack(spacing: 20 * unit) {
+                botLeg(unit: unit)
+                botLeg(unit: unit)
+            }
+            .offset(y: 43 * unit)
+        }
+    }
+
+    private func terminalCube(unit: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 17 * unit, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.11, green: 0.15, blue: 0.19),
+                            Color(red: 0.04, green: 0.08, blue: 0.10)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 74 * unit, height: 62 * unit)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 17 * unit, style: .continuous)
+                        .stroke(Color(red: 0.38, green: 0.82, blue: 0.73).opacity(0.72), lineWidth: 2 * unit)
+                )
+
+            HStack(spacing: 9 * unit) {
+                Text(">")
+                    .font(.system(size: 21 * unit, weight: .heavy, design: .rounded))
+                Capsule()
+                    .frame(width: 22 * unit, height: 5 * unit)
+            }
+            .foregroundStyle(statusTint)
+            .offset(y: -6 * unit)
+
+            HStack(spacing: 24 * unit) {
+                botLeg(unit: unit)
+                botLeg(unit: unit)
+            }
+            .offset(y: 39 * unit)
+        }
+    }
+
+    private func bookstackBuddy(unit: CGFloat) -> some View {
+        ZStack {
+            book(width: 72, height: 20, color: Color(red: 0.92, green: 0.47, blue: 0.42), unit: unit)
+                .offset(y: 20 * unit)
+            book(width: 66, height: 20, color: Color(red: 0.46, green: 0.67, blue: 0.94), unit: unit)
+                .offset(y: 0)
+            book(width: 76, height: 22, color: Color(red: 0.96, green: 0.75, blue: 0.36), unit: unit)
+                .offset(y: -22 * unit)
+
+            eyes(unit: unit, color: Color(red: 0.06, green: 0.08, blue: 0.09))
+                .offset(y: -22 * unit)
+
+            HStack(spacing: 18 * unit) {
+                botLeg(unit: unit)
+                botLeg(unit: unit)
+            }
+            .offset(y: 45 * unit)
+        }
+    }
+
+    private func book(width: CGFloat, height: CGFloat, color: Color, unit: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 6 * unit, style: .continuous)
+            .fill(color)
+            .frame(width: width * unit, height: height * unit)
+            .overlay(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white.opacity(0.58))
+                    .frame(width: 5 * unit)
+                    .padding(.vertical, 4 * unit)
+                    .padding(.leading, 9 * unit)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 6 * unit, style: .continuous)
+                    .stroke(Color.black.opacity(0.20), lineWidth: 1.5 * unit)
+            )
+    }
+
+    private func botArm(unit: CGFloat) -> some View {
+        Capsule()
+            .fill(Color(red: 0.18, green: 0.45, blue: 0.49))
+            .frame(width: 11 * unit, height: 28 * unit)
+    }
+
+    private func botLeg(unit: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 4 * unit, style: .continuous)
+            .fill(Color(red: 0.12, green: 0.29, blue: 0.34))
+            .frame(width: 11 * unit, height: 18 * unit)
+    }
+
+    private var statusTint: Color {
+        statusColor(status == .unknown ? .idle : status)
+    }
+}
+
+private struct NaturePetSprite: View {
+    let petID: ClaudePetID
+    let status: ClaudeDisplayStatus
+    let isExcited: Bool
+
+    var body: some View {
+        GeometryReader { proxy in
+            let unit = min(proxy.size.width, proxy.size.height) / 128
+
+            ZStack {
+                petShadow(unit: unit)
+
+                switch petID {
+                case .pebblePal:
+                    pebblePal(unit: unit)
+                case .pocketStar:
+                    pocketStar(unit: unit)
+                case .sproutBuddy:
+                    sproutBuddy(unit: unit)
+                default:
+                    sproutBuddy(unit: unit)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .offset(y: isExcited ? -5 * unit : 0)
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+
+    private func sproutBuddy(unit: CGFloat) -> some View {
+        ZStack {
+            Capsule()
+                .fill(Color(red: 0.38, green: 0.73, blue: 0.42))
+                .frame(width: 9 * unit, height: 42 * unit)
+                .offset(y: -20 * unit)
+
+            leaf(unit: unit)
+                .rotationEffect(.degrees(-30))
+                .offset(x: -18 * unit, y: -42 * unit)
+            leaf(unit: unit)
+                .rotationEffect(.degrees(32))
+                .offset(x: 18 * unit, y: -44 * unit)
+
+            RoundedRectangle(cornerRadius: 18 * unit, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.61, green: 0.40, blue: 0.28),
+                            Color(red: 0.36, green: 0.22, blue: 0.16)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 70 * unit, height: 46 * unit)
+                .offset(y: 18 * unit)
+
+            eyes(unit: unit, color: Color(red: 0.05, green: 0.08, blue: 0.05))
+                .offset(y: 13 * unit)
+        }
+    }
+
+    private func pebblePal(unit: CGFloat) -> some View {
+        ZStack {
+            Ellipse()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.72, green: 0.74, blue: 0.68),
+                            Color(red: 0.43, green: 0.47, blue: 0.44)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 82 * unit, height: 62 * unit)
+                .overlay(Ellipse().stroke(Color.black.opacity(0.22), lineWidth: 2 * unit))
+
+            Circle()
+                .fill(Color.white.opacity(0.22))
+                .frame(width: 18 * unit, height: 12 * unit)
+                .offset(x: -18 * unit, y: -18 * unit)
+
+            eyes(unit: unit, color: Color(red: 0.06, green: 0.08, blue: 0.07))
+                .offset(y: -2 * unit)
+        }
+    }
+
+    private func pocketStar(unit: CGFloat) -> some View {
+        ZStack {
+            star(unit: unit)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 1.0, green: 0.84, blue: 0.31),
+                            Color(red: 0.96, green: 0.48, blue: 0.34)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 82 * unit, height: 82 * unit)
+                .shadow(color: statusColor(status).opacity(0.28), radius: 12 * unit)
+
+            eyes(unit: unit, color: Color(red: 0.09, green: 0.08, blue: 0.04))
+                .offset(y: 7 * unit)
+        }
+    }
+
+    private func leaf(unit: CGFloat) -> some View {
+        Ellipse()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.55, green: 0.91, blue: 0.45),
+                        Color(red: 0.22, green: 0.58, blue: 0.30)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: 34 * unit, height: 22 * unit)
+    }
+
+    private func star(unit: CGFloat) -> Path {
+        var path = Path()
+        let center = CGPoint(x: 41 * unit, y: 41 * unit)
+        let points = 5
+        let outer = 39 * unit
+        let inner = 18 * unit
+
+        for index in 0..<(points * 2) {
+            let radius = index.isMultiple(of: 2) ? outer : inner
+            let angle = (Double(index) * .pi / Double(points)) - (.pi / 2)
+            let point = CGPoint(
+                x: center.x + CGFloat(cos(angle)) * radius,
+                y: center.y + CGFloat(sin(angle)) * radius
+            )
+
+            if index == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct CozyPetSprite: View {
+    let petID: ClaudePetID
+    let status: ClaudeDisplayStatus
+    let isExcited: Bool
+
+    var body: some View {
+        GeometryReader { proxy in
+            let unit = min(proxy.size.width, proxy.size.height) / 128
+
+            ZStack {
+                petShadow(unit: unit)
+
+                switch petID {
+                case .nightLamp:
+                    nightLamp(unit: unit)
+                case .tinyRocket:
+                    tinyRocket(unit: unit)
+                case .teaCup:
+                    teaCup(unit: unit)
+                default:
+                    teaCup(unit: unit)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .offset(y: isExcited ? -5 * unit : 0)
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+
+    private func teaCup(unit: CGFloat) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 18 * unit, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.96, green: 0.74, blue: 0.78),
+                            Color(red: 0.73, green: 0.38, blue: 0.52)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 72 * unit, height: 52 * unit)
+                .offset(y: 10 * unit)
+
+            Circle()
+                .stroke(Color(red: 0.73, green: 0.38, blue: 0.52), lineWidth: 7 * unit)
+                .frame(width: 28 * unit, height: 28 * unit)
+                .offset(x: 42 * unit, y: 9 * unit)
+
+            steam(unit: unit, x: -16)
+            steam(unit: unit, x: 8)
+
+            eyes(unit: unit, color: Color(red: 0.12, green: 0.05, blue: 0.08))
+                .offset(y: 6 * unit)
+        }
+    }
+
+    private func nightLamp(unit: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .fill(statusColor(status).opacity(0.26))
+                .frame(width: 92 * unit, height: 92 * unit)
+
+            Path { path in
+                path.move(to: CGPoint(x: 42 * unit, y: 22 * unit))
+                path.addLine(to: CGPoint(x: 86 * unit, y: 22 * unit))
+                path.addLine(to: CGPoint(x: 76 * unit, y: 65 * unit))
+                path.addLine(to: CGPoint(x: 52 * unit, y: 65 * unit))
+                path.closeSubpath()
+            }
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(red: 1.0, green: 0.78, blue: 0.34),
+                        Color(red: 0.94, green: 0.42, blue: 0.36)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+
+            Capsule()
+                .fill(Color(red: 0.42, green: 0.27, blue: 0.32))
+                .frame(width: 10 * unit, height: 34 * unit)
+                .offset(y: 30 * unit)
+
+            RoundedRectangle(cornerRadius: 6 * unit, style: .continuous)
+                .fill(Color(red: 0.34, green: 0.20, blue: 0.24))
+                .frame(width: 46 * unit, height: 10 * unit)
+                .offset(y: 51 * unit)
+
+            eyes(unit: unit, color: Color(red: 0.11, green: 0.07, blue: 0.05))
+                .offset(y: -3 * unit)
+        }
+    }
+
+    private func tinyRocket(unit: CGFloat) -> some View {
+        ZStack {
+            Capsule()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.95, green: 0.95, blue: 0.91),
+                            Color(red: 0.58, green: 0.73, blue: 0.95)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 48 * unit, height: 86 * unit)
+
+            Circle()
+                .fill(statusColor(status).opacity(0.72))
+                .frame(width: 20 * unit, height: 20 * unit)
+                .offset(y: -18 * unit)
+
+            HStack(spacing: 34 * unit) {
+                rocketFin(unit: unit, flipped: false)
+                rocketFin(unit: unit, flipped: true)
+            }
+            .offset(y: 25 * unit)
+
+            Path { path in
+                path.move(to: CGPoint(x: 64 * unit, y: 103 * unit))
+                path.addLine(to: CGPoint(x: 50 * unit, y: 78 * unit))
+                path.addLine(to: CGPoint(x: 78 * unit, y: 78 * unit))
+                path.closeSubpath()
+            }
+            .fill(Color(red: 1.0, green: 0.60, blue: 0.21).opacity(0.82))
+            .offset(y: isExcited ? 4 * unit : 0)
+
+            eyes(unit: unit, color: Color(red: 0.08, green: 0.10, blue: 0.13))
+                .offset(y: 10 * unit)
+        }
+    }
+
+    private func steam(unit: CGFloat, x: CGFloat) -> some View {
+        Capsule()
+            .stroke(Color.white.opacity(0.42), lineWidth: 3 * unit)
+            .frame(width: 14 * unit, height: 28 * unit)
+            .rotationEffect(.degrees(16))
+            .offset(x: x * unit, y: -33 * unit)
+    }
+
+    private func rocketFin(unit: CGFloat, flipped: Bool) -> some View {
+        Path { path in
+            path.move(to: CGPoint(x: 0, y: 0))
+            path.addLine(to: CGPoint(x: 18 * unit, y: 26 * unit))
+            path.addLine(to: CGPoint(x: 0, y: 21 * unit))
+            path.closeSubpath()
+        }
+        .fill(Color(red: 0.93, green: 0.30, blue: 0.36))
+        .frame(width: 18 * unit, height: 26 * unit)
+        .scaleEffect(x: flipped ? -1 : 1, y: 1)
+    }
+}
+
+private func petShadow(unit: CGFloat) -> some View {
+    Ellipse()
+        .fill(Color.black.opacity(0.22))
+        .frame(width: 68 * unit, height: 11 * unit)
+        .offset(y: 47 * unit)
+}
+
+private func eyes(unit: CGFloat, color: Color) -> some View {
+    HStack(spacing: 15 * unit) {
+        Circle()
+            .fill(color)
+            .frame(width: 7 * unit, height: 7 * unit)
+        Circle()
+            .fill(color)
+            .frame(width: 7 * unit, height: 7 * unit)
     }
 }
 
