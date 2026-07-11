@@ -4,13 +4,54 @@ import SwiftUI
 
 struct PetSprite: View {
     let petID: PetID
-    let status: HarnessSessionStatus
-    let isExcited: Bool
+    let visualContext: PetVisualContext
     let pixelation: PetSpritePixelation
 
     var body: some View {
         Group {
-            switch PetCatalog.renderFamily(for: petID) {
+            if let definition = PetCatalog.definition(for: petID) {
+                switch definition.renderSource {
+                case let .assetPack(artPack):
+                    AssetPetSprite(
+                        definition: definition,
+                        artPack: artPack,
+                        visualContext: visualContext
+                    )
+                case let .legacy(renderFamily):
+                    LegacyPetSpriteAdapter(
+                        petID: petID,
+                        renderFamily: renderFamily,
+                        visualContext: visualContext
+                    )
+                }
+            } else {
+                LegacyPetSpriteAdapter(
+                    petID: .codeBot,
+                    renderFamily: .workspace,
+                    visualContext: visualContext
+                )
+            }
+        }
+        .pixelatedSpriteEffect(pixelation)
+    }
+}
+
+private struct LegacyPetSpriteAdapter: View {
+    let petID: PetID
+    let renderFamily: PetRenderFamily
+    let visualContext: PetVisualContext
+
+    private var status: HarnessSessionStatus {
+        visualContext.animationSettings.areStatusMoodsEnabled ? visualContext.status : .unknown
+    }
+
+    private var isExcited: Bool {
+        visualContext.isHovered && visualContext.animationSettings.isHoverBounceEnabled
+    }
+
+    var body: some View {
+        Group {
+            switch renderFamily {
             case .cuteCloud, .cloud:
                 CloudFamilySprite(
                     petID: petID,
@@ -25,11 +66,144 @@ struct PetSprite: View {
                 CozyPetSprite(petID: petID, status: status, isExcited: isExcited)
             case .voxel:
                 VoxelPetSprite(petID: petID, status: status, isExcited: isExcited)
-            case .none:
-                WorkspacePetSprite(petID: .codeBot, status: status, isExcited: isExcited)
             }
         }
-        .pixelatedSpriteEffect(pixelation)
+        .scaleEffect(PetHoverExcitement.scale(isHovered: isExcited))
+        .offset(y: PetHoverExcitement.verticalOffset(isHovered: isExcited))
+    }
+}
+
+@MainActor
+private final class PetArtImageCache {
+    static let shared = PetArtImageCache()
+
+    private let images = NSCache<NSURL, NSImage>()
+
+    func image(for frame: PetAnimationFrame) -> NSImage? {
+        guard let url = PetArtResourceLocator.url(for: frame) else { return nil }
+        if let cached = images.object(forKey: url as NSURL) {
+            return cached
+        }
+        guard let image = NSImage(contentsOf: url) else { return nil }
+        images.setObject(image, forKey: url as NSURL)
+        return image
+    }
+}
+
+private struct AssetPetSprite: View {
+    let definition: PetDefinition
+    let artPack: PetArtPack
+    let visualContext: PetVisualContext
+
+    private var requestedState: PetVisualState {
+        PetVisualStateResolver.requestedState(for: visualContext)
+    }
+
+    private var animation: PetAnimation {
+        artPack.resolvedAnimation(for: requestedState)
+    }
+
+    private var usesTimeline: Bool {
+        visualContext.animationSettings.isIdleMotionEnabled
+            && (animation.frames.count > 1 || animation.motion != .none)
+    }
+
+    var body: some View {
+        Group {
+            if usesTimeline {
+                TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { timeline in
+                    renderedFrame(at: timeline.date)
+                }
+            } else {
+                renderedFrame(at: Date(timeIntervalSinceReferenceDate: 0))
+            }
+        }
+        .id(requestedState)
+        .transition(.opacity)
+        .animation(
+            .easeInOut(duration: definition.presentation.transitionDuration),
+            value: requestedState
+        )
+    }
+
+    @ViewBuilder
+    private func renderedFrame(at date: Date) -> some View {
+        let elapsed = date.timeIntervalSinceReferenceDate
+        let frame = animation.frames[animation.frameIndex(at: elapsed)]
+
+        GeometryReader { proxy in
+            let unit = min(proxy.size.width, proxy.size.height) / 128
+
+            ZStack {
+                Ellipse()
+                    .fill(Color.black.opacity(definition.presentation.shadowOpacity))
+                    .frame(
+                        width: definition.presentation.shadowWidth * unit,
+                        height: definition.presentation.shadowHeight * unit
+                    )
+                    .offset(y: 45 * unit)
+
+                if let image = PetArtImageCache.shared.image(for: frame) {
+                    Image(nsImage: image)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .scaleEffect(definition.presentation.contentScale)
+                        .offset(
+                            x: definition.presentation.anchorX * unit,
+                            y: definition.presentation.anchorY * unit
+                        )
+                        .modifier(
+                            PetMotionModifier(
+                                preset: animation.motion,
+                                elapsed: elapsed,
+                                isEnabled: visualContext.animationSettings.isIdleMotionEnabled
+                            )
+                        )
+                } else {
+                    missingArtPlaceholder
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+
+    private var missingArtPlaceholder: some View {
+        VStack(spacing: 4) {
+            Image(systemName: "photo.badge.exclamationmark")
+            Text(definition.id.rawValue)
+                .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                .lineLimit(1)
+        }
+        .foregroundStyle(.secondary)
+    }
+}
+
+private struct PetMotionModifier: ViewModifier {
+    let preset: PetMotionPreset
+    let elapsed: TimeInterval
+    let isEnabled: Bool
+
+    private var phase: CGFloat {
+        CGFloat(sin(elapsed * 2.4))
+    }
+
+    func body(content: Content) -> some View {
+        guard isEnabled else { return AnyView(content) }
+
+        switch preset {
+        case .none:
+            return AnyView(content)
+        case .breathe:
+            return AnyView(content.scaleEffect(1 + phase * 0.018))
+        case .bob:
+            return AnyView(content.offset(y: phase * 2.5))
+        case .sway:
+            return AnyView(content.rotationEffect(.degrees(Double(phase) * 2.2)))
+        case .pulse:
+            return AnyView(content.scaleEffect(1 + phase * 0.04))
+        }
     }
 }
 

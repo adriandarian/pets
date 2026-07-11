@@ -4,6 +4,16 @@ import Testing
 @Suite
 struct PetSpriteSourceTests {
     @Test
+    func petSpriteRoutesDefinitionsToAssetOrLegacyRenderer() throws {
+        let source = try source("Sources/Pets/PetSprites.swift")
+
+        #expect(source.contains("switch definition.renderSource"))
+        #expect(source.contains("AssetPetSprite("))
+        #expect(source.contains("LegacyPetSpriteAdapter("))
+        #expect(source.contains("PetVisualStateResolver.requestedState"))
+    }
+
+    @Test
     func petSpriteRoutesVoxelPetsToVoxelRenderer() throws {
         let source = try source("Sources/Pets/PetSprites.swift")
 

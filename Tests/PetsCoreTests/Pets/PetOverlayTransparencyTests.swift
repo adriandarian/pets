@@ -136,6 +136,10 @@ struct PetOverlayTransparencyTests {
         let spritesSource = try String(contentsOf: spritesSourceURL, encoding: .utf8)
 
         #expect(source.contains("PetSprite("))
+        #expect(source.contains("PetVisualContext("))
+        #expect(source.contains("status: store.dominantStatus"))
+        #expect(source.contains("hasActiveSessions: !store.visibleSessions.isEmpty"))
+        #expect(!source.contains("status: spriteStatus"))
         #expect(source.contains("pixelation: petInstance.pixelation"))
         #expect(source.contains(".id(petInstance.pixelation)"))
         #expect(spritesSource.contains("pixelatedSpriteEffect"))
@@ -243,7 +247,9 @@ struct PetOverlayTransparencyTests {
         let sourceURL = try sourceFile("Sources/Pets/PetSprites.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("switch PetCatalog.renderFamily(for: petID)"))
+        #expect(source.contains("switch definition.renderSource"))
+        #expect(source.contains("private struct LegacyPetSpriteAdapter: View"))
+        #expect(source.contains("case .workspace:"))
         #expect(source.contains("WorkspacePetSprite("))
         #expect(source.contains("NaturePetSprite("))
         #expect(source.contains("CozyPetSprite("))

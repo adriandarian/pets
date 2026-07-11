@@ -59,8 +59,12 @@ struct PetOverlayView: View {
                         ZStack(alignment: .topTrailing) {
                             PetSprite(
                                 petID: petInstance.petID,
-                                status: spriteStatus,
-                                isExcited: isPetHovered,
+                                visualContext: PetVisualContext(
+                                    status: store.dominantStatus,
+                                    hasActiveSessions: !store.visibleSessions.isEmpty,
+                                    isHovered: isPetHovered,
+                                    animationSettings: petInstance.animationSettings
+                                ),
                                 pixelation: petInstance.pixelation
                             )
                                 .id(petInstance.pixelation)
@@ -70,8 +74,6 @@ struct PetOverlayView: View {
                                     width: PetOverlayMetrics.spriteSize * PetOverlayMetrics.petScale,
                                     height: PetOverlayMetrics.spriteSize * PetOverlayMetrics.petScale
                                 )
-                                .scaleEffect(PetHoverExcitement.scale(isHovered: isPetHovered))
-                                .offset(y: PetHoverExcitement.verticalOffset(isHovered: isPetHovered))
                                 .contentShape(Rectangle())
                                 .animation(.spring(response: 0.18, dampingFraction: 0.52), value: isPetHovered)
                                 .onHover { hovering in
@@ -130,10 +132,6 @@ struct PetOverlayView: View {
 
     private var petInstance: PetInstance? {
         store.petInstance(for: petInstanceID)
-    }
-
-    private var spriteStatus: HarnessSessionStatus {
-        petInstance?.animationSettings.areStatusMoodsEnabled == true ? store.dominantStatus : .unknown
     }
 
     private var isLeadingPlacement: Bool {
@@ -873,4 +871,3 @@ private struct RunningStatusSpinner: View {
             .rotationEffect(.degrees(rotation))
     }
 }
-

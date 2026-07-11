@@ -282,8 +282,12 @@ private struct PetCarouselCard: View {
 
                     PetSprite(
                         petID: pet.petID,
-                        status: .unknown,
-                        isExcited: false,
+                        visualContext: PetVisualContext(
+                            status: .idle,
+                            hasActiveSessions: true,
+                            isHovered: false,
+                            animationSettings: pet.animationSettings
+                        ),
                         pixelation: pet.pixelation
                     )
                     .frame(width: 34, height: 34)
@@ -357,8 +361,12 @@ private struct SpriteSummaryPanel: View {
 
                 PetSprite(
                     petID: pet.petID,
-                    status: pet.animationSettings.areStatusMoodsEnabled ? dominantStatus : .unknown,
-                    isExcited: false,
+                    visualContext: PetVisualContext(
+                        status: dominantStatus,
+                        hasActiveSessions: dominantStatus != .unknown,
+                        isHovered: false,
+                        animationSettings: pet.animationSettings
+                    ),
                     pixelation: pet.pixelation
                 )
                 .frame(width: 112, height: 112)
@@ -386,7 +394,9 @@ private struct SpriteSummaryPanel: View {
                 HStack(spacing: 6) {
                     SpriteCapabilityTag(petFamilyName)
                     SpriteCapabilityTag(pet.pixelation.displayName)
-                    SpriteCapabilityTag("Moods")
+                    if PetCatalog.definition(for: pet.petID)?.capabilities.supportsStatusMoods == true {
+                        SpriteCapabilityTag("Moods")
+                    }
                 }
 
                 Button("Change Sprite...") {
@@ -723,8 +733,12 @@ private struct SpritePickerCard: View {
 
                     PetSprite(
                         petID: petID,
-                        status: .unknown,
-                        isExcited: false,
+                        visualContext: PetVisualContext(
+                            status: .idle,
+                            hasActiveSessions: true,
+                            isHovered: false,
+                            animationSettings: .default
+                        ),
                         pixelation: .off
                     )
                     .frame(width: 86, height: 86)
