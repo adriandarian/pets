@@ -19,6 +19,9 @@ public struct PetID: RawRepresentable, Equatable, Hashable, Codable, Sendable {
     public static let teaCup = PetID(rawValue: "tea-cup")
     public static let nightLamp = PetID(rawValue: "night-lamp")
     public static let tinyRocket = PetID(rawValue: "tiny-rocket")
+    public static let voxelCat = PetID(rawValue: "voxel-cat")
+    public static let voxelSlime = PetID(rawValue: "voxel-slime")
+    public static let voxelDragon = PetID(rawValue: "voxel-dragon")
 
     public static func custom(_ name: String) -> PetID {
         PetID(rawValue: "custom:\(name)")
@@ -31,6 +34,7 @@ public enum PetRenderFamily: Equatable, Hashable, Sendable {
     case workspace
     case nature
     case cozy
+    case voxel
 }
 
 public struct PetCatalogEntry: Equatable, Hashable, Sendable {
@@ -167,6 +171,27 @@ public enum PetCatalog {
             categoryID: "cozy-pets",
             renderFamily: .cozy,
             maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .voxelCat,
+            displayName: "Voxel Cat",
+            categoryID: "voxel-pets",
+            renderFamily: .voxel,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .voxelSlime,
+            displayName: "Voxel Slime",
+            categoryID: "voxel-pets",
+            renderFamily: .voxel,
+            maximumPixelation: .chunky
+        ),
+        PetCatalogEntry(
+            id: .voxelDragon,
+            displayName: "Voxel Dragon",
+            categoryID: "voxel-pets",
+            renderFamily: .voxel,
+            maximumPixelation: .chunky
         )
     ]
 
@@ -207,6 +232,15 @@ public enum PetCatalog {
                 .teaCup,
                 .nightLamp,
                 .tinyRocket
+            ]
+        ),
+        PetCatalogCategory(
+            id: "voxel-pets",
+            displayName: "Voxel Pets",
+            petIDs: [
+                .voxelCat,
+                .voxelSlime,
+                .voxelDragon
             ]
         )
     ]

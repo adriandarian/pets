@@ -98,11 +98,11 @@ and:
 
 ```swift
 let migrated = PetInstance.migratedDefault(
-    petID: .classicClaude,
+    petID: .classicCloud,
     pixelation: .chunky,
     sessionContextLineCount: 3
 )
-#expect(migrated.petID == .classicClaude)
+#expect(migrated.petID == .classicCloud)
 #expect(migrated.pixelation == .chunky)
 #expect(migrated.sessionContextLineCount == 3)
 ```

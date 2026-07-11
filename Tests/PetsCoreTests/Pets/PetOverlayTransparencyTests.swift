@@ -91,7 +91,9 @@ struct PetOverlayTransparencyTests {
     @Test
     func menuLinksToPetConfigurationAndFutureCreationSurface() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
+        let settingsSourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let settingsSource = try String(contentsOf: settingsSourceURL, encoding: .utf8)
 
         #expect(source.contains("@Environment(\\.openSettings)"))
         #expect(source.contains("openSettings()"))
@@ -102,7 +104,7 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("window.styleMask.contains(.closable)"))
         #expect(!source.contains("for window in NSApp.windows where !(window is PetPanel)"))
         #expect(source.contains("PetSettingsView("))
-        #expect(source.contains("PetCatalog.builtInCategories"))
+        #expect(settingsSource.contains("PetCatalog.builtInCategories"))
         #expect(!source.contains("PetConfigurationRow"))
     }
 
@@ -117,7 +119,7 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("Button(\"Quit Pets\")"))
 
         let menuStart = try #require(source.range(of: "private struct PetMenuView: View"))
-        let menuEnd = try #require(source.range(of: "private struct PetSettingsView: View", range: menuStart.upperBound..<source.endIndex))
+        let menuEnd = try #require(source.range(of: "private enum LoginItemController", range: menuStart.upperBound..<source.endIndex))
         let menuSource = String(source[menuStart.lowerBound..<menuEnd.lowerBound])
 
         #expect(!menuSource.contains("Toggle(\"Open at Login\""))
@@ -129,21 +131,23 @@ struct PetOverlayTransparencyTests {
     @Test
     func overlayPassesPixelationPreferenceToSprite() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
+        let spritesSourceURL = try sourceFile("Sources/Pets/PetSprites.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let spritesSource = try String(contentsOf: spritesSourceURL, encoding: .utf8)
 
         #expect(source.contains("PetSprite("))
         #expect(source.contains("pixelation: petInstance.pixelation"))
-        #expect(source.contains("pixelatedSpriteEffect"))
         #expect(source.contains(".id(petInstance.pixelation)"))
-        #expect(source.contains("PixelatedSpriteRasterizer(pixelation: pixelation)"))
-        #expect(source.contains("imageLayer.magnificationFilter = .nearest"))
-        #expect(source.contains("bitmapImageRepForCachingDisplay"))
-        #expect(!source.contains("PixelatedSpriteOverlay"))
+        #expect(spritesSource.contains("pixelatedSpriteEffect"))
+        #expect(spritesSource.contains("PixelatedSpriteRasterizer(pixelation: pixelation)"))
+        #expect(spritesSource.contains("imageLayer.magnificationFilter = .nearest"))
+        #expect(spritesSource.contains("bitmapImageRepForCachingDisplay"))
+        #expect(!spritesSource.contains("PixelatedSpriteOverlay"))
     }
 
     @Test
     func menuAndOverlayExposeSessionContextLineCount() throws {
-        let appSourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
+        let appSourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
         let overlaySourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let appSource = try String(contentsOf: appSourceURL, encoding: .utf8)
         let overlaySource = try String(contentsOf: overlaySourceURL, encoding: .utf8)
@@ -162,7 +166,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petSettingsUseContainedCarouselAndTwoColumnControls() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("PetInstanceCarouselView("))
@@ -194,7 +198,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petCarouselAffordancesOnlyShowWhenContentOverflows() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("let isOverflowing = carouselContentWidth > proxy.size.width"))
@@ -208,7 +212,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petSpriteUsesScalableCloudFamilyRenderer() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetSprites.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("CloudFamilySprite("))
@@ -224,7 +228,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func spritePickerUsesCatalogTabs() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("@State private var selectedCategoryID = PetCatalog.builtInCategories.first?.id"))
@@ -236,7 +240,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petSpriteRoutesNonCloudPetsToDistinctRenderers() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetSprites.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("switch PetCatalog.renderFamily(for: petID)"))

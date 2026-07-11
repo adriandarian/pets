@@ -23,6 +23,8 @@ struct PetSprite: View {
                 NaturePetSprite(petID: petID, status: status, isExcited: isExcited)
             case .cozy:
                 CozyPetSprite(petID: petID, status: status, isExcited: isExcited)
+            case .voxel:
+                VoxelPetSprite(petID: petID, status: status, isExcited: isExcited)
             case .none:
                 WorkspacePetSprite(petID: .codeBot, status: status, isExcited: isExcited)
             }
@@ -665,6 +667,267 @@ private struct CozyPetSprite: View {
         .fill(Color(red: 0.93, green: 0.30, blue: 0.36))
         .frame(width: 18 * unit, height: 26 * unit)
         .scaleEffect(x: flipped ? -1 : 1, y: 1)
+    }
+}
+
+private struct VoxelPetSprite: View {
+    let petID: PetID
+    let status: HarnessSessionStatus
+    let isExcited: Bool
+
+    var body: some View {
+        GeometryReader { proxy in
+            let unit = min(proxy.size.width, proxy.size.height) / 128
+
+            ZStack {
+                petShadow(unit: unit)
+
+                switch petID {
+                case .voxelCat:
+                    voxelCat(unit: unit)
+                case .voxelSlime:
+                    voxelSlime(unit: unit)
+                case .voxelDragon:
+                    voxelDragon(unit: unit)
+                default:
+                    voxelCat(unit: unit)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .offset(y: isExcited ? -5 * unit : 0)
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+
+    private func voxelCat(unit: CGFloat) -> some View {
+        ZStack {
+            voxelTail(unit: unit, color: catSecondary)
+                .offset(x: 42 * unit, y: 13 * unit)
+
+            voxelBlock(width: 62, height: 42, color: catSecondary, unit: unit)
+                .offset(y: 19 * unit)
+
+            HStack(spacing: 34 * unit) {
+                voxelBlock(width: 12, height: 16, color: catSecondary, unit: unit, cornerRadius: 2)
+                voxelBlock(width: 12, height: 16, color: catSecondary, unit: unit, cornerRadius: 2)
+            }
+            .offset(y: 43 * unit)
+
+            HStack(spacing: 30 * unit) {
+                catEar(unit: unit, flipped: false)
+                catEar(unit: unit, flipped: true)
+            }
+            .offset(y: -38 * unit)
+
+            voxelBlock(width: 56, height: 48, color: catPrimary, unit: unit)
+                .offset(y: -13 * unit)
+
+            voxelEyes(unit: unit)
+                .offset(y: -16 * unit)
+
+            voxelBlock(width: 10, height: 5, color: Color(red: 0.23, green: 0.12, blue: 0.16), unit: unit, cornerRadius: 1)
+                .offset(y: -2 * unit)
+        }
+    }
+
+    private func voxelSlime(unit: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .fill(statusTint.opacity(0.20))
+                .frame(width: 92 * unit, height: 92 * unit)
+
+            voxelBlock(width: 74, height: 44, color: slimePrimary, unit: unit, cornerRadius: 7)
+                .offset(y: 22 * unit)
+
+            voxelBlock(width: 58, height: 40, color: slimeSecondary, unit: unit, cornerRadius: 7)
+                .offset(y: -4 * unit)
+
+            voxelBlock(width: 34, height: 24, color: slimeHighlight, unit: unit, cornerRadius: 5)
+                .opacity(0.80)
+                .offset(x: -16 * unit, y: -18 * unit)
+
+            voxelEyes(unit: unit, size: 9)
+                .offset(y: -2 * unit)
+
+            voxelBlock(width: 22, height: 5, color: Color(red: 0.04, green: 0.20, blue: 0.18), unit: unit, cornerRadius: 1)
+                .offset(y: 16 * unit)
+        }
+    }
+
+    private func voxelDragon(unit: CGFloat) -> some View {
+        ZStack {
+            dragonWing(unit: unit, flipped: false)
+                .offset(x: -41 * unit, y: 2 * unit)
+            dragonWing(unit: unit, flipped: true)
+                .offset(x: 41 * unit, y: 2 * unit)
+
+            voxelTail(unit: unit, color: dragonSecondary)
+                .rotationEffect(.degrees(-18))
+                .offset(x: 42 * unit, y: 26 * unit)
+
+            voxelBlock(width: 66, height: 42, color: dragonPrimary, unit: unit)
+                .offset(y: 20 * unit)
+
+            HStack(spacing: 14 * unit) {
+                dragonHorn(unit: unit, flipped: false)
+                dragonHorn(unit: unit, flipped: true)
+            }
+            .offset(y: -50 * unit)
+
+            voxelBlock(width: 52, height: 46, color: dragonPrimary, unit: unit)
+                .offset(y: -18 * unit)
+
+            voxelBlock(width: 30, height: 20, color: dragonSecondary, unit: unit, cornerRadius: 2)
+                .offset(y: 2 * unit)
+
+            voxelEyes(unit: unit)
+                .offset(y: -20 * unit)
+        }
+    }
+
+    private func voxelBlock(
+        width: CGFloat,
+        height: CGFloat,
+        color: Color,
+        unit: CGFloat,
+        cornerRadius: CGFloat = 3
+    ) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius * unit, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        color.opacity(0.98),
+                        color.opacity(0.72)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: width * unit, height: height * unit)
+            .overlay(alignment: .topLeading) {
+                Rectangle()
+                    .fill(Color.white.opacity(0.18))
+                    .frame(width: width * 0.46 * unit, height: max(2, height * 0.18) * unit)
+                    .padding(3 * unit)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius * unit, style: .continuous)
+                    .stroke(Color.black.opacity(0.24), lineWidth: 1.4 * unit)
+            )
+    }
+
+    private func voxelEyes(unit: CGFloat, size: CGFloat = 8) -> some View {
+        HStack(spacing: 14 * unit) {
+            Rectangle()
+                .fill(statusTint)
+                .frame(width: size * unit, height: size * unit)
+            Rectangle()
+                .fill(statusTint)
+                .frame(width: size * unit, height: size * unit)
+        }
+        .shadow(color: statusTint.opacity(0.50), radius: 4 * unit)
+    }
+
+    private func catEar(unit: CGFloat, flipped: Bool) -> some View {
+        Path { path in
+            path.move(to: CGPoint(x: 0, y: 22 * unit))
+            path.addLine(to: CGPoint(x: 10 * unit, y: 0))
+            path.addLine(to: CGPoint(x: 20 * unit, y: 22 * unit))
+            path.closeSubpath()
+        }
+        .fill(catPrimary)
+        .frame(width: 20 * unit, height: 22 * unit)
+        .scaleEffect(x: flipped ? -1 : 1, y: 1)
+        .overlay(
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: 22 * unit))
+                path.addLine(to: CGPoint(x: 10 * unit, y: 0))
+                path.addLine(to: CGPoint(x: 20 * unit, y: 22 * unit))
+                path.closeSubpath()
+            }
+            .stroke(Color.black.opacity(0.22), lineWidth: 1.3 * unit)
+            .scaleEffect(x: flipped ? -1 : 1, y: 1)
+        )
+    }
+
+    private func dragonWing(unit: CGFloat, flipped: Bool) -> some View {
+        Path { path in
+            path.move(to: CGPoint(x: 8 * unit, y: 4 * unit))
+            path.addLine(to: CGPoint(x: 36 * unit, y: 18 * unit))
+            path.addLine(to: CGPoint(x: 19 * unit, y: 47 * unit))
+            path.addLine(to: CGPoint(x: 3 * unit, y: 30 * unit))
+            path.closeSubpath()
+        }
+        .fill(dragonWingFill)
+        .frame(width: 38 * unit, height: 50 * unit)
+        .scaleEffect(x: flipped ? -1 : 1, y: 1)
+        .overlay(
+            Path { path in
+                path.move(to: CGPoint(x: 8 * unit, y: 4 * unit))
+                path.addLine(to: CGPoint(x: 36 * unit, y: 18 * unit))
+                path.addLine(to: CGPoint(x: 19 * unit, y: 47 * unit))
+                path.addLine(to: CGPoint(x: 3 * unit, y: 30 * unit))
+                path.closeSubpath()
+            }
+            .stroke(Color.black.opacity(0.22), lineWidth: 1.2 * unit)
+            .scaleEffect(x: flipped ? -1 : 1, y: 1)
+        )
+    }
+
+    private func dragonHorn(unit: CGFloat, flipped: Bool) -> some View {
+        Path { path in
+            path.move(to: CGPoint(x: 0, y: 18 * unit))
+            path.addLine(to: CGPoint(x: 9 * unit, y: 0))
+            path.addLine(to: CGPoint(x: 18 * unit, y: 18 * unit))
+            path.closeSubpath()
+        }
+        .fill(Color(red: 0.96, green: 0.78, blue: 0.42))
+        .frame(width: 18 * unit, height: 18 * unit)
+        .scaleEffect(x: flipped ? -1 : 1, y: 1)
+    }
+
+    private func voxelTail(unit: CGFloat, color: Color) -> some View {
+        HStack(spacing: 0) {
+            voxelBlock(width: 12, height: 12, color: color, unit: unit, cornerRadius: 2)
+            voxelBlock(width: 12, height: 12, color: color, unit: unit, cornerRadius: 2)
+            voxelBlock(width: 12, height: 12, color: color, unit: unit, cornerRadius: 2)
+        }
+    }
+
+    private var statusTint: Color {
+        statusColor(status == .unknown ? .idle : status)
+    }
+
+    private var catPrimary: Color {
+        Color(red: 0.73, green: 0.62, blue: 0.86)
+    }
+
+    private var catSecondary: Color {
+        Color(red: 0.55, green: 0.46, blue: 0.72)
+    }
+
+    private var slimePrimary: Color {
+        Color(red: 0.24, green: 0.78, blue: 0.65)
+    }
+
+    private var slimeSecondary: Color {
+        Color(red: 0.33, green: 0.91, blue: 0.78)
+    }
+
+    private var slimeHighlight: Color {
+        Color(red: 0.70, green: 1.00, blue: 0.91)
+    }
+
+    private var dragonPrimary: Color {
+        Color(red: 0.91, green: 0.38, blue: 0.27)
+    }
+
+    private var dragonSecondary: Color {
+        Color(red: 0.72, green: 0.20, blue: 0.20)
+    }
+
+    private var dragonWingFill: Color {
+        Color(red: 0.43, green: 0.30, blue: 0.74)
     }
 }
 
