@@ -12,7 +12,10 @@ let package = Package(
         .executable(name: "Pets", targets: ["Pets"])
     ],
     targets: [
-        .target(name: "PetsCore"),
+        .target(
+            name: "PetsCore",
+            resources: [.copy("Resources/PetArt")]
+        ),
         .executableTarget(
             name: "Pets",
             dependencies: ["PetsCore"]
