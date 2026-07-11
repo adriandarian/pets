@@ -4,4 +4,4 @@ dist/
 .playwright-mcp/
 .codex/
 .superpowers/
-
+.worktrees/
