@@ -34,11 +34,14 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
     }
 
     public static func defaultInstance(id: ID = UUID()) -> PetInstance {
-        migratedDefault(
+        let defaults = PetCatalog.definition(for: PetCatalog.defaultPetID)?.defaults ?? .standard
+        return PetInstance(
             id: id,
+            name: PetCatalog.displayName(for: PetCatalog.defaultPetID),
             petID: PetCatalog.defaultPetID,
-            pixelation: .off,
-            sessionContextLineCount: PetSessionContextLineCount.defaultValue
+            pixelation: defaults.pixelation,
+            sessionContextLineCount: defaults.sessionContextLineCount,
+            animationSettings: defaults.animationSettings
         )
     }
 

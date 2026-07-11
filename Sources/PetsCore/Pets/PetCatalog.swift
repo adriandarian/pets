@@ -73,182 +73,56 @@ public struct PetCatalogCategory: Equatable, Hashable, Sendable {
 
 public enum PetCatalog {
     public static let defaultPetID = PetID.cuteCloud
-    public static let entries: [PetCatalogEntry] = [
-        PetCatalogEntry(
-            id: .cuteCloud,
-            displayName: "Cute Cloud",
-            categoryID: "cloud-pets",
-            renderFamily: .cuteCloud,
-            maximumPixelation: .medium
-        ),
-        PetCatalogEntry(
-            id: .classicCloud,
-            displayName: "Classic Cloud",
-            categoryID: "cloud-pets",
-            renderFamily: .cloud,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .helperCloud,
-            displayName: "Helper Cloud",
-            categoryID: "cloud-pets",
-            renderFamily: .cloud,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .sleepCloud,
-            displayName: "Sleep Cloud",
-            categoryID: "cloud-pets",
-            renderFamily: .cloud,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .focusCloud,
-            displayName: "Focus Cloud",
-            categoryID: "cloud-pets",
-            renderFamily: .cloud,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .codeBot,
-            displayName: "Code Bot",
-            categoryID: "workspace-pets",
-            renderFamily: .workspace,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .terminalCube,
-            displayName: "Terminal Cube",
-            categoryID: "workspace-pets",
-            renderFamily: .workspace,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .bookstackBuddy,
-            displayName: "Bookstack Buddy",
-            categoryID: "workspace-pets",
-            renderFamily: .workspace,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .sproutBuddy,
-            displayName: "Sprout Buddy",
-            categoryID: "nature-pets",
-            renderFamily: .nature,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .pebblePal,
-            displayName: "Pebble Pal",
-            categoryID: "nature-pets",
-            renderFamily: .nature,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .pocketStar,
-            displayName: "Pocket Star",
-            categoryID: "nature-pets",
-            renderFamily: .nature,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .teaCup,
-            displayName: "Tea Cup",
-            categoryID: "cozy-pets",
-            renderFamily: .cozy,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .nightLamp,
-            displayName: "Night Lamp",
-            categoryID: "cozy-pets",
-            renderFamily: .cozy,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .tinyRocket,
-            displayName: "Tiny Rocket",
-            categoryID: "cozy-pets",
-            renderFamily: .cozy,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .voxelCat,
-            displayName: "Voxel Cat",
-            categoryID: "voxel-pets",
-            renderFamily: .voxel,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .voxelSlime,
-            displayName: "Voxel Slime",
-            categoryID: "voxel-pets",
-            renderFamily: .voxel,
-            maximumPixelation: .chunky
-        ),
-        PetCatalogEntry(
-            id: .voxelDragon,
-            displayName: "Voxel Dragon",
-            categoryID: "voxel-pets",
-            renderFamily: .voxel,
-            maximumPixelation: .chunky
-        )
+    public static let definitions: [PetDefinition] = [
+        CuteCloudPetDefinition(),
+        ClassicCloudPetDefinition(),
+        HelperCloudPetDefinition(),
+        SleepCloudPetDefinition(),
+        FocusCloudPetDefinition(),
+        CodeBotPetDefinition(),
+        TerminalCubePetDefinition(),
+        BookstackBuddyPetDefinition(),
+        SproutBuddyPetDefinition(),
+        PebblePalPetDefinition(),
+        PocketStarPetDefinition(),
+        TeaCupPetDefinition(),
+        NightLampPetDefinition(),
+        TinyRocketPetDefinition(),
+        VoxelCatPetDefinition(),
+        VoxelSlimePetDefinition(),
+        VoxelDragonPetDefinition()
     ]
 
-    public static let builtInCategories: [PetCatalogCategory] = [
-        PetCatalogCategory(
-            id: "cloud-pets",
-            displayName: "Cloud Pets",
-            petIDs: [
-                .cuteCloud,
-                .classicCloud,
-                .helperCloud,
-                .sleepCloud,
-                .focusCloud
-            ]
-        ),
-        PetCatalogCategory(
-            id: "workspace-pets",
-            displayName: "Workspace Pets",
-            petIDs: [
-                .codeBot,
-                .terminalCube,
-                .bookstackBuddy
-            ]
-        ),
-        PetCatalogCategory(
-            id: "nature-pets",
-            displayName: "Nature Pets",
-            petIDs: [
-                .sproutBuddy,
-                .pebblePal,
-                .pocketStar
-            ]
-        ),
-        PetCatalogCategory(
-            id: "cozy-pets",
-            displayName: "Cozy Pets",
-            petIDs: [
-                .teaCup,
-                .nightLamp,
-                .tinyRocket
-            ]
-        ),
-        PetCatalogCategory(
-            id: "voxel-pets",
-            displayName: "Voxel Pets",
-            petIDs: [
-                .voxelCat,
-                .voxelSlime,
-                .voxelDragon
-            ]
+    private static let definitionsByID = Dictionary(
+        uniqueKeysWithValues: definitions.map { ($0.id, $0) }
+    )
+
+    public static let entries: [PetCatalogEntry] = definitions.compactMap { definition in
+        guard case let .legacy(renderFamily) = definition.renderSource else { return nil }
+        return PetCatalogEntry(
+            id: definition.id,
+            displayName: definition.displayName,
+            categoryID: definition.category.id,
+            renderFamily: renderFamily,
+            maximumPixelation: definition.capabilities.maximumPixelation
         )
-    ]
+    }
+
+    public static let builtInCategories: [PetCatalogCategory] = {
+        let groupedDefinitions = Dictionary(grouping: definitions, by: \.category)
+        return groupedDefinitions.keys.sorted { $0.order < $1.order }.map { category in
+            PetCatalogCategory(
+                id: category.id,
+                displayName: category.displayName,
+                petIDs: groupedDefinitions[category, default: []].map(\.id)
+            )
+        }
+    }()
     public static let builtInPetIDs: [PetID] = builtInCategories.flatMap(\.petIDs)
 
     public static func displayName(for petID: PetID) -> String {
-        if let entry = entry(for: petID) {
-            return entry.displayName
+        if let definition = definition(for: petID) {
+            return definition.displayName
         }
         if petID.rawValue.hasPrefix("custom:") {
             return String(petID.rawValue.dropFirst("custom:".count))
@@ -261,15 +135,20 @@ public enum PetCatalog {
     }
 
     public static func maximumPixelation(for petID: PetID) -> PetSpritePixelation {
-        entry(for: petID)?.maximumPixelation ?? .off
+        definition(for: petID)?.capabilities.maximumPixelation ?? .off
     }
 
     public static func renderFamily(for petID: PetID) -> PetRenderFamily? {
-        entry(for: petID)?.renderFamily
+        guard case let .legacy(renderFamily) = definition(for: petID)?.renderSource else { return nil }
+        return renderFamily
     }
 
     public static func entry(for petID: PetID) -> PetCatalogEntry? {
         entries.first { $0.id == petID }
+    }
+
+    public static func definition(for petID: PetID) -> PetDefinition? {
+        definitionsByID[petID]
     }
 
     public static func pixelation(

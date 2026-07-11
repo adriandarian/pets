@@ -7,14 +7,13 @@ struct PetInstanceTests {
     @Test
     func defaultInstanceUsesExistingCatalogDefaults() {
         let instance = PetInstance.defaultInstance()
+        let definition = PetCatalog.definition(for: PetCatalog.defaultPetID)
 
         #expect(instance.name == "Cute Cloud")
         #expect(instance.petID == .cuteCloud)
-        #expect(instance.pixelation == .off)
-        #expect(instance.sessionContextLineCount == 2)
-        #expect(instance.animationSettings.isHoverBounceEnabled)
-        #expect(instance.animationSettings.isIdleMotionEnabled)
-        #expect(instance.animationSettings.areStatusMoodsEnabled)
+        #expect(instance.pixelation == definition?.defaults.pixelation)
+        #expect(instance.sessionContextLineCount == definition?.defaults.sessionContextLineCount)
+        #expect(instance.animationSettings == definition?.defaults.animationSettings)
         #expect(instance.isVisible)
     }
 

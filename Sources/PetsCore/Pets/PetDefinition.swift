@@ -145,4 +145,24 @@ open class PetDefinition: @unchecked Sendable {
         self.presentation = presentation
         self.renderSource = renderSource
     }
+
+    public init(
+        id: PetID,
+        displayName: String,
+        category: PetCategoryDescriptor,
+        maximumPixelation: PetSpritePixelation,
+        legacyRenderFamily: PetRenderFamily
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.category = category
+        self.capabilities = PetCapabilities(
+            maximumPixelation: maximumPixelation,
+            supportsStatusMoods: true,
+            supportsHoverExcitement: true
+        )
+        self.defaults = .standard
+        self.presentation = .standard
+        self.renderSource = .legacy(legacyRenderFamily)
+    }
 }
