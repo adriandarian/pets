@@ -13,7 +13,7 @@
 - Work on the existing `feature/pet-reaction-moods` branch and preserve all completed reaction behavior.
 - Every cloud idle loop contains `frame-000.png` through `frame-007.png`, exactly eight 512x512 transparent PNGs.
 - Reuse each existing `frame-000.png`; create 35 new frames by editing canonical images, never by unrelated regeneration.
-- Use the `imagegen` skill and `image_gen` image-editing tool for semantic image changes. Local tools may only resize, encode, validate, or compose contact sheets.
+- Use the `imagegen` skill and built-in `image_gen` image-editing tool for semantic image changes. Generate on flat `#00ff00` chroma key, remove it with the installed imagegen helper, and use local tools only to remove that key, resize, encode, validate, or compose contact sheets.
 - Preserve species identity, camera, voxel scale, materials, lighting direction, face placement, subject scale, and canvas anchor.
 - Use the exact 5.56-second durations/blends from the design spec.
 - Idle Motion off freezes `frame-000`, image transforms, and shadow movement.
@@ -872,7 +872,7 @@ Sources/PetsCore/Resources/PetArt/cute-cloud/idle/frame-000.png
 Use this invariant in every prompt:
 
 ```text
-Edit the supplied canonical Cumulus voxel cloud into one subtle idle-animation keyframe. Preserve the exact character identity, three-quarter camera, voxel size, white material, warm studio lighting direction, black square eyes, blush, tiny mouth, arm construction, subject scale, and floor anchor. Keep a single isolated character on a fully transparent square canvas with no floor, cast shadow, border, text, glow, or background. Do not add or remove anatomy. Output one image only.
+Edit the supplied canonical Cumulus voxel cloud into one subtle idle-animation keyframe. Preserve the exact character identity, three-quarter camera, voxel size, white material, warm studio lighting direction, black square eyes, blush, tiny mouth, arm construction, subject scale, and floor anchor. Place the single isolated character on a perfectly flat solid #00ff00 chroma-key square background. The background must be uniform with no shadows, gradients, texture, floor, reflections, or lighting variation. Do not use #00ff00 anywhere in the character. No cast shadow, border, text, or glow. Do not add or remove anatomy. Output one image only.
 ```
 
 Append the exact frame instruction:
@@ -889,10 +889,19 @@ Append the exact frame instruction:
 
 Use the accepted previous pose as an additional reference for frames `002`, `003`, `006`, and `007`, while keeping frame 000 as the primary identity reference.
 
-Normalize each accepted square output mechanically by running `sips` on the exact local path returned by the image tool. For example, after the frame-001 tool result is saved as `output/imagegen/cumulus-frame-001.png`:
+Copy each selected built-in output from `$CODEX_HOME/generated_images/` into `tmp/imagegen/`, remove the flat key with the installed helper, then resize the alpha result. For frame 001:
 
 ```bash
-sips -z 512 512 output/imagegen/cumulus-frame-001.png --out Sources/PetsCore/Resources/PetArt/cute-cloud/idle/frame-001.png
+mkdir -p tmp/imagegen
+python "${CODEX_HOME:-$HOME/.codex}/skills/.system/imagegen/scripts/remove_chroma_key.py" \
+  --input tmp/imagegen/cumulus-frame-001-keyed.png \
+  --out tmp/imagegen/cumulus-frame-001-alpha.png \
+  --auto-key border \
+  --soft-matte \
+  --transparent-threshold 12 \
+  --opaque-threshold 220 \
+  --despill
+sips -z 512 512 tmp/imagegen/cumulus-frame-001-alpha.png --out Sources/PetsCore/Resources/PetArt/cute-cloud/idle/frame-001.png
 ```
 
 - [ ] **Step 5: Create the contact-sheet builder and inspect Cumulus**
@@ -1005,7 +1014,7 @@ Run `swift test --filter nimbusHasCompleteIdleLoop`; expect frame-count failure.
 Use canonical `PetArt/nimbus-cloud/idle/frame-000.png` and this invariant:
 
 ```text
-Edit the supplied canonical Nimbus voxel storm cloud into one subtle idle-animation keyframe. Preserve the exact character identity, three-quarter camera, voxel size, white upper cloud, charcoal lower cloud, blue raindrop count and attachment layout, single yellow lightning bolt, warm studio lighting direction, face, blush, arms, subject scale, and floor anchor. Keep a single isolated character on a fully transparent square canvas with no floor, cast shadow, border, text, aura, or background. Do not add or remove raindrops, lightning branches, or anatomy. Output one image only.
+Edit the supplied canonical Nimbus voxel storm cloud into one subtle idle-animation keyframe. Preserve the exact character identity, three-quarter camera, voxel size, white upper cloud, charcoal lower cloud, blue raindrop count and attachment layout, single yellow lightning bolt, warm studio lighting direction, face, blush, arms, subject scale, and floor anchor. Place the single isolated character on a perfectly flat solid #00ff00 chroma-key square background with no shadows, gradients, texture, floor, reflections, or lighting variation. Do not use #00ff00 in the character. No cast shadow, border, text, or aura. Do not add or remove raindrops, lightning branches, or anatomy. Output one image only.
 ```
 
 | Target | Frame instruction |
@@ -1018,7 +1027,7 @@ Edit the supplied canonical Nimbus voxel storm cloud into one subtle idle-animat
 | `006` | Closed determined blink as short dark voxel lines; every weather element unchanged. |
 | `007` | Half reopened eyes; all other elements canonical. |
 
-Use the canonical plus accepted neighboring frames (`001` for `002`, `002` for `003`, `004` for `005`, `005` for `006`, and `006` for `007`). Normalize every accepted result with `sips -z 512 512`, switch Nimbus to `cloudIdleAnimation(slug: "nimbus-cloud", motion: .bob)`, then build and inspect its contact sheet:
+Use the canonical plus accepted neighboring frames (`001` for `002`, `002` for `003`, `004` for `005`, `005` for `006`, and `006` for `007`). Run every selected keyed output through `remove_chroma_key.py` with the Task 4 flags, then normalize the alpha PNG with `sips -z 512 512`. Switch Nimbus to `cloudIdleAnimation(slug: "nimbus-cloud", motion: .bob)`, then build and inspect its contact sheet:
 
 ```bash
 swift scripts/build_idle_contact_sheet.swift Sources/PetsCore/Resources/PetArt/nimbus-cloud/idle docs/assets/cloud-idle-loops/nimbus-cloud.png
@@ -1067,7 +1076,7 @@ Run `swift test --filter cirrusHasCompleteIdleLoop`; expect frame-count failure.
 Invariant:
 
 ```text
-Edit the supplied canonical Cirrus voxel wind cloud into one subtle idle-animation keyframe. Preserve the exact character identity, three-quarter camera, voxel size, pearly white material, warm lighting direction, face, blush, arms, body scale, and the exact count and attachment order of all long wind tendrils. Keep one isolated character on a fully transparent square canvas with no floor, cast shadow, border, text, or background. Tendrils may curl by only a few voxels and may not merge, split, disappear, or change count. Output one image only.
+Edit the supplied canonical Cirrus voxel wind cloud into one subtle idle-animation keyframe. Preserve the exact character identity, three-quarter camera, voxel size, pearly white material, warm lighting direction, face, blush, arms, body scale, and the exact count and attachment order of all long wind tendrils. Place one isolated character on a perfectly flat solid #00ff00 chroma-key square background with no shadows, gradients, texture, floor, reflections, or lighting variation. Do not use #00ff00 in the character. No cast shadow, border, or text. Tendrils may curl by only a few voxels and may not merge, split, disappear, or change count. Output one image only.
 ```
 
 | Target | Frame instruction |
@@ -1080,7 +1089,7 @@ Edit the supplied canonical Cirrus voxel wind cloud into one subtle idle-animati
 | `006` | Viewer-right eye fully winked as a short dark voxel line; other eye open; no other change. |
 | `007` | Viewer-right eye halfway reopened; exact canonical face placement. |
 
-Normalize every accepted result with `sips -z 512 512`, switch Cirrus to `cloudIdleAnimation(slug: "cirrus-cloud", motion: .sway)`, and build its sheet:
+Remove the key from every accepted result with `remove_chroma_key.py` using the Task 4 flags, normalize with `sips -z 512 512`, switch Cirrus to `cloudIdleAnimation(slug: "cirrus-cloud", motion: .sway)`, and build its sheet:
 
 ```bash
 swift scripts/build_idle_contact_sheet.swift Sources/PetsCore/Resources/PetArt/cirrus-cloud/idle docs/assets/cloud-idle-loops/cirrus-cloud.png
@@ -1127,7 +1136,7 @@ Run `swift test --filter lenticularHasCompleteIdleLoop`; expect frame-count fail
 Invariant:
 
 ```text
-Edit the supplied canonical Lenticular voxel cloud into one subtle idle-animation keyframe. Preserve the exact character identity, three-quarter camera, voxel size, pearly material, warm lighting, face, blush, arms, subject scale, floor anchor, and the exact number and thickness of upper and lower concentric cloud bands. Keep one isolated character on a fully transparent square canvas with no floor, cast shadow, border, text, or background. Bands may shift laterally by only a few voxels and may not merge, split, or change count. Output one image only.
+Edit the supplied canonical Lenticular voxel cloud into one subtle idle-animation keyframe. Preserve the exact character identity, three-quarter camera, voxel size, pearly material, warm lighting, face, blush, arms, subject scale, floor anchor, and the exact number and thickness of upper and lower concentric cloud bands. Place one isolated character on a perfectly flat solid #00ff00 chroma-key square background with no shadows, gradients, texture, floor, reflections, or lighting variation. Do not use #00ff00 in the character. No cast shadow, border, or text. Bands may shift laterally by only a few voxels and may not merge, split, or change count. Output one image only.
 ```
 
 | Target | Frame instruction |
@@ -1140,7 +1149,7 @@ Edit the supplied canonical Lenticular voxel cloud into one subtle idle-animatio
 | `006` | Calm closed blink as two short dark voxel lines; all bands unchanged. |
 | `007` | Half reopened eyes; all other geometry canonical. |
 
-Normalize every result, switch Lenticular to `cloudIdleAnimation(slug: "lenticular-cloud", motion: .breathe)`, build/inspect its sheet, then run:
+Remove the key from every accepted result with the installed helper and Task 4 flags, normalize the alpha PNGs, switch Lenticular to `cloudIdleAnimation(slug: "lenticular-cloud", motion: .breathe)`, build/inspect its sheet, then run:
 
 ```bash
 swift scripts/build_idle_contact_sheet.swift Sources/PetsCore/Resources/PetArt/lenticular-cloud/idle docs/assets/cloud-idle-loops/lenticular-cloud.png
@@ -1191,7 +1200,7 @@ Run the focused test; expect failure only for Snow before integration.
 Invariant:
 
 ```text
-Edit the supplied canonical Snow Cloud voxel character into one subtle idle-animation keyframe. Preserve the exact character identity, three-quarter camera, voxel size, white upper cloud, blue ice gradient, warm lighting direction, face, blush, arms, subject scale, floor anchor, and the exact count and attachment points of icicles and visible snowflakes. Keep one isolated character on a fully transparent square canvas with no floor, cast shadow, border, text, loose particles, or background. Snowflakes and icicles may shift by only a few voxels and may not appear, disappear, merge, or change count. Output one image only.
+Edit the supplied canonical Snow Cloud voxel character into one subtle idle-animation keyframe. Preserve the exact character identity, three-quarter camera, voxel size, white upper cloud, blue ice gradient, warm lighting direction, face, blush, arms, subject scale, floor anchor, and the exact count and attachment points of icicles and visible snowflakes. Place one isolated character on a perfectly flat solid #00ff00 chroma-key square background with no shadows, gradients, texture, floor, reflections, or lighting variation. Do not use #00ff00 in the character. No cast shadow, border, text, or loose particles. Snowflakes and icicles may shift by only a few voxels and may not appear, disappear, merge, or change count. Output one image only.
 ```
 
 | Target | Frame instruction |
@@ -1204,7 +1213,7 @@ Edit the supplied canonical Snow Cloud voxel character into one subtle idle-anim
 | `006` | Closed blink as two short dark voxel lines; smile, blush, icicles, and snowflakes unchanged. |
 | `007` | Half reopened eyes; all other geometry canonical. |
 
-Normalize every accepted result, switch Snow to `cloudIdleAnimation(slug: "snow-cloud", motion: .breathe)`, build/inspect its contact sheet, and regenerate drifted frames:
+Remove the key from every accepted result with the installed helper and Task 4 flags, normalize the alpha PNGs, switch Snow to `cloudIdleAnimation(slug: "snow-cloud", motion: .breathe)`, build/inspect its contact sheet, and regenerate drifted frames:
 
 ```bash
 swift scripts/build_idle_contact_sheet.swift Sources/PetsCore/Resources/PetArt/snow-cloud/idle docs/assets/cloud-idle-loops/snow-cloud.png
