@@ -104,7 +104,8 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("window.styleMask.contains(.closable)"))
         #expect(!source.contains("for window in NSApp.windows where !(window is PetPanel)"))
         #expect(source.contains("PetSettingsView("))
-        #expect(settingsSource.contains("PetCatalog.builtInCategories"))
+        #expect(settingsSource.contains("Text(\"Generated Cute Cloud\")"))
+        #expect(!settingsSource.contains("PetCatalog.builtInCategories"))
         #expect(!source.contains("PetConfigurationRow"))
     }
 
@@ -181,7 +182,9 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("SettingsDesignPalette.root"))
         #expect(source.contains("PetCatalog.category(for: pet.petID)?.displayName"))
         #expect(source.contains("SpriteSummaryPanel("))
-        #expect(source.contains("Button(\"Change Sprite...\")"))
+        #expect(source.contains("Text(\"Generated Cute Cloud\")"))
+        #expect(!source.contains("Button(\"Change Sprite...\")"))
+        #expect(!source.contains("SpritePickerSheet"))
         #expect(source.contains("Button(\"Delete Pet\", role: .destructive)"))
         #expect(source.contains("store.removeSelectedPet()"))
         #expect(source.contains("EmptyPetCollectionView"))
@@ -215,47 +218,35 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
-    func petSpriteUsesScalableCloudFamilyRenderer() throws {
+    func petSpriteUsesOnlyGeneratedAssetRenderer() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetSprites.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("CloudFamilySprite("))
-        #expect(source.contains("ScaledCloudFamilySprite("))
+        #expect(source.contains("AssetPetSprite("))
         #expect(source.contains("GeometryReader { proxy in"))
-        #expect(source.contains("case .helperCloud"))
-        #expect(source.contains("case .sleepCloud"))
-        #expect(source.contains("case .focusCloud"))
-        #expect(!source.contains("if petID == .classicCloud {\n                ClassicCloudSprite"))
-        #expect(!source.contains("showsStatusDot"))
-        #expect(!source.contains("statusDotColor"))
+        #expect(!source.contains("LegacyPetSpriteAdapter"))
+        #expect(!source.contains("CloudFamilySprite"))
+        #expect(!source.contains("VoxelPetSprite"))
     }
 
     @Test
-    func spritePickerUsesCatalogTabs() throws {
+    func settingsDoNotOfferSpriteSelection() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("@State private var selectedCategoryID = PetCatalog.builtInCategories.first?.id"))
-        #expect(source.contains("ForEach(PetCatalog.builtInCategories, id: \\.id) { category in"))
-        #expect(source.contains(".pickerStyle(.segmented)"))
-        #expect(source.contains("selectedCategory.petIDs"))
-        #expect(source.contains("PetCatalog.category(for: pet.petID)?.displayName"))
+        #expect(!source.contains("SpritePickerSheet"))
+        #expect(!source.contains("SpritePickerCard"))
+        #expect(!source.contains("Change Sprite..."))
     }
 
     @Test
-    func petSpriteRoutesNonCloudPetsToDistinctRenderers() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetSprites.swift")
+    func overlayDoesNotOfferLegacyPetSwitching() throws {
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("switch definition.renderSource"))
-        #expect(source.contains("private struct LegacyPetSpriteAdapter: View"))
-        #expect(source.contains("case .workspace:"))
-        #expect(source.contains("WorkspacePetSprite("))
-        #expect(source.contains("NaturePetSprite("))
-        #expect(source.contains("CozyPetSprite("))
-        #expect(source.contains("case .codeBot"))
-        #expect(source.contains("case .sproutBuddy"))
-        #expect(source.contains("case .teaCup"))
+        #expect(!source.contains("ForEach(PetCatalog.builtInPetIDs"))
+        #expect(!source.contains("store.selectPet("))
+        #expect(!source.contains(".contextMenu"))
     }
 
     @Test
@@ -266,7 +257,7 @@ struct PetOverlayTransparencyTests {
         let persistenceSource = try String(contentsOf: persistenceSourceURL, encoding: .utf8)
 
         #expect(persistenceSource.contains("return ([], nil)"))
-        #expect(persistenceSource.contains("return (decoded.map(normalizedCloudFamilyInstance), nil)"))
+        #expect(persistenceSource.contains("return (decoded.map { $0.normalizedForCurrentCatalog() }, nil)"))
         #expect(!source.contains("cloudFamilyCollection(from:"))
         #expect(!source.contains("starterCloudFamilyInstances"))
         #expect(source.contains("@Published private(set) var selectedPetInstanceID: PetInstance.ID?"))

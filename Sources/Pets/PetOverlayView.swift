@@ -29,6 +29,19 @@ enum PetOverlayPalette {
     static let idleEyeGreen = Color(red: 0.52, green: 0.82, blue: 0.56)
 }
 
+func statusColor(_ status: HarnessSessionStatus) -> Color {
+    switch status {
+    case .busy:
+        return Color(red: 0.35, green: 0.82, blue: 1.0)
+    case .waiting:
+        return Color(red: 1.0, green: 0.76, blue: 0.28)
+    case .idle:
+        return PetOverlayPalette.codexGreen
+    case .unknown:
+        return Color.white.opacity(0.52)
+    }
+}
+
 struct PetOverlayView: View {
     @ObservedObject var store: PetStore
     let petInstanceID: PetInstance.ID
@@ -78,19 +91,6 @@ struct PetOverlayView: View {
                                 .animation(.spring(response: 0.18, dampingFraction: 0.52), value: isPetHovered)
                                 .onHover { hovering in
                                     isPetHovered = petInstance.animationSettings.isHoverBounceEnabled && hovering
-                                }
-                                .contextMenu {
-                                    ForEach(PetCatalog.builtInPetIDs, id: \.self) { petID in
-                                        Button {
-                                            store.selectPetInstance(petInstance.id)
-                                            store.selectPet(petID)
-                                        } label: {
-                                            Label(
-                                                PetCatalog.displayName(for: petID),
-                                                systemImage: petInstance.petID == petID ? "checkmark" : "face.smiling"
-                                            )
-                                        }
-                                    }
                                 }
 
                             ChatCollapseButton(

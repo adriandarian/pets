@@ -16,26 +16,6 @@ public struct PetCategoryDescriptor: Equatable, Hashable, Sendable {
         displayName: "Cloud Pets",
         order: 0
     )
-    public static let workspacePets = PetCategoryDescriptor(
-        id: "workspace-pets",
-        displayName: "Workspace Pets",
-        order: 1
-    )
-    public static let naturePets = PetCategoryDescriptor(
-        id: "nature-pets",
-        displayName: "Nature Pets",
-        order: 2
-    )
-    public static let cozyPets = PetCategoryDescriptor(
-        id: "cozy-pets",
-        displayName: "Cozy Pets",
-        order: 3
-    )
-    public static let voxelPets = PetCategoryDescriptor(
-        id: "voxel-pets",
-        displayName: "Voxel Pets",
-        order: 4
-    )
 }
 
 public struct PetCapabilities: Equatable, Sendable {
@@ -116,7 +96,6 @@ public struct PetPresentationConfiguration: Equatable, Sendable {
 
 public enum PetRenderSource: Equatable, Sendable {
     case assetPack(PetArtPack)
-    case legacy(PetRenderFamily)
 }
 
 open class PetDefinition: @unchecked Sendable {
@@ -146,23 +125,4 @@ open class PetDefinition: @unchecked Sendable {
         self.renderSource = renderSource
     }
 
-    public init(
-        id: PetID,
-        displayName: String,
-        category: PetCategoryDescriptor,
-        maximumPixelation: PetSpritePixelation,
-        legacyRenderFamily: PetRenderFamily
-    ) {
-        self.id = id
-        self.displayName = displayName
-        self.category = category
-        self.capabilities = PetCapabilities(
-            maximumPixelation: maximumPixelation,
-            supportsStatusMoods: true,
-            supportsHoverExcitement: true
-        )
-        self.defaults = .standard
-        self.presentation = .standard
-        self.renderSource = .legacy(legacyRenderFamily)
-    }
 }

@@ -23,10 +23,11 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
         isVisible: Bool = true,
         overlayPosition: PetOverlayPosition = .default
     ) {
+        let resolvedPetID = PetCatalog.resolvedPetID(petID)
         self.id = id
         self.name = name
-        self.petID = petID
-        self.pixelation = PetCatalog.pixelation(pixelation, allowedFor: petID)
+        self.petID = resolvedPetID
+        self.pixelation = PetCatalog.pixelation(pixelation, allowedFor: resolvedPetID)
         self.sessionContextLineCount = PetSessionContextLineCount.clamped(sessionContextLineCount)
         self.animationSettings = animationSettings
         self.isVisible = isVisible
@@ -51,18 +52,19 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
         pixelation: PetSpritePixelation,
         sessionContextLineCount: Int
     ) -> PetInstance {
-        PetInstance(
+        let resolvedPetID = PetCatalog.resolvedPetID(petID)
+        return PetInstance(
             id: id,
-            name: PetCatalog.displayName(for: petID),
-            petID: petID,
+            name: PetCatalog.displayName(for: resolvedPetID),
+            petID: resolvedPetID,
             pixelation: pixelation,
             sessionContextLineCount: sessionContextLineCount
         )
     }
 
     public mutating func updatePetID(_ petID: PetID) {
-        self.petID = petID
-        pixelation = PetCatalog.pixelation(pixelation, allowedFor: petID)
+        self.petID = PetCatalog.resolvedPetID(petID)
+        pixelation = PetCatalog.pixelation(pixelation, allowedFor: self.petID)
     }
 
     public mutating func updatePixelation(_ pixelation: PetSpritePixelation) {
@@ -71,6 +73,12 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
 
     public mutating func updateSessionContextLineCount(_ lineCount: Int) {
         sessionContextLineCount = PetSessionContextLineCount.clamped(lineCount)
+    }
+
+    public func normalizedForCurrentCatalog() -> PetInstance {
+        var normalized = self
+        normalized.updatePetID(petID)
+        return normalized
     }
 }
 

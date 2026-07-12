@@ -42,9 +42,9 @@ struct PetInstanceTests {
         let instances = [
             PetInstance(
                 id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
-                name: "Classic",
-                petID: .classicCloud,
-                pixelation: .chunky,
+                name: "My Cloud",
+                petID: .cuteCloud,
+                pixelation: .medium,
                 sessionContextLineCount: 4,
                 animationSettings: PetAnimationSettings(
                     isHoverBounceEnabled: false,
@@ -66,24 +66,30 @@ struct PetInstanceTests {
     }
 
     @Test
-    func migratedDefaultUsesExistingPreferenceValues() {
+    func removedPetSelectionMigratesToCuteCloud() {
         let migrated = PetInstance.migratedDefault(
-            petID: .classicCloud,
+            petID: PetID(rawValue: "helper-cloud"),
             pixelation: .chunky,
             sessionContextLineCount: 3
         )
 
-        #expect(migrated.name == "Classic Cloud")
-        #expect(migrated.petID == .classicCloud)
-        #expect(migrated.pixelation == .chunky)
+        #expect(migrated.name == "Cute Cloud")
+        #expect(migrated.petID == .cuteCloud)
+        #expect(migrated.pixelation == .medium)
         #expect(migrated.sessionContextLineCount == 3)
     }
 
     @Test
-    func legacyClassicClaudeIDDecodesAsClassicCloud() throws {
-        let id = PetID(rawValue: "classic-claude")
+    func decodedLegacyInstanceNormalizesToCuteCloud() throws {
+        let currentData = try JSONEncoder().encode(PetInstance.defaultInstance())
+        let currentJSON = try #require(String(data: currentData, encoding: .utf8))
+        let legacyData = try #require(
+            currentJSON.replacingOccurrences(of: "cute-cloud", with: "voxel-cat").data(using: .utf8)
+        )
+        let decoded = try JSONDecoder().decode(PetInstance.self, from: legacyData)
+        let normalized = decoded.normalizedForCurrentCatalog()
 
-        #expect(id == .classicCloud)
-        #expect(id.rawValue == "classic-cloud")
+        #expect(normalized.petID == .cuteCloud)
+        #expect(normalized.pixelation == .off)
     }
 }

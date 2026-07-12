@@ -1,5 +1,7 @@
 # Pet Definition Classes and Generated Art Packs Implementation Plan
 
+> **Superseded:** The user replaced the phased multi-pet migration with a single-pet product direction on 2026-07-11. The completed implementation keeps only generated Cute Cloud, removes all legacy pets and selection UI, and normalizes saved legacy IDs to Cute Cloud.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the duplicated built-in pet catalog/render routing with immutable concrete pet definition classes, add optional asset-backed animation states with idle fallback, and migrate Cute Cloud to generated voxel-style art while all other pets retain their legacy renderers.

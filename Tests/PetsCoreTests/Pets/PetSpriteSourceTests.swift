@@ -4,33 +4,27 @@ import Testing
 @Suite
 struct PetSpriteSourceTests {
     @Test
-    func petSpriteRoutesDefinitionsToAssetOrLegacyRenderer() throws {
+    func petSpriteUsesOnlyGeneratedAssetRenderer() throws {
         let source = try source("Sources/Pets/PetSprites.swift")
 
-        #expect(source.contains("switch definition.renderSource"))
         #expect(source.contains("AssetPetSprite("))
-        #expect(source.contains("LegacyPetSpriteAdapter("))
         #expect(source.contains("PetVisualStateResolver.requestedState"))
+        #expect(!source.contains("LegacyPetSpriteAdapter"))
+        #expect(!source.contains("CloudFamilySprite"))
+        #expect(!source.contains("WorkspacePetSprite"))
+        #expect(!source.contains("NaturePetSprite"))
+        #expect(!source.contains("CozyPetSprite"))
+        #expect(!source.contains("VoxelPetSprite"))
     }
 
     @Test
-    func petSpriteRoutesVoxelPetsToVoxelRenderer() throws {
+    func petSpriteRetainsFramePlaybackMotionAndPixelation() throws {
         let source = try source("Sources/Pets/PetSprites.swift")
 
-        #expect(source.contains("case .voxel:"))
-        #expect(source.contains("VoxelPetSprite(petID: petID, status: status, isExcited: isExcited)"))
-    }
-
-    @Test
-    func voxelRendererDefinesAllVoxelPetsAndUsesStatusTint() throws {
-        let source = try source("Sources/Pets/PetSprites.swift")
-
-        #expect(source.contains("private struct VoxelPetSprite: View"))
-        #expect(source.contains("case .voxelCat:"))
-        #expect(source.contains("case .voxelSlime:"))
-        #expect(source.contains("case .voxelDragon:"))
-        #expect(source.contains("private var statusTint: Color"))
-        #expect(source.contains("statusColor(status == .unknown ? .idle : status)"))
+        #expect(source.contains("animation.frameIndex(at: elapsed)"))
+        #expect(source.contains("PetMotionModifier("))
+        #expect(source.contains("pixelatedSpriteEffect"))
+        #expect(source.contains("PixelatedSpriteRasterizer(pixelation: pixelation)"))
     }
 
     private func source(_ path: String) throws -> String {

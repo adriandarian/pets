@@ -68,7 +68,6 @@ private struct GeneralSettingsPane: View {
 private struct PetConfigurationPane: View {
     @ObservedObject var store: PetStore
     let respawnSelectedPet: () -> Void
-    @State private var isSpritePickerPresented = false
     @State private var isDeleteConfirmationPresented = false
 
     var body: some View {
@@ -82,9 +81,7 @@ private struct PetConfigurationPane: View {
                     SpriteSummaryPanel(
                         pet: selectedPet,
                         dominantStatus: store.dominantStatus
-                    ) {
-                        isSpritePickerPresented = true
-                    }
+                    )
 
                     HStack(alignment: .top, spacing: 14) {
                         BehaviorSettingsPanel(store: store)
@@ -102,12 +99,6 @@ private struct PetConfigurationPane: View {
         }
         .padding(22)
         .background(SettingsDesignPalette.root)
-        .sheet(isPresented: $isSpritePickerPresented) {
-            SpritePickerSheet(
-                store: store,
-                isPresented: $isSpritePickerPresented
-            )
-        }
         .confirmationDialog(
             "Delete \(selectedPet?.name ?? "Pet")?",
             isPresented: $isDeleteConfirmationPresented
@@ -349,7 +340,6 @@ private struct PetCarouselFade: View {
 private struct SpriteSummaryPanel: View {
     let pet: PetInstance
     let dominantStatus: HarnessSessionStatus
-    let changeSprite: () -> Void
 
     var body: some View {
         HStack(spacing: 18) {
@@ -383,10 +373,10 @@ private struct SpriteSummaryPanel: View {
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
 
-                Text(PetCatalog.displayName(for: pet.petID))
+                Text("Generated Cute Cloud")
                     .font(.title3.bold())
 
-                Text("Current sprite in \(petFamilyName). Open the picker to switch variants or choose another family.")
+                Text("The only built-in pet, with generated artwork for every activity state.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -399,12 +389,6 @@ private struct SpriteSummaryPanel: View {
                     }
                 }
 
-                Button("Change Sprite...") {
-                    changeSprite()
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(SettingsDesignPalette.accentStrong)
-                .padding(.top, 2)
             }
             .frame(width: 260, alignment: .leading)
         }
@@ -653,114 +637,5 @@ private struct PetDetailsSettingsPanel: View {
 
     private var contextLineCountSliderRange: ClosedRange<Double> {
         Double(PetSessionContextLineCount.supportedRange.lowerBound)...Double(PetSessionContextLineCount.supportedRange.upperBound)
-    }
-}
-
-private struct SpritePickerSheet: View {
-    @ObservedObject var store: PetStore
-    @Binding var isPresented: Bool
-    @State private var selectedCategoryID = PetCatalog.builtInCategories.first?.id
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Choose a Sprite")
-                        .font(.title2.bold())
-
-                    Text("Preview every available sprite before applying one.")
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-            }
-
-            Picker("Pet family", selection: $selectedCategoryID) {
-                ForEach(PetCatalog.builtInCategories, id: \.id) { category in
-                    Text(category.displayName)
-                        .tag(Optional(category.id))
-                }
-            }
-            .pickerStyle(.segmented)
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-                ForEach(selectedCategory.petIDs, id: \.self) { petID in
-                    SpritePickerCard(
-                        petID: petID,
-                        isSelected: petID == store.selectedPetInstance?.petID
-                    ) {
-                        store.updateSelectedPetID(petID)
-                        isPresented = false
-                    }
-                }
-            }
-
-            Spacer()
-
-            HStack {
-                Spacer()
-                Button("Cancel") {
-                    isPresented = false
-                }
-            }
-        }
-        .padding(22)
-        .frame(width: 680, height: 520)
-        .onAppear {
-            selectedCategoryID = store.selectedPetInstance
-                .flatMap { PetCatalog.category(for: $0.petID)?.id }
-                ?? selectedCategoryID
-        }
-    }
-
-    private var selectedCategory: PetCatalogCategory {
-        PetCatalog.builtInCategories.first { $0.id == selectedCategoryID }
-            ?? PetCatalog.builtInCategories[0]
-    }
-}
-
-private struct SpritePickerCard: View {
-    let petID: PetID
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(.quaternary.opacity(0.6))
-
-                    PetSprite(
-                        petID: petID,
-                        visualContext: PetVisualContext(
-                            status: .idle,
-                            hasActiveSessions: true,
-                            isHovered: false,
-                            animationSettings: .default
-                        ),
-                        pixelation: .off
-                    )
-                    .frame(width: 86, height: 86)
-                }
-                .frame(height: 116)
-
-                Text(PetCatalog.displayName(for: petID))
-                    .font(.headline)
-                    .lineLimit(1)
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity)
-            .contentShape(RoundedRectangle(cornerRadius: 14))
-        }
-        .buttonStyle(.plain)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(isSelected ? Color.accentColor.opacity(0.16) : Color.secondary.opacity(0.08))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(isSelected ? Color.accentColor.opacity(0.55) : Color.clear, lineWidth: 1)
-        }
     }
 }

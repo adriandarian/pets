@@ -17,8 +17,10 @@ struct PetSettingsPersistence {
     }
 
     func loadPetConfiguration() -> (instances: [PetInstance], selectedID: PetInstance.ID?, error: String?) {
-        let legacyPetID = defaults.string(forKey: DefaultsKey.selectedPetID).map(PetID.init(rawValue:))
-            ?? PetCatalog.defaultPetID
+        let legacyPetID = PetCatalog.resolvedPetID(
+            defaults.string(forKey: DefaultsKey.selectedPetID).map(PetID.init(rawValue:))
+                ?? PetCatalog.defaultPetID
+        )
         let legacyPixelation = PetCatalog.pixelation(
             PetSpritePixelation.persisted(rawValue: defaults.string(forKey: DefaultsKey.spritePixelation)),
             allowedFor: legacyPetID
@@ -66,7 +68,7 @@ struct PetSettingsPersistence {
         if let data = defaults.data(forKey: DefaultsKey.petInstances) {
             do {
                 let decoded = try JSONDecoder().decode([PetInstance].self, from: data)
-                return (decoded.map(normalizedCloudFamilyInstance), nil)
+                return (decoded.map { $0.normalizedForCurrentCatalog() }, nil)
             } catch {
                 return (
                     [],
@@ -81,17 +83,5 @@ struct PetSettingsPersistence {
             sessionContextLineCount: migratedContextLineCount
         )
         return ([], nil)
-    }
-
-    private func normalizedCloudFamilyInstance(_ instance: PetInstance) -> PetInstance {
-        let legacyClassicCloudName = ["Classic", "Claude"].joined(separator: " ")
-        guard instance.petID == .classicCloud,
-              instance.name == legacyClassicCloudName
-                || instance.name == PetCatalog.displayName(for: .classicCloud)
-        else { return instance }
-
-        var normalized = instance
-        normalized.name = PetCatalog.displayName(for: .classicCloud)
-        return normalized
     }
 }

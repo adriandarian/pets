@@ -1,8 +1,10 @@
 # Pet Definition Classes and Generated Art Packs Design
 
+> **Superseded:** The user replaced the phased multi-pet migration with a single-pet product direction on 2026-07-11. Cute Cloud is now the only registered pet; legacy definitions, renderers, and selection UI are intentionally removed, and saved legacy IDs normalize to Cute Cloud.
+
 **Date:** 2026-07-11
 
-**Status:** Approved in conversation; pending written-spec review
+**Status:** Superseded by the Cute-Cloud-only implementation
 
 ## Summary
 

@@ -154,10 +154,6 @@ final class PetStore: ObservableObject {
         isOpenAtLoginEnabled = isEnabled
     }
 
-    func selectPet(_ petID: PetID) {
-        updateSelectedPetID(petID)
-    }
-
     func updateSpritePixelation(_ requestedPixelation: PetSpritePixelation) {
         updateSelectedPetPixelation(requestedPixelation)
     }
@@ -188,15 +184,6 @@ final class PetStore: ObservableObject {
             pet.name = trimmedName.isEmpty
                 ? PetCatalog.displayName(for: pet.petID)
                 : trimmedName
-        }
-    }
-
-    func updateSelectedPetID(_ petID: PetID) {
-        updateSelectedPet { pet in
-            pet.updatePetID(petID)
-            if pet.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                pet.name = PetCatalog.displayName(for: petID)
-            }
         }
     }
 

@@ -78,56 +78,26 @@ struct ClaudeSessionScannerTests {
     }
 
     @Test
-    func cuteCloudPetIsDefaultWhileClassicPetStaysAvailable() {
+    func cuteCloudIsTheOnlyAvailablePet() {
         #expect(PetCatalog.defaultPetID == .cuteCloud)
-        #expect(PetCatalog.builtInPetIDs.first == .cuteCloud)
-        #expect(PetCatalog.builtInPetIDs.contains(.classicCloud))
-        #expect(PetCatalog.builtInPetIDs.contains(.helperCloud))
-        #expect(PetCatalog.builtInPetIDs.contains(.sleepCloud))
-        #expect(PetCatalog.builtInPetIDs.contains(.focusCloud))
-        #expect(PetCatalog.displayName(for: .classicCloud) == "Classic Cloud")
-        #expect(PetCatalog.renderFamily(for: .classicCloud) == .cloud)
+        #expect(PetCatalog.builtInPetIDs == [.cuteCloud])
+        #expect(PetCatalog.displayName(for: .cuteCloud) == "Cute Cloud")
     }
 
     @Test
-    func builtInPetsAreGroupedIntoPickerCategories() {
+    func catalogContainsOneCategoryForCuteCloud() {
         let categories = PetCatalog.builtInCategories
 
         #expect(categories.first?.id == "cloud-pets")
         #expect(categories.first?.displayName == "Cloud Pets")
-        #expect(categories.first?.petIDs == [
-            .cuteCloud,
-            .classicCloud,
-            .helperCloud,
-            .sleepCloud,
-            .focusCloud
-        ])
-        #expect(categories.count >= 4)
-
-        let categorizedPetIDs = categories.flatMap(\.petIDs)
-        #expect(categorizedPetIDs == PetCatalog.builtInPetIDs)
-        #expect(Set(categorizedPetIDs).count == PetCatalog.builtInPetIDs.count)
-
-        let nonCloudCategories = categories.dropFirst()
-        #expect(nonCloudCategories.allSatisfy { !$0.petIDs.isEmpty })
-        #expect(nonCloudCategories.allSatisfy { category in
-            category.petIDs.allSatisfy { !categories[0].petIDs.contains($0) }
-        })
-    }
-
-    @Test
-    func customPetIDsPreserveStableUserProvidedName() throws {
-        let customID = PetID.custom("tiny-bot")
-
-        #expect(customID.rawValue == "custom:tiny-bot")
-        #expect(PetID(rawValue: customID.rawValue) == customID)
+        #expect(categories.first?.petIDs == [.cuteCloud])
+        #expect(categories.count == 1)
     }
 
     @Test
     func petPixelationClampsToSpriteCapability() {
         #expect(PetCatalog.pixelation(.chunky, allowedFor: .cuteCloud) == .medium)
-        #expect(PetCatalog.pixelation(.chunky, allowedFor: .classicCloud) == .chunky)
-        #expect(PetCatalog.pixelation(.medium, allowedFor: PetID.custom("future")) == .off)
+        #expect(PetCatalog.pixelation(.chunky, allowedFor: PetID(rawValue: "classic-cloud")) == .medium)
     }
 
     @Test
