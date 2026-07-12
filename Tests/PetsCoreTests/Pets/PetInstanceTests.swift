@@ -9,7 +9,7 @@ struct PetInstanceTests {
         let instance = PetInstance.defaultInstance()
         let definition = PetCatalog.definition(for: PetCatalog.defaultPetID)
 
-        #expect(instance.name == "Cute Cloud")
+        #expect(instance.name == "Cumulus")
         #expect(instance.petID == .cuteCloud)
         #expect(instance.pixelation == definition?.defaults.pixelation)
         #expect(instance.sessionContextLineCount == definition?.defaults.sessionContextLineCount)
@@ -22,10 +22,40 @@ struct PetInstanceTests {
         var instance = PetInstance.defaultInstance()
         instance.pixelation = .chunky
 
-        instance.updatePetID(.cuteCloud)
+        instance.updatePetID(.cirrusCloud)
 
-        #expect(instance.petID == .cuteCloud)
+        #expect(instance.petID == .cirrusCloud)
         #expect(instance.pixelation == .medium)
+    }
+
+    @Test
+    func userInitiatedChangeRenamesLegacyCuteCloudDefault() {
+        var instance = PetInstance(
+            name: "Cute Cloud",
+            petID: .cuteCloud,
+            pixelation: .off,
+            sessionContextLineCount: 2
+        )
+
+        instance.changePetID(.nimbusCloud)
+
+        #expect(instance.petID == .nimbusCloud)
+        #expect(instance.name == "Nimbus")
+    }
+
+    @Test
+    func userInitiatedChangePreservesCustomName() {
+        var instance = PetInstance(
+            name: "Stormy",
+            petID: .cuteCloud,
+            pixelation: .off,
+            sessionContextLineCount: 2
+        )
+
+        instance.changePetID(.snowCloud)
+
+        #expect(instance.petID == .snowCloud)
+        #expect(instance.name == "Stormy")
     }
 
     @Test
@@ -73,10 +103,28 @@ struct PetInstanceTests {
             sessionContextLineCount: 3
         )
 
-        #expect(migrated.name == "Cute Cloud")
+        #expect(migrated.name == "Cumulus")
         #expect(migrated.petID == .cuteCloud)
         #expect(migrated.pixelation == .medium)
         #expect(migrated.sessionContextLineCount == 3)
+    }
+
+    @Test
+    func decodedCloudFamilySelectionRemainsSelected() throws {
+        let instance = PetInstance(
+            name: "Stormy",
+            petID: .nimbusCloud,
+            pixelation: .off,
+            sessionContextLineCount: 2
+        )
+
+        let decoded = try JSONDecoder().decode(
+            PetInstance.self,
+            from: JSONEncoder().encode(instance)
+        ).normalizedForCurrentCatalog()
+
+        #expect(decoded.petID == .nimbusCloud)
+        #expect(decoded.name == "Stormy")
     }
 
     @Test

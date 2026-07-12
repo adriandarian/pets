@@ -9,6 +9,7 @@ struct PetDefinitionTests {
         let instance = PetInstance.defaultInstance()
 
         #expect(definition.id == .cuteCloud)
+        #expect(definition is CumulusCloudPetDefinition)
         #expect(definition.defaults.pixelation == .off)
         #expect(instance.petID == definition.id)
     }

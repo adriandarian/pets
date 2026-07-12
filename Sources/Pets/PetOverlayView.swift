@@ -92,6 +92,19 @@ struct PetOverlayView: View {
                                 .onHover { hovering in
                                     isPetHovered = petInstance.animationSettings.isHoverBounceEnabled && hovering
                                 }
+                                .contextMenu {
+                                    ForEach(PetCatalog.builtInPetIDs, id: \.self) { petID in
+                                        Button {
+                                            store.selectPetInstance(petInstance.id)
+                                            store.selectPet(petID)
+                                        } label: {
+                                            Label(
+                                                PetCatalog.displayName(for: petID),
+                                                systemImage: petInstance.petID == petID ? "checkmark" : "cloud"
+                                            )
+                                        }
+                                    }
+                                }
 
                             ChatCollapseButton(
                                 isExpanded: areChatsExpanded,

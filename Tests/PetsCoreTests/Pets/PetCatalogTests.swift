@@ -4,30 +4,69 @@ import Testing
 @Suite
 struct PetCatalogTests {
     @Test
-    func cuteCloudIsTheOnlyRegisteredPet() throws {
-        #expect(PetCatalog.definitions.map(\.id) == [.cuteCloud])
-        #expect(PetCatalog.builtInPetIDs == [.cuteCloud])
+    func cloudFamilyIsTheOnlyRegisteredFamily() throws {
+        let cloudPetIDs: [PetID] = [
+            .cuteCloud,
+            .nimbusCloud,
+            .cirrusCloud,
+            .lenticularCloud,
+            .snowCloud,
+        ]
+
+        #expect(PetCatalog.definitions.map(\.id) == cloudPetIDs)
+        #expect(PetCatalog.builtInPetIDs == cloudPetIDs)
 
         let category = try #require(PetCatalog.builtInCategories.first)
         #expect(PetCatalog.builtInCategories.count == 1)
         #expect(category.id == "cloud-pets")
         #expect(category.displayName == "Cloud Pets")
-        #expect(category.petIDs == [.cuteCloud])
+        #expect(category.petIDs == cloudPetIDs)
     }
 
     @Test
-    func cuteCloudDefinitionOwnsEveryAnimationState() throws {
-        let cuteCloud = try #require(PetCatalog.definition(for: .cuteCloud))
+    func everyCloudSpeciesHasItsOwnConcreteDefinition() throws {
+        #expect(PetCatalog.definition(for: .cuteCloud) is CumulusCloudPetDefinition)
+        #expect(PetCatalog.definition(for: .nimbusCloud) is NimbusCloudPetDefinition)
+        #expect(PetCatalog.definition(for: .cirrusCloud) is CirrusCloudPetDefinition)
+        #expect(PetCatalog.definition(for: .lenticularCloud) is LenticularCloudPetDefinition)
+        #expect(PetCatalog.definition(for: .snowCloud) is SnowCloudPetDefinition)
 
-        #expect(cuteCloud is CuteCloudPetDefinition)
-        #expect(cuteCloud.displayName == "Cute Cloud")
-        #expect(cuteCloud.capabilities.maximumPixelation == .medium)
-        guard case let .assetPack(pack) = cuteCloud.renderSource else {
-            Issue.record("Cute Cloud must use an asset pack")
+        #expect(PetCatalog.displayName(for: .cuteCloud) == "Cumulus")
+        #expect(PetCatalog.displayName(for: .nimbusCloud) == "Nimbus")
+        #expect(PetCatalog.displayName(for: .cirrusCloud) == "Cirrus")
+        #expect(PetCatalog.displayName(for: .lenticularCloud) == "Lenticular")
+        #expect(PetCatalog.displayName(for: .snowCloud) == "Snow Cloud")
+    }
+
+    @Test
+    func cumulusOwnsEveryAnimationState() throws {
+        let cumulus = try #require(PetCatalog.definition(for: .cuteCloud))
+
+        #expect(cumulus.capabilities.maximumPixelation == .medium)
+        guard case let .assetPack(pack) = cumulus.renderSource else {
+            Issue.record("Cumulus must use an asset pack")
             return
         }
         for state in PetVisualState.allCases {
             #expect(pack.animation(for: state) != nil)
+        }
+    }
+
+    @Test
+    func newCloudSpeciesUseIdleFallbackForOptionalStates() throws {
+        for petID in [PetID.nimbusCloud, .cirrusCloud, .lenticularCloud, .snowCloud] {
+            let definition = try #require(PetCatalog.definition(for: petID))
+            guard case let .assetPack(pack) = definition.renderSource else {
+                Issue.record("Every cloud species must use an asset pack")
+                continue
+            }
+
+            #expect(pack.animation(for: .idle) != nil)
+            #expect(pack.animation(for: .busy) == nil)
+            #expect(pack.animation(for: .waiting) == nil)
+            #expect(pack.animation(for: .excited) == nil)
+            #expect(pack.animation(for: .sleeping) == nil)
+            #expect(pack.resolvedAnimation(for: .busy) == pack.idle)
         }
     }
 
@@ -40,8 +79,10 @@ struct PetCatalogTests {
     }
 
     @Test
-    func pixelationAlwaysUsesCuteCloudCapability() {
-        #expect(PetCatalog.pixelation(.chunky, allowedFor: .cuteCloud) == .medium)
+    func pixelationUsesCloudFamilyCapabilities() {
+        for petID in PetCatalog.builtInPetIDs {
+            #expect(PetCatalog.pixelation(.chunky, allowedFor: petID) == .medium)
+        }
         #expect(PetCatalog.pixelation(.chunky, allowedFor: PetID(rawValue: "helper-cloud")) == .medium)
     }
 }

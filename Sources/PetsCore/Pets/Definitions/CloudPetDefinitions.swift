@@ -1,23 +1,19 @@
 import Foundation
 
-public final class CuteCloudPetDefinition: PetDefinition, @unchecked Sendable {
+public final class CumulusCloudPetDefinition: PetDefinition, @unchecked Sendable {
     public init() {
         let artPack = PetArtPack(
-            idle: cuteCloudAnimation(state: "idle", duration: 1.1, motion: .breathe),
-            busy: cuteCloudAnimation(state: "busy", duration: 0.72, motion: .bob),
-            waiting: cuteCloudAnimation(state: "waiting", duration: 0.85, motion: .sway),
-            excited: cuteCloudAnimation(state: "excited", duration: 0.55, motion: .pulse),
-            sleeping: cuteCloudAnimation(state: "sleeping", duration: 1.4, motion: .breathe)
+            idle: cloudAnimation(slug: "cute-cloud", state: "idle", duration: 1.1, motion: .breathe),
+            busy: cloudAnimation(slug: "cute-cloud", state: "busy", duration: 0.72, motion: .bob),
+            waiting: cloudAnimation(slug: "cute-cloud", state: "waiting", duration: 0.85, motion: .sway),
+            excited: cloudAnimation(slug: "cute-cloud", state: "excited", duration: 0.55, motion: .pulse),
+            sleeping: cloudAnimation(slug: "cute-cloud", state: "sleeping", duration: 1.4, motion: .breathe)
         )
         super.init(
             id: .cuteCloud,
-            displayName: "Cute Cloud",
+            displayName: "Cumulus",
             category: .cloudPets,
-            capabilities: PetCapabilities(
-                maximumPixelation: .medium,
-                supportsStatusMoods: true,
-                supportsHoverExcitement: true
-            ),
+            capabilities: .cloudWithMoods,
             defaults: .standard,
             presentation: PetPresentationConfiguration(
                 contentScale: 1,
@@ -33,24 +29,135 @@ public final class CuteCloudPetDefinition: PetDefinition, @unchecked Sendable {
     }
 }
 
-private func cuteCloudAnimation(
-    state: String,
-    duration: TimeInterval,
-    motion: PetMotionPreset
+public final class NimbusCloudPetDefinition: PetDefinition, @unchecked Sendable {
+    public init() {
+        super.init(
+            id: .nimbusCloud,
+            displayName: "Nimbus",
+            category: .cloudPets,
+            capabilities: .cloudWithoutMoods,
+            defaults: .standard,
+            presentation: PetPresentationConfiguration(
+                contentScale: 0.94,
+                anchorX: 0,
+                anchorY: -1,
+                shadowWidth: 64,
+                shadowHeight: 10,
+                shadowOpacity: 0.16,
+                transitionDuration: 0.16
+            ),
+            renderSource: .assetPack(
+                PetArtPack(idle: cloudAnimation(slug: "nimbus-cloud", motion: .bob))
+            )
+        )
+    }
+}
+
+public final class CirrusCloudPetDefinition: PetDefinition, @unchecked Sendable {
+    public init() {
+        super.init(
+            id: .cirrusCloud,
+            displayName: "Cirrus",
+            category: .cloudPets,
+            capabilities: .cloudWithoutMoods,
+            defaults: .standard,
+            presentation: PetPresentationConfiguration(
+                contentScale: 0.96,
+                anchorX: 0,
+                anchorY: 1,
+                shadowWidth: 82,
+                shadowHeight: 9,
+                shadowOpacity: 0.13,
+                transitionDuration: 0.16
+            ),
+            renderSource: .assetPack(
+                PetArtPack(idle: cloudAnimation(slug: "cirrus-cloud", motion: .sway))
+            )
+        )
+    }
+}
+
+public final class LenticularCloudPetDefinition: PetDefinition, @unchecked Sendable {
+    public init() {
+        super.init(
+            id: .lenticularCloud,
+            displayName: "Lenticular",
+            category: .cloudPets,
+            capabilities: .cloudWithoutMoods,
+            defaults: .standard,
+            presentation: PetPresentationConfiguration(
+                contentScale: 0.96,
+                anchorX: 0,
+                anchorY: 0,
+                shadowWidth: 86,
+                shadowHeight: 10,
+                shadowOpacity: 0.14,
+                transitionDuration: 0.16
+            ),
+            renderSource: .assetPack(
+                PetArtPack(idle: cloudAnimation(slug: "lenticular-cloud", motion: .breathe))
+            )
+        )
+    }
+}
+
+public final class SnowCloudPetDefinition: PetDefinition, @unchecked Sendable {
+    public init() {
+        super.init(
+            id: .snowCloud,
+            displayName: "Snow Cloud",
+            category: .cloudPets,
+            capabilities: .cloudWithoutMoods,
+            defaults: .standard,
+            presentation: PetPresentationConfiguration(
+                contentScale: 0.94,
+                anchorX: 0,
+                anchorY: 1,
+                shadowWidth: 78,
+                shadowHeight: 10,
+                shadowOpacity: 0.15,
+                transitionDuration: 0.16
+            ),
+            renderSource: .assetPack(
+                PetArtPack(idle: cloudAnimation(slug: "snow-cloud", motion: .breathe))
+            )
+        )
+    }
+}
+
+private extension PetCapabilities {
+    static let cloudWithMoods = PetCapabilities(
+        maximumPixelation: .medium,
+        supportsStatusMoods: true,
+        supportsHoverExcitement: true
+    )
+
+    static let cloudWithoutMoods = PetCapabilities(
+        maximumPixelation: .medium,
+        supportsStatusMoods: false,
+        supportsHoverExcitement: true
+    )
+}
+
+private func cloudAnimation(
+    slug: String,
+    state: String = "idle",
+    duration: TimeInterval = 1.1,
+    motion: PetMotionPreset = .breathe
 ) -> PetAnimation {
     guard let animation = PetAnimation(
         frames: [
             PetAnimationFrame(
                 resourceName: "frame-000",
                 resourceExtension: "png",
-                subdirectory: "PetArt/cute-cloud/\(state)",
+                subdirectory: "PetArt/\(slug)/\(state)",
                 duration: duration
             )
         ],
         loopBehavior: .loop,
         motion: motion
     ) else {
-        preconditionFailure("Cute Cloud animation must contain a valid frame")
+        preconditionFailure("Cloud animation must contain a valid frame")
     }
     return animation
 }

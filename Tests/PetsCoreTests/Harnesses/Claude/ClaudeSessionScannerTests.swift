@@ -78,19 +78,25 @@ struct ClaudeSessionScannerTests {
     }
 
     @Test
-    func cuteCloudIsTheOnlyAvailablePet() {
+    func cumulusRemainsTheDefaultCloudPet() {
         #expect(PetCatalog.defaultPetID == .cuteCloud)
-        #expect(PetCatalog.builtInPetIDs == [.cuteCloud])
-        #expect(PetCatalog.displayName(for: .cuteCloud) == "Cute Cloud")
+        #expect(PetCatalog.builtInPetIDs == [
+            .cuteCloud,
+            .nimbusCloud,
+            .cirrusCloud,
+            .lenticularCloud,
+            .snowCloud,
+        ])
+        #expect(PetCatalog.displayName(for: .cuteCloud) == "Cumulus")
     }
 
     @Test
-    func catalogContainsOneCategoryForCuteCloud() {
+    func catalogContainsOneCloudFamilyCategory() {
         let categories = PetCatalog.builtInCategories
 
         #expect(categories.first?.id == "cloud-pets")
         #expect(categories.first?.displayName == "Cloud Pets")
-        #expect(categories.first?.petIDs == [.cuteCloud])
+        #expect(categories.first?.petIDs == PetCatalog.builtInPetIDs)
         #expect(categories.count == 1)
     }
 

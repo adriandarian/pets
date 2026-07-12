@@ -158,6 +158,10 @@ final class PetStore: ObservableObject {
         updateSelectedPetPixelation(requestedPixelation)
     }
 
+    func selectPet(_ petID: PetID) {
+        updateSelectedPetID(petID)
+    }
+
     func updateSessionContextLineCount(_ requestedLineCount: Int) {
         updateSelectedPetContextLineCount(requestedLineCount)
     }
@@ -184,6 +188,12 @@ final class PetStore: ObservableObject {
             pet.name = trimmedName.isEmpty
                 ? PetCatalog.displayName(for: pet.petID)
                 : trimmedName
+        }
+    }
+
+    func updateSelectedPetID(_ petID: PetID) {
+        updateSelectedPet { pet in
+            pet.changePetID(petID)
         }
     }
 

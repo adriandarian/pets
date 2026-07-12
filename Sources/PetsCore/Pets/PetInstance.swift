@@ -67,6 +67,20 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
         pixelation = PetCatalog.pixelation(pixelation, allowedFor: self.petID)
     }
 
+    public mutating func changePetID(_ petID: PetID) {
+        let previousPetID = self.petID
+        let previousDefaultName = PetCatalog.displayName(for: previousPetID)
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let usesDefaultName = trimmedName.isEmpty
+            || name == previousDefaultName
+            || (previousPetID == .cuteCloud && name == "Cute Cloud")
+
+        updatePetID(petID)
+        if usesDefaultName {
+            name = PetCatalog.displayName(for: self.petID)
+        }
+    }
+
     public mutating func updatePixelation(_ pixelation: PetSpritePixelation) {
         self.pixelation = PetCatalog.pixelation(pixelation, allowedFor: petID)
     }

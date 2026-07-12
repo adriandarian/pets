@@ -6,6 +6,10 @@ public struct PetID: RawRepresentable, Equatable, Hashable, Codable, Sendable {
     }
 
     public static let cuteCloud = PetID(rawValue: "cute-cloud")
+    public static let nimbusCloud = PetID(rawValue: "nimbus-cloud")
+    public static let cirrusCloud = PetID(rawValue: "cirrus-cloud")
+    public static let lenticularCloud = PetID(rawValue: "lenticular-cloud")
+    public static let snowCloud = PetID(rawValue: "snow-cloud")
 }
 
 public struct PetCatalogCategory: Equatable, Hashable, Sendable {
@@ -22,7 +26,13 @@ public struct PetCatalogCategory: Equatable, Hashable, Sendable {
 
 public enum PetCatalog {
     public static let defaultPetID = PetID.cuteCloud
-    public static let definitions: [PetDefinition] = [CuteCloudPetDefinition()]
+    public static let definitions: [PetDefinition] = [
+        CumulusCloudPetDefinition(),
+        NimbusCloudPetDefinition(),
+        CirrusCloudPetDefinition(),
+        LenticularCloudPetDefinition(),
+        SnowCloudPetDefinition(),
+    ]
 
     private static let definitionsByID = Dictionary(
         uniqueKeysWithValues: definitions.map { ($0.id, $0) }
@@ -32,17 +42,17 @@ public enum PetCatalog {
         PetCatalogCategory(
             id: PetCategoryDescriptor.cloudPets.id,
             displayName: PetCategoryDescriptor.cloudPets.displayName,
-            petIDs: [.cuteCloud]
+            petIDs: [.cuteCloud, .nimbusCloud, .cirrusCloud, .lenticularCloud, .snowCloud]
         )
     ]
-    public static let builtInPetIDs: [PetID] = [.cuteCloud]
+    public static let builtInPetIDs: [PetID] = builtInCategories.flatMap(\.petIDs)
 
     public static func resolvedPetID(_ petID: PetID) -> PetID {
         definitionsByID[petID] == nil ? defaultPetID : petID
     }
 
     public static func displayName(for petID: PetID) -> String {
-        definition(for: resolvedPetID(petID))?.displayName ?? "Cute Cloud"
+        definition(for: resolvedPetID(petID))?.displayName ?? "Cumulus"
     }
 
     public static func category(for petID: PetID) -> PetCatalogCategory? {
