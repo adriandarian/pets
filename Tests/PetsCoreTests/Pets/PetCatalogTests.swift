@@ -34,7 +34,23 @@ struct PetCatalogTests {
         #expect(cuteCloud is CuteCloudPetDefinition)
         #expect(PetCatalog.displayName(for: .cuteCloud) == cuteCloud.displayName)
         #expect(PetCatalog.maximumPixelation(for: .cuteCloud) == cuteCloud.capabilities.maximumPixelation)
-        #expect(PetCatalog.renderFamily(for: .cuteCloud) == .cuteCloud)
+        #expect(PetCatalog.renderFamily(for: .cuteCloud) == nil)
+    }
+
+    @Test
+    func cuteCloudUsesCompleteAssetPackWhileOtherPetsRemainLegacy() throws {
+        let cuteCloud = try #require(PetCatalog.definition(for: .cuteCloud))
+        guard case let .assetPack(pack) = cuteCloud.renderSource else {
+            Issue.record("Cute Cloud must use an asset pack")
+            return
+        }
+
+        for state in PetVisualState.allCases {
+            #expect(pack.animation(for: state) != nil)
+        }
+
+        let classic = try #require(PetCatalog.definition(for: .classicCloud))
+        #expect(classic.renderSource == .legacy(.cloud))
     }
 
     @Test

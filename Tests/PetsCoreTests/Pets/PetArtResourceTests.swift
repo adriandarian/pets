@@ -10,13 +10,13 @@ struct PetArtResourceTests {
         let existing = PetAnimationFrame(
             resourceName: "frame-000",
             resourceExtension: "png",
-            subdirectory: "PetArt/test/idle",
+            subdirectory: "PetArt/cute-cloud/idle",
             duration: 1
         )
         let missing = PetAnimationFrame(
             resourceName: "missing",
             resourceExtension: "png",
-            subdirectory: "PetArt/test/idle",
+            subdirectory: "PetArt/cute-cloud/idle",
             duration: 1
         )
 
