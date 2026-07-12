@@ -16,6 +16,11 @@ struct PetArtResourceTests {
     }
 
     @Test
+    func cirrusHasCompleteIdleLoop() throws {
+        try assertCompleteIdleLoop(petID: .cirrusCloud)
+    }
+
+    @Test
     func locatorFindsBundledFrameAndRejectsMissingFrame() {
         let existing = PetAnimationFrame(
             resourceName: "frame-000",

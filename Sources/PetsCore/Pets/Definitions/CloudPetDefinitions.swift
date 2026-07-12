@@ -71,7 +71,7 @@ public final class CirrusCloudPetDefinition: PetDefinition, @unchecked Sendable 
                 transitionDuration: 0.16
             ),
             renderSource: .assetPack(
-                PetArtPack(idle: cloudAnimation(slug: "cirrus-cloud", motion: .sway))
+                PetArtPack(idle: cloudIdleAnimation(slug: "cirrus-cloud", motion: .sway))
             )
         )
     }
