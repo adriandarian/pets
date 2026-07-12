@@ -76,7 +76,8 @@ struct PetOverlayView: View {
                                     status: store.dominantStatus,
                                     hasActiveSessions: !store.visibleSessions.isEmpty,
                                     isHovered: isPetHovered,
-                                    animationSettings: petInstance.animationSettings
+                                    animationSettings: petInstance.animationSettings,
+                                    reaction: store.currentReaction
                                 ),
                                 pixelation: petInstance.pixelation
                             )

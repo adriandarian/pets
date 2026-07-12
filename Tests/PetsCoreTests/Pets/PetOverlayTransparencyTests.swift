@@ -278,6 +278,31 @@ struct PetOverlayTransparencyTests {
         #expect(!source.contains("[ClaudeSession]"))
     }
 
+    @Test
+    func petStoreCoordinatesCompletionAndErrorReactions() throws {
+        let sourceURL = try sourceFile("Sources/Pets/PetStore.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+
+        #expect(source.contains("@Published private(set) var currentReaction: PetReaction?"))
+        #expect(source.contains("private var sessionTransitionDetector = PetSessionTransitionDetector()"))
+        #expect(source.contains("private static let completionReactionDuration: Duration = .seconds(4)"))
+        #expect(source.contains("sessionTransitionDetector.observe(scannedSessions)"))
+        #expect(source.contains("private func beginCompletionReaction()"))
+        #expect(source.contains("private func setLastError(_ error: String?)"))
+        #expect(source.contains("completionReactionTask?.cancel()"))
+        #expect(source.contains("guard let self, self.currentReaction == .completion else { return }"))
+        #expect(!source.contains("lastError = error.localizedDescription"))
+        #expect(!source.contains("lastError = nil"))
+    }
+
+    @Test
+    func liveOverlayForwardsCurrentReactionToPetSprite() throws {
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+
+        #expect(source.contains("reaction: store.currentReaction"))
+    }
+
     private func sourceFile(_ path: String) throws -> URL {
         try repositoryRoot().appending(path: path)
     }

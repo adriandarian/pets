@@ -6,6 +6,7 @@ import Foundation
 final class PetStore: ObservableObject {
     @Published private(set) var sessions: [HarnessSession] = []
     @Published private(set) var lastError: String?
+    @Published private(set) var currentReaction: PetReaction?
     private(set) var lastUpdated: Date?
     @Published private(set) var isOpenAtLoginEnabled = false
     @Published private(set) var petInstances: [PetInstance]
@@ -15,7 +16,10 @@ final class PetStore: ObservableObject {
     private let harness: any PetHarness
     private let settingsPersistence: PetSettingsPersistence
     private var refreshTask: Task<Void, Never>?
+    private var sessionTransitionDetector = PetSessionTransitionDetector()
+    private var completionReactionTask: Task<Void, Never>?
     private static let refreshInterval: Duration = .seconds(5)
+    private static let completionReactionDuration: Duration = .seconds(4)
 
     init(
         harness: any PetHarness = ClaudeHarness(),
@@ -28,10 +32,12 @@ final class PetStore: ObservableObject {
         self.petInstances = loadedInstances
         self.selectedPetInstanceID = loadedPetConfiguration.selectedID
         self.lastError = loadedPetConfiguration.error
+        self.currentReaction = loadedPetConfiguration.error == nil ? nil : .error
     }
 
     deinit {
         refreshTask?.cancel()
+        completionReactionTask?.cancel()
     }
 
     func start() {
@@ -229,7 +235,7 @@ final class PetStore: ObservableObject {
     }
 
     func recordError(_ error: String) {
-        lastError = error
+        setLastError(error)
         lastUpdated = Date()
     }
 
@@ -246,7 +252,7 @@ final class PetStore: ObservableObject {
                 }.value
                 applyActivationResult(result)
             } catch {
-                lastError = error.localizedDescription
+                setLastError(error.localizedDescription)
                 lastUpdated = Date()
             }
         }
@@ -259,10 +265,10 @@ final class PetStore: ObservableObject {
                 try await Task.detached {
                     try harness.sendReply(message, to: session)
                 }.value
-                lastError = nil
+                setLastError(nil)
                 await refresh()
             } catch {
-                lastError = error.localizedDescription
+                setLastError(error.localizedDescription)
                 lastUpdated = Date()
             }
         }
@@ -285,12 +291,19 @@ final class PetStore: ObservableObject {
     }
 
     private func applyRefreshResult(sessions scannedSessions: [HarnessSession]?, error: String?) {
-        if let scannedSessions, sessions != scannedSessions {
-            sessions = scannedSessions
-            dismissedSessions.formIntersection(scannedSessions.map(PetDismissedSession.init))
-        }
-        if lastError != error {
-            lastError = error
+        if let scannedSessions {
+            let didCompleteSession = sessionTransitionDetector.observe(scannedSessions)
+            if sessions != scannedSessions {
+                sessions = scannedSessions
+                dismissedSessions.formIntersection(scannedSessions.map(PetDismissedSession.init))
+            }
+
+            setLastError(error)
+            if error == nil, didCompleteSession {
+                beginCompletionReaction()
+            }
+        } else {
+            setLastError(error)
         }
         lastUpdated = Date()
     }
@@ -298,13 +311,44 @@ final class PetStore: ObservableObject {
     private func applyActivationResult(_ result: HarnessActivationResult) {
         switch result {
         case .focusedExactTarget, .activatedApp:
-            lastError = nil
+            setLastError(nil)
         case let .unsupportedHost(processName):
-            lastError = "Could not find a supported app for \(processName ?? "this session")."
+            setLastError("Could not find a supported app for \(processName ?? "this session").")
         case let .permissionDenied(reason):
-            lastError = reason
+            setLastError(reason)
         }
         lastUpdated = Date()
+    }
+
+    private func setLastError(_ error: String?) {
+        if error != nil {
+            completionReactionTask?.cancel()
+            completionReactionTask = nil
+            currentReaction = .error
+        } else if currentReaction == .error {
+            currentReaction = nil
+        }
+
+        if lastError != error {
+            lastError = error
+        }
+    }
+
+    private func beginCompletionReaction() {
+        completionReactionTask?.cancel()
+        currentReaction = .completion
+
+        completionReactionTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: Self.completionReactionDuration)
+            } catch {
+                return
+            }
+
+            guard let self, self.currentReaction == .completion else { return }
+            self.currentReaction = nil
+            self.completionReactionTask = nil
+        }
     }
 
     private func updateSelectedPet(_ mutate: (inout PetInstance) -> Void) {
