@@ -56,7 +56,11 @@ private struct AssetPetSprite: View {
 
     private var usesTimeline: Bool {
         visualContext.animationSettings.isIdleMotionEnabled
-            && (animation.frames.count > 1 || animation.motion != .none)
+            && (
+                animation.frames.count > 1
+                    || animation.motion != .none
+                    || visualContext.reaction != nil
+            )
     }
 
     var body: some View {
@@ -111,6 +115,13 @@ private struct AssetPetSprite: View {
                                 isEnabled: visualContext.animationSettings.isIdleMotionEnabled
                             )
                         )
+                        .modifier(
+                            PetReactionVisualModifier(
+                                reaction: visualContext.reaction,
+                                elapsed: elapsed,
+                                isMotionEnabled: visualContext.animationSettings.isIdleMotionEnabled
+                            )
+                        )
                 } else {
                     missingArtPlaceholder
                 }
@@ -154,6 +165,55 @@ private struct PetMotionModifier: ViewModifier {
             return AnyView(content.rotationEffect(.degrees(Double(phase) * 2.2)))
         case .pulse:
             return AnyView(content.scaleEffect(1 + phase * 0.04))
+        }
+    }
+}
+
+private struct PetReactionVisualModifier: ViewModifier {
+    let reaction: PetReaction?
+    let elapsed: TimeInterval
+    let isMotionEnabled: Bool
+
+    private var phase: CGFloat {
+        CGFloat(sin(elapsed * 2.8))
+    }
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        switch reaction {
+        case .some(.completion):
+            content
+                .saturation(1.18)
+                .overlay {
+                    LinearGradient(
+                        colors: [
+                            Color(red: 1.0, green: 0.72, blue: 0.24),
+                            Color(red: 1.0, green: 0.38, blue: 0.34),
+                            Color(red: 0.76, green: 0.35, blue: 0.72),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .blendMode(.screen)
+                    .opacity(0.72)
+                    .mask(content)
+                }
+                .shadow(
+                    color: Color(red: 1.0, green: 0.48, blue: 0.22).opacity(0.48),
+                    radius: 9,
+                    y: 1
+                )
+                .scaleEffect(isMotionEnabled ? 1 + (phase + 1) * 0.012 : 1)
+                .offset(y: isMotionEnabled ? -2 - phase * 1.2 : 0)
+        case .some(.error):
+            content
+                .saturation(0.28)
+                .brightness(-0.18)
+                .colorMultiply(Color(red: 0.55, green: 0.62, blue: 0.72))
+                .shadow(color: Color.black.opacity(0.42), radius: 7, y: 3)
+                .offset(y: isMotionEnabled ? 2 + abs(phase) * 0.8 : 0)
+        case nil:
+            content
         }
     }
 }

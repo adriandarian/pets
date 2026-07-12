@@ -27,6 +27,23 @@ struct PetSpriteSourceTests {
         #expect(source.contains("PixelatedSpriteRasterizer(pixelation: pixelation)"))
     }
 
+    @Test
+    func petSpriteAppliesTransparentReactionTreatmentsBeforePixelation() throws {
+        let source = try source("Sources/Pets/PetSprites.swift")
+
+        #expect(source.contains("PetReactionVisualModifier("))
+        #expect(source.contains("reaction: visualContext.reaction"))
+        #expect(source.contains("LinearGradient("))
+        #expect(source.contains(".mask(content)"))
+        #expect(source.contains(".saturation(0.28)"))
+        #expect(source.contains(".brightness(-0.18)"))
+        #expect(source.contains("visualContext.reaction != nil"))
+
+        let reactionModifier = try #require(source.range(of: "private struct PetReactionVisualModifier"))
+        let pixelation = try #require(source.range(of: "private extension View"))
+        #expect(reactionModifier.lowerBound < pixelation.lowerBound)
+    }
+
     private func source(_ path: String) throws -> String {
         let url = try repositoryRoot().appending(path: path)
         return try String(contentsOf: url, encoding: .utf8)
