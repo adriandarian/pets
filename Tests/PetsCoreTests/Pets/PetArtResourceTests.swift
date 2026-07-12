@@ -11,6 +11,11 @@ struct PetArtResourceTests {
     }
 
     @Test
+    func nimbusHasCompleteIdleLoop() throws {
+        try assertCompleteIdleLoop(petID: .nimbusCloud)
+    }
+
+    @Test
     func locatorFindsBundledFrameAndRejectsMissingFrame() {
         let existing = PetAnimationFrame(
             resourceName: "frame-000",

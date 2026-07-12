@@ -47,7 +47,7 @@ public final class NimbusCloudPetDefinition: PetDefinition, @unchecked Sendable 
                 transitionDuration: 0.16
             ),
             renderSource: .assetPack(
-                PetArtPack(idle: cloudAnimation(slug: "nimbus-cloud", motion: .bob))
+                PetArtPack(idle: cloudIdleAnimation(slug: "nimbus-cloud", motion: .bob))
             )
         )
     }
