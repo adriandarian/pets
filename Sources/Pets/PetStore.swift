@@ -293,7 +293,11 @@ final class PetStore: ObservableObject {
 
     private func applyRefreshResult(sessions scannedSessions: [HarnessSession]?, error: String?) {
         if let scannedSessions {
-            let didCompleteSession = sessionTransitionDetector.observe(scannedSessions)
+            let wasShowingError = lastError != nil
+            let didCompleteSession = sessionTransitionDetector.observe(
+                scannedSessions,
+                suppressCompletion: wasShowingError
+            )
             if sessions != scannedSessions {
                 sessions = scannedSessions
                 dismissedSessions.formIntersection(scannedSessions.map(PetDismissedSession.init))

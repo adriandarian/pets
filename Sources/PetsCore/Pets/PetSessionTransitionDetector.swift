@@ -4,7 +4,10 @@ public struct PetSessionTransitionDetector: Sendable {
     public init() {}
 
     @discardableResult
-    public mutating func observe(_ sessions: [HarnessSession]) -> Bool {
+    public mutating func observe(
+        _ sessions: [HarnessSession],
+        suppressCompletion: Bool = false
+    ) -> Bool {
         var currentStatuses: [String: HarnessSessionStatus] = [:]
         for session in sessions {
             currentStatuses[session.id] = session.status
@@ -12,6 +15,7 @@ public struct PetSessionTransitionDetector: Sendable {
 
         defer { previousStatuses = currentStatuses }
         guard let previousStatuses else { return false }
+        guard !suppressCompletion else { return false }
 
         return currentStatuses.contains { id, status in
             guard status == .idle, let previousStatus = previousStatuses[id] else {

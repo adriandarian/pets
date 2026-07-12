@@ -286,7 +286,14 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("@Published private(set) var currentReaction: PetReaction?"))
         #expect(source.contains("private var sessionTransitionDetector = PetSessionTransitionDetector()"))
         #expect(source.contains("private static let completionReactionDuration: Duration = .seconds(4)"))
-        #expect(source.contains("sessionTransitionDetector.observe(scannedSessions)"))
+        let errorCapture = try #require(source.range(of: "let wasShowingError = lastError != nil"))
+        let suppressionInput = try #require(source.range(of: "suppressCompletion: wasShowingError"))
+        let errorClear = try #require(source.range(
+            of: "setLastError(error)",
+            range: suppressionInput.upperBound..<source.endIndex
+        ))
+        #expect(errorCapture.lowerBound < suppressionInput.lowerBound)
+        #expect(suppressionInput.lowerBound < errorClear.lowerBound)
         #expect(source.contains("private func beginCompletionReaction()"))
         #expect(source.contains("private func setLastError(_ error: String?)"))
         #expect(source.contains("completionReactionTask?.cancel()"))

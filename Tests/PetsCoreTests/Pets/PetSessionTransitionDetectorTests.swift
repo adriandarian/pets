@@ -77,6 +77,22 @@ struct PetSessionTransitionDetectorTests {
         #expect(idleObservation)
     }
 
+    @Test
+    func suppressedCompletionAdvancesSnapshotWithoutReplayingTransition() {
+        var detector = PetSessionTransitionDetector()
+
+        let initialObservation = detector.observe([session(id: "chat", status: .busy)])
+        let suppressedIdleObservation = detector.observe(
+            [session(id: "chat", status: .idle)],
+            suppressCompletion: true
+        )
+        let unchangedIdleObservation = detector.observe([session(id: "chat", status: .idle)])
+
+        #expect(!initialObservation)
+        #expect(!suppressedIdleObservation)
+        #expect(!unchangedIdleObservation)
+    }
+
     private func session(
         harnessID: String = "test-harness",
         id: String,
