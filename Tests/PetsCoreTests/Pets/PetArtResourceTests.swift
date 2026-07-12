@@ -120,10 +120,52 @@ struct PetArtResourceTests {
         ))
         context.setFillColor(NSColor.white.cgColor)
         context.fill(CGRect(x: 8, y: 9, width: 6, height: 5))
-        context.fill(CGRect(x: 0, y: 0, width: 2, height: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 2, height: 4))
 
         let image = try #require(context.makeImage())
         #expect(alphaBounds(in: image) == CGRect(x: 8, y: 18, width: 6, height: 5))
+    }
+
+    @Test
+    func alphaBoundsIncludeSubstantiveDetachedFeatures() throws {
+        let context = try #require(CGContext(
+            data: nil,
+            width: 32,
+            height: 32,
+            bitsPerComponent: 8,
+            bytesPerRow: 32 * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        context.setFillColor(NSColor.white.cgColor)
+        context.fill(CGRect(x: 8, y: 9, width: 6, height: 5))
+        context.fill(CGRect(x: 24, y: 12, width: 4, height: 4))
+
+        let image = try #require(context.makeImage())
+        #expect(alphaBounds(in: image) == CGRect(x: 8, y: 16, width: 20, height: 7))
+    }
+
+    @Test
+    func lenticularEarlyHoverBandsMoveOppositelyAndPeakDeepens() throws {
+        let definition = try #require(PetCatalog.definition(for: .lenticularCloud))
+        guard case let .assetPack(pack) = definition.renderSource else {
+            Issue.record("Lenticular must use an asset pack")
+            return
+        }
+        let images = try pack.idle.frames.prefix(3).map { frame -> CGImage in
+            let url = try #require(PetArtResourceLocator.url(for: frame))
+            let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+            return try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        }
+        let canonical = try #require(lenticularBandSample(in: images[0]))
+        let earlyHover = try #require(lenticularBandSample(in: images[1]))
+        let peak = try #require(lenticularBandSample(in: images[2]))
+
+        #expect(earlyHover.upperMidX <= canonical.upperMidX - 4)
+        #expect(earlyHover.lowerMidX >= canonical.lowerMidX + 4)
+        #expect(peak.upperMidX <= earlyHover.upperMidX - 0.25)
+        #expect(peak.lowerMidX >= earlyHover.lowerMidX + 1)
+        #expect(peak.bounds.midY < earlyHover.bounds.midY)
     }
 
     private func assertCompleteIdleLoop(petID: PetID) throws {
@@ -141,6 +183,48 @@ struct PetArtResourceTests {
     }
 
     private func alphaBounds(in image: CGImage) -> CGRect? {
+        let pixels = substantiveAlphaPixels(in: image)
+        guard let first = pixels.first else { return nil }
+        var minX = first.x
+        var maxX = first.x
+        var minY = first.y
+        var maxY = first.y
+        for pixel in pixels.dropFirst() {
+            minX = min(minX, pixel.x)
+            maxX = max(maxX, pixel.x)
+            minY = min(minY, pixel.y)
+            maxY = max(maxY, pixel.y)
+        }
+        return CGRect(
+            x: minX,
+            y: minY,
+            width: maxX - minX + 1,
+            height: maxY - minY + 1
+        )
+    }
+
+    private func lenticularBandSample(
+        in image: CGImage
+    ) -> (upperMidX: CGFloat, lowerMidX: CGFloat, bounds: CGRect)? {
+        let pixels = substantiveAlphaPixels(in: image)
+        guard let bounds = alphaBounds(in: image) else { return nil }
+
+        // Relative crops remain stable as the character rises and its silhouette breathes:
+        // the top 40% isolates the cap assembly, while the bottom 28% isolates the base.
+        let upperLimit = bounds.minY + bounds.height * 0.40
+        let lowerLimit = bounds.maxY - bounds.height * 0.28
+        let upper = pixels.filter { CGFloat($0.y) < upperLimit }
+        let lower = pixels.filter { CGFloat($0.y) >= lowerLimit }
+        guard !upper.isEmpty, !lower.isEmpty else { return nil }
+
+        return (
+            upperMidX: upper.reduce(CGFloat.zero) { $0 + CGFloat($1.x) } / CGFloat(upper.count),
+            lowerMidX: lower.reduce(CGFloat.zero) { $0 + CGFloat($1.x) } / CGFloat(lower.count),
+            bounds: bounds
+        )
+    }
+
+    private func substantiveAlphaPixels(in image: CGImage) -> [(x: Int, y: Int)] {
         let bitmap = NSBitmapImageRep(cgImage: image)
         let width = image.width
         let height = image.height
@@ -152,26 +236,23 @@ struct PetArtResourceTests {
         }
 
         var visited = [Bool](repeating: false, count: occupied.count)
-        var largest: (pixelCount: Int, bounds: CGRect)?
+        var substantivePixels: [(x: Int, y: Int)] = []
+
+        // Ignore only tiny extraction noise while retaining detached sprite details such as
+        // raindrops. Sixteen occupied pixels is above Lenticular's 8-pixel speck and far
+        // below Nimbus's smallest legitimate detached weather component (223 pixels).
+        let minimumSubstantiveComponentPixels = 16
 
         for start in occupied.indices where occupied[start] && !visited[start] {
             var queue = [start]
             var cursor = 0
             visited[start] = true
-            var minX = start % width
-            var maxX = minX
-            var minY = start / width
-            var maxY = minY
 
             while cursor < queue.count {
                 let index = queue[cursor]
                 cursor += 1
                 let x = index % width
                 let y = index / width
-                minX = min(minX, x)
-                maxX = max(maxX, x)
-                minY = min(minY, y)
-                maxY = max(maxY, y)
 
                 for neighborY in max(0, y - 1)...min(height - 1, y + 1) {
                     for neighborX in max(0, x - 1)...min(width - 1, x + 1) {
@@ -184,17 +265,11 @@ struct PetArtResourceTests {
                 }
             }
 
-            let bounds = CGRect(
-                x: minX,
-                y: minY,
-                width: maxX - minX + 1,
-                height: maxY - minY + 1
-            )
-            if queue.count > (largest?.pixelCount ?? 0) {
-                largest = (queue.count, bounds)
+            if queue.count >= minimumSubstantiveComponentPixels {
+                substantivePixels.append(contentsOf: queue.map { ($0 % width, $0 / width) })
             }
         }
 
-        return largest?.bounds
+        return substantivePixels
     }
 }
