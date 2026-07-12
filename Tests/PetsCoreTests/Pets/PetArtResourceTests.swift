@@ -100,7 +100,7 @@ struct PetArtResourceTests {
     private func assertCompleteIdleLoop(petID: PetID) throws {
         let definition = try #require(PetCatalog.definition(for: petID))
         guard case let .assetPack(pack) = definition.renderSource else {
-            Issue.record("Cumulus must use an asset pack")
+            Issue.record("\(definition.displayName) must use an asset pack")
             return
         }
 
