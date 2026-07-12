@@ -16,7 +16,7 @@ final class PetStore: ObservableObject {
     private let harness: any PetHarness
     private let settingsPersistence: PetSettingsPersistence
     private var refreshTask: Task<Void, Never>?
-    private var sessionTransitionDetector = PetSessionTransitionDetector()
+    private var sessionObservationCoordinator = PetSessionObservationCoordinator()
     private var completionReactionTask: Task<Void, Never>?
     private var completionReactionExpiry = PetCompletionReactionExpiry()
     private static let refreshInterval: Duration = .seconds(5)
@@ -34,6 +34,7 @@ final class PetStore: ObservableObject {
         self.selectedPetInstanceID = loadedPetConfiguration.selectedID
         self.lastError = loadedPetConfiguration.error
         self.currentReaction = loadedPetConfiguration.error == nil ? nil : .error
+        self.sessionObservationCoordinator.recordError(loadedPetConfiguration.error)
     }
 
     deinit {
@@ -293,11 +294,8 @@ final class PetStore: ObservableObject {
 
     private func applyRefreshResult(sessions scannedSessions: [HarnessSession]?, error: String?) {
         if let scannedSessions {
-            let wasShowingError = lastError != nil
-            let didCompleteSession = sessionTransitionDetector.observe(
-                scannedSessions,
-                suppressCompletion: wasShowingError
-            )
+            let didCompleteSession = sessionObservationCoordinator
+                .observeSuccessfulSessions(scannedSessions)
             if sessions != scannedSessions {
                 sessions = scannedSessions
                 dismissedSessions.formIntersection(scannedSessions.map(PetDismissedSession.init))
@@ -326,6 +324,8 @@ final class PetStore: ObservableObject {
     }
 
     private func setLastError(_ error: String?) {
+        sessionObservationCoordinator.recordError(error)
+
         if error != nil {
             completionReactionTask?.cancel()
             completionReactionTask = nil

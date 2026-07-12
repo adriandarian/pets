@@ -284,18 +284,19 @@ struct PetOverlayTransparencyTests {
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("@Published private(set) var currentReaction: PetReaction?"))
-        #expect(source.contains("private var sessionTransitionDetector = PetSessionTransitionDetector()"))
+        #expect(source.contains("private var sessionObservationCoordinator = PetSessionObservationCoordinator()"))
         #expect(source.contains("private static let completionReactionDuration: Duration = .seconds(4)"))
-        let errorCapture = try #require(source.range(of: "let wasShowingError = lastError != nil"))
-        let suppressionInput = try #require(source.range(of: "suppressCompletion: wasShowingError"))
+        let sessionObservation = try #require(source.range(
+            of: ".observeSuccessfulSessions(scannedSessions)"
+        ))
         let errorClear = try #require(source.range(
             of: "setLastError(error)",
-            range: suppressionInput.upperBound..<source.endIndex
+            range: sessionObservation.upperBound..<source.endIndex
         ))
-        #expect(errorCapture.lowerBound < suppressionInput.lowerBound)
-        #expect(suppressionInput.lowerBound < errorClear.lowerBound)
+        #expect(sessionObservation.lowerBound < errorClear.lowerBound)
         #expect(source.contains("private func beginCompletionReaction()"))
         #expect(source.contains("private func setLastError(_ error: String?)"))
+        #expect(source.contains("sessionObservationCoordinator.recordError(error)"))
         #expect(source.contains("completionReactionTask?.cancel()"))
         #expect(source.contains("private var completionReactionExpiry = PetCompletionReactionExpiry()"))
         #expect(source.contains("completionReactionExpiry.cancel()"))
