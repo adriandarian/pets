@@ -4,19 +4,22 @@ public struct PetVisualContext: Equatable, Sendable {
     public let isHovered: Bool
     public let animationSettings: PetAnimationSettings
     public let reaction: PetReaction?
+    public let animationPhaseOffset: Double
 
     public init(
         status: HarnessSessionStatus,
         hasActiveSessions: Bool,
         isHovered: Bool,
         animationSettings: PetAnimationSettings,
-        reaction: PetReaction? = nil
+        reaction: PetReaction? = nil,
+        animationPhaseOffset: Double = 0
     ) {
         self.status = status
         self.hasActiveSessions = hasActiveSessions
         self.isHovered = isHovered
         self.animationSettings = animationSettings
         self.reaction = reaction
+        self.animationPhaseOffset = min(0.999_999, max(0, animationPhaseOffset))
     }
 }
 

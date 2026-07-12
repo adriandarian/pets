@@ -107,6 +107,18 @@ struct PetVisualStateResolverTests {
         #expect(PetVisualStateResolver.requestedState(for: context) == .completion)
     }
 
+    @Test
+    func visualContextDefaultsAnimationPhaseToZero() {
+        let context = PetVisualContext(
+            status: .idle,
+            hasActiveSessions: true,
+            isHovered: false,
+            animationSettings: .default
+        )
+
+        #expect(context.animationPhaseOffset == 0)
+    }
+
     private func context(status: HarnessSessionStatus) -> PetVisualContext {
         PetVisualContext(
             status: status,
