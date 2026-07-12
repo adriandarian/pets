@@ -58,6 +58,9 @@ private struct PetConfigurationPane: View {
     var body: some View {
         NavigationSplitView {
             PetSidebar(store: store)
+                .background {
+                    EdgeToEdgeSidebarBackground()
+                }
                 .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 260)
         } detail: {
             if let selectedPet {
@@ -96,6 +99,14 @@ private struct PetConfigurationPane: View {
 
     private var selectedPet: PetInstance? {
         store.selectedPetInstance
+    }
+}
+
+private struct EdgeToEdgeSidebarBackground: View {
+    var body: some View {
+        Rectangle()
+            .fill(.thinMaterial)
+            .ignoresSafeArea(.container, edges: [.top, .leading, .bottom])
     }
 }
 
@@ -183,7 +194,7 @@ private struct PetDetailPane: View {
     let deletePet: () -> Void
 
     var body: some View {
-        ScrollView {
+        ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 16) {
                 header
 
