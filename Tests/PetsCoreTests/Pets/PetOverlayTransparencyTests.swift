@@ -170,51 +170,50 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
-    func petSettingsUseContainedCarouselAndTwoColumnControls() throws {
+    func petSettingsUseNativeAdaptiveSidebarAndDetailLayout() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("PetInstanceCarouselView("))
-        #expect(source.contains("ScrollView(.horizontal, showsIndicators: false)"))
-        #expect(source.contains("PetCarouselArrow(systemName: \"chevron.left\")"))
-        #expect(source.contains("PetCarouselArrow(systemName: \"chevron.right\")"))
+        #expect(source.contains("NavigationSplitView"))
+        #expect(source.contains("private struct PetSidebar: View"))
+        #expect(source.contains("List(selection: selectedPetBinding)"))
+        #expect(source.contains(".listStyle(.sidebar)"))
+        #expect(source.contains("private struct PetDetailPane: View"))
         #expect(source.contains("SpritePreviewGridBackground()"))
-        #expect(source.contains("SettingsDesignPalette.root"))
+        #expect(source.contains("Color(nsColor: .separatorColor)"))
         #expect(source.contains("PetCatalog.category(for: pet.petID)?.displayName"))
-        #expect(source.contains("SpriteSummaryPanel("))
         #expect(source.contains("Text(PetCatalog.displayName(for: pet.petID))"))
+        #expect(source.contains("Menu {"))
+        #expect(source.contains("Button(\"Duplicate\")"))
+        #expect(source.contains("Button(\"Delete\", role: .destructive)"))
         #expect(source.contains("Button(\"Change Sprite...\")"))
         #expect(source.contains("SpritePickerSheet"))
         #expect(source.contains("Button(\"Delete Pet\", role: .destructive)"))
         #expect(source.contains("store.removeSelectedPet()"))
         #expect(source.contains("EmptyPetCollectionView"))
         #expect(!source.contains(".disabled(store.petInstances.count <= 1)"))
-        #expect(source.contains("BehaviorSettingsPanel("))
-        #expect(source.contains("PetDetailsSettingsPanel("))
-        #expect(source.contains("HStack(alignment: .top, spacing: 14)"))
         #expect(source.contains("SettingSwitchRow(\"Hover bounce\""))
-        #expect(source.contains(".toggleStyle(GradientSettingsToggleStyle())"))
-        #expect(source.contains("LinearGradient(colors: [SettingsDesignPalette.switchPink, SettingsDesignPalette.switchTeal]"))
-        #expect(source.contains(".frame(width: 18, height: 18)"))
-        #expect(source.contains(".frame(width: 42, height: 24)"))
-        #expect(source.contains(".frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)"))
+        #expect(source.contains(".toggleStyle(.switch)"))
         #expect(source.contains("TextField(\"\", text: nameBinding)"))
-        #expect(!source.contains("private struct PetInstanceListView"))
-        #expect(!source.contains("List(selection: selectedPetBinding)"))
+        #expect(!source.contains(".preferredColorScheme("))
+        #expect(!source.contains("SettingsDesignPalette"))
+        #expect(!source.contains("GradientSettingsToggleStyle"))
+        #expect(!source.contains("PetInstanceCarouselView"))
+        #expect(!source.contains("ScrollView(.horizontal"))
     }
 
     @Test
-    func petCarouselAffordancesOnlyShowWhenContentOverflows() throws {
+    func petSidebarSelectionUsesStoreAsSourceOfTruth() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("let isOverflowing = carouselContentWidth > proxy.size.width"))
-        #expect(source.contains("if isOverflowing {"))
-        #expect(source.contains("ScrollView(.horizontal, showsIndicators: false)"))
-        #expect(source.contains("PetCarouselArrow(systemName: \"chevron.left\")"))
-        #expect(source.contains("PetCarouselArrow(systemName: \"chevron.right\")"))
-        #expect(!source.contains("PetCarouselEndCapBar"))
-        #expect(!source.contains("PetCarouselScrollbar"))
+        #expect(source.contains("get: { store.selectedPetInstanceID }"))
+        #expect(source.contains("store.selectPetInstance(selectedID)"))
+        #expect(source.contains("ForEach(store.petInstances)"))
+        #expect(source.contains("PetSidebarRow(pet: pet)"))
+        #expect(source.contains("store.addPet()"))
+        #expect(!source.contains("carouselContentWidth"))
+        #expect(!source.contains("PetCarouselArrow"))
     }
 
     @Test

@@ -26,23 +26,7 @@ struct PetSettingsView: View {
             }
         }
         .frame(width: 900, height: 620)
-        .scenePadding()
-        .tint(SettingsDesignPalette.accent)
-        .preferredColorScheme(.dark)
     }
-}
-
-private enum SettingsDesignPalette {
-    static let root = Color(red: 0.08, green: 0.12, blue: 0.10)
-    static let panel = Color(red: 0.13, green: 0.18, blue: 0.15)
-    static let panelRaised = Color(red: 0.16, green: 0.22, blue: 0.18)
-    static let inset = Color(red: 0.10, green: 0.14, blue: 0.12)
-    static let border = Color.white.opacity(0.11)
-    static let selectedFill = Color(red: 0.20, green: 0.36, blue: 0.34)
-    static let accent = Color(red: 0.38, green: 0.78, blue: 0.72)
-    static let accentStrong = Color(red: 0.27, green: 0.58, blue: 0.52)
-    static let switchPink = Color(red: 1.00, green: 0.41, blue: 0.66)
-    static let switchTeal = Color(red: 0.40, green: 0.85, blue: 0.81)
 }
 
 private struct GeneralSettingsPane: View {
@@ -72,36 +56,24 @@ private struct PetConfigurationPane: View {
     @State private var isDeleteConfirmationPresented = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            PetInstanceCarouselView(store: store)
-
+        NavigationSplitView {
+            PetSidebar(store: store)
+                .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 260)
+        } detail: {
             if let selectedPet {
-                selectedPetHeader(for: selectedPet)
-
-                VStack(spacing: 14) {
-                    SpriteSummaryPanel(
-                        pet: selectedPet,
-                        dominantStatus: store.dominantStatus
-                    ) {
-                        isSpritePickerPresented = true
-                    }
-
-                    HStack(alignment: .top, spacing: 14) {
-                        BehaviorSettingsPanel(store: store)
-                            .frame(maxWidth: .infinity, alignment: .top)
-
-                        PetDetailsSettingsPanel(store: store)
-                            .frame(maxWidth: .infinity, alignment: .top)
-                    }
-                }
+                PetDetailPane(
+                    store: store,
+                    pet: selectedPet,
+                    respawnSelectedPet: respawnSelectedPet,
+                    changeSprite: { isSpritePickerPresented = true },
+                    deletePet: { isDeleteConfirmationPresented = true }
+                )
             } else {
                 EmptyPetCollectionView {
                     store.addPet()
                 }
             }
         }
-        .padding(22)
-        .background(SettingsDesignPalette.root)
         .sheet(isPresented: $isSpritePickerPresented) {
             SpritePickerSheet(
                 store: store,
@@ -125,42 +97,170 @@ private struct PetConfigurationPane: View {
     private var selectedPet: PetInstance? {
         store.selectedPetInstance
     }
+}
 
-    private func selectedPetHeader(for selectedPet: PetInstance) -> some View {
-        HStack(alignment: .center, spacing: 16) {
+private struct PetSidebar: View {
+    @ObservedObject var store: PetStore
+
+    var body: some View {
+        VStack(spacing: 0) {
+            List(selection: selectedPetBinding) {
+                Section("My Pets") {
+                    ForEach(store.petInstances) { pet in
+                        PetSidebarRow(pet: pet)
+                            .tag(pet.id)
+                    }
+                }
+            }
+            .listStyle(.sidebar)
+
+            Divider()
+
+            HStack {
+                Button {
+                    store.addPet()
+                } label: {
+                    Label("Add Pet", systemImage: "plus")
+                }
+                .buttonStyle(.borderless)
+                .help("Add Pet")
+
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+        }
+    }
+
+    private var selectedPetBinding: Binding<PetInstance.ID?> {
+        Binding(
+            get: { store.selectedPetInstanceID },
+            set: { selectedID in
+                guard let selectedID else { return }
+                store.selectPetInstance(selectedID)
+            }
+        )
+    }
+}
+
+private struct PetSidebarRow: View {
+    let pet: PetInstance
+
+    var body: some View {
+        HStack(spacing: 10) {
+            PetSprite(
+                petID: pet.petID,
+                visualContext: PetVisualContext(
+                    status: .idle,
+                    hasActiveSessions: true,
+                    isHovered: false,
+                    animationSettings: pet.animationSettings
+                ),
+                pixelation: pet.pixelation
+            )
+            .frame(width: 34, height: 34)
+
             VStack(alignment: .leading, spacing: 2) {
-                Text(selectedPet.name)
-                    .font(.title2.bold())
+                Text(pet.name)
+                    .lineLimit(1)
 
-                Text("\(selectedPet.isVisible ? "Visible" : "Hidden") - \(petFamilyName(for: selectedPet.petID)) - active session aware")
+                Text(pet.isVisible ? "Visible" : "Hidden")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+    }
+}
+
+private struct PetDetailPane: View {
+    @ObservedObject var store: PetStore
+    let pet: PetInstance
+    let respawnSelectedPet: () -> Void
+    let changeSprite: () -> Void
+    let deletePet: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                header
+
+                PetPreview(
+                    pet: pet,
+                    dominantStatus: store.dominantStatus
+                )
+
+                PetDetailsSection(store: store)
+
+                PetAppearanceSection(
+                    pet: pet,
+                    changeSprite: changeSprite
+                )
+
+                PetBehaviorSection(store: store)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 12) {
+            PetSprite(
+                petID: pet.petID,
+                visualContext: PetVisualContext(
+                    status: .idle,
+                    hasActiveSessions: true,
+                    isHovered: false,
+                    animationSettings: pet.animationSettings
+                ),
+                pixelation: pet.pixelation
+            )
+            .frame(width: 42, height: 42)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(pet.name)
+                    .font(.title2.weight(.semibold))
+
+                Text("\(petFamilyName) · \(pet.isVisible ? "Visible" : "Hidden") · Session aware")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
-            Spacer()
+            Spacer(minLength: 16)
 
             Button("Respawn") {
                 respawnSelectedPet()
             }
             .buttonStyle(.borderedProminent)
-            .tint(SettingsDesignPalette.accentStrong)
 
-            Button(selectedPet.isVisible ? "Hide" : "Show") {
-                store.updatePetVisibility(selectedPet.id, isVisible: !selectedPet.isVisible)
+            Button(pet.isVisible ? "Hide" : "Show") {
+                store.updatePetVisibility(pet.id, isVisible: !pet.isVisible)
             }
 
-            Button("Duplicate") {
-                store.duplicateSelectedPet()
-            }
+            Menu {
+                Button("Duplicate") {
+                    store.duplicateSelectedPet()
+                }
 
-            Button("Delete", role: .destructive) {
-                isDeleteConfirmationPresented = true
+                Divider()
+
+                Button("Delete", role: .destructive) {
+                    deletePet()
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
             }
+            .menuStyle(.borderlessButton)
+            .help("More pet actions")
+            .accessibilityLabel("More pet actions")
         }
     }
 
-    private func petFamilyName(for petID: PetID) -> String {
-        PetCatalog.category(for: petID)?.displayName ?? "Custom Pet"
+    private var petFamilyName: String {
+        PetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
     }
 }
 
@@ -171,7 +271,7 @@ private struct EmptyPetCollectionView: View {
         VStack(spacing: 14) {
             Image(systemName: "pawprint")
                 .font(.system(size: 40, weight: .semibold))
-                .foregroundStyle(SettingsDesignPalette.accent)
+                .foregroundStyle(.secondary)
 
             Text("No Pets")
                 .font(.title2.bold())
@@ -186,245 +286,42 @@ private struct EmptyPetCollectionView: View {
                 Label("Add Pet", systemImage: "plus")
             }
             .buttonStyle(.borderedProminent)
-            .tint(SettingsDesignPalette.accentStrong)
         }
-        .frame(maxWidth: .infinity, minHeight: 366)
-        .background(SettingsDesignPalette.panel, in: RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(SettingsDesignPalette.border)
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(32)
     }
 }
 
-private struct PetInstanceCarouselView: View {
-    @ObservedObject var store: PetStore
-
-    var body: some View {
-        GeometryReader { proxy in
-            let carouselContentWidth = carouselContentWidth
-            let isOverflowing = carouselContentWidth > proxy.size.width
-
-            ZStack {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(store.petInstances) { pet in
-                            PetCarouselCard(
-                                pet: pet,
-                                isSelected: pet.id == store.selectedPetInstanceID
-                            ) {
-                                store.selectPetInstance(pet.id)
-                            }
-                        }
-
-                        Button {
-                            store.addPet()
-                        } label: {
-                            Label("Add Pet", systemImage: "plus")
-                                .frame(width: 104, height: 58)
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                    .padding(.horizontal, 48)
-                    .padding(.vertical, 12)
-                }
-
-                if isOverflowing {
-                    HStack {
-                        PetCarouselArrow(systemName: "chevron.left")
-                        Spacer()
-                        PetCarouselArrow(systemName: "chevron.right")
-                    }
-                    .allowsHitTesting(false)
-                }
-            }
-        }
-        .frame(height: 92)
-        .background(SettingsDesignPalette.panelRaised, in: RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(SettingsDesignPalette.border)
-        }
-    }
-
-    private var carouselContentWidth: CGFloat {
-        let petCount = CGFloat(store.petInstances.count)
-        let itemCount = petCount + 1
-        let gapCount = max(0, itemCount - 1)
-        return (petCount * 198) + 104 + (gapCount * 10) + 96
-    }
-}
-
-private struct PetCarouselArrow: View {
-    let systemName: String
-
-    var body: some View {
-        Image(systemName: systemName)
-            .font(.system(size: 14, weight: .bold))
-            .foregroundStyle(SettingsDesignPalette.accent)
-            .frame(width: 32, height: 42)
-            .background(SettingsDesignPalette.inset.opacity(0.88), in: RoundedRectangle(cornerRadius: 10))
-            .padding(.horizontal, 9)
-    }
-}
-
-private struct PetCarouselCard: View {
-    let pet: PetInstance
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 9)
-                        .fill(Color.white.opacity(0.08))
-
-                    PetSprite(
-                        petID: pet.petID,
-                        visualContext: PetVisualContext(
-                            status: .idle,
-                            hasActiveSessions: true,
-                            isHovered: false,
-                            animationSettings: pet.animationSettings
-                        ),
-                        pixelation: pet.pixelation
-                    )
-                    .frame(width: 34, height: 34)
-                }
-                .frame(width: 44, height: 44)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(pet.name)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(1)
-
-                    Text(carouselSubtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                .frame(width: 124, alignment: .leading)
-            }
-            .padding(.horizontal, 10)
-            .frame(width: 198, height: 58)
-            .contentShape(RoundedRectangle(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(isSelected ? SettingsDesignPalette.selectedFill : Color.white.opacity(0.06))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(isSelected ? SettingsDesignPalette.accent.opacity(0.65) : Color.clear, lineWidth: 1)
-        }
-    }
-
-    private var carouselSubtitle: String {
-        PetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
-    }
-}
-
-private struct PetCarouselFade: View {
-    enum Edge {
-        case leading
-        case trailing
-    }
-
-    let edge: Edge
-
-    var body: some View {
-        LinearGradient(
-            colors: edge == .leading
-                ? [Color(nsColor: .windowBackgroundColor), Color(nsColor: .windowBackgroundColor).opacity(0)]
-                : [Color(nsColor: .windowBackgroundColor).opacity(0), Color(nsColor: .windowBackgroundColor)],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        .frame(width: 40)
-    }
-}
-
-private struct SpriteSummaryPanel: View {
+private struct PetPreview: View {
     let pet: PetInstance
     let dominantStatus: HarnessSessionStatus
-    let changeSprite: () -> Void
 
     var body: some View {
-        HStack(spacing: 18) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(SettingsDesignPalette.inset)
+        ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
 
-                SpritePreviewGridBackground()
+            SpritePreviewGridBackground()
 
-                PetSprite(
-                    petID: pet.petID,
-                    visualContext: PetVisualContext(
-                        status: dominantStatus,
-                        hasActiveSessions: dominantStatus != .unknown,
-                        isHovered: false,
-                        animationSettings: pet.animationSettings
-                    ),
-                    pixelation: pet.pixelation
-                )
-                .frame(width: 112, height: 112)
-            }
-            .frame(maxWidth: .infinity, minHeight: 218)
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(SettingsDesignPalette.border)
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Sprite")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-
-                Text(PetCatalog.displayName(for: pet.petID))
-                    .font(.title3.bold())
-
-                Text(spriteDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 6) {
-                    SpriteCapabilityTag(petFamilyName)
-                    SpriteCapabilityTag(pet.pixelation.displayName)
-                    if PetCatalog.definition(for: pet.petID)?.capabilities.supportsStatusMoods == true {
-                        SpriteCapabilityTag("Moods")
-                    }
-                }
-
-                Button("Change Sprite...") {
-                    changeSprite()
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(SettingsDesignPalette.accentStrong)
-                .padding(.top, 2)
-            }
-            .frame(width: 260, alignment: .leading)
+            PetSprite(
+                petID: pet.petID,
+                visualContext: PetVisualContext(
+                    status: dominantStatus,
+                    hasActiveSessions: dominantStatus != .unknown,
+                    isHovered: false,
+                    animationSettings: pet.animationSettings
+                ),
+                pixelation: pet.pixelation
+            )
+            .frame(width: 116, height: 116)
         }
-        .padding(16)
-        .background(SettingsDesignPalette.panel, in: RoundedRectangle(cornerRadius: 14))
+        .frame(maxWidth: .infinity, minHeight: 210)
         .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(SettingsDesignPalette.border)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
         }
-    }
-
-    private var petFamilyName: String {
-        PetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
-    }
-
-    private var spriteDescription: String {
-        if PetCatalog.definition(for: pet.petID)?.capabilities.supportsStatusMoods == true {
-            return "Generated voxel artwork with a complete set of activity moods."
-        }
-        return "A distinct generated cloud species; optional activity moods currently use its idle art."
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(pet.name) preview")
     }
 }
 
@@ -448,52 +345,164 @@ private struct SpritePreviewGridBackground: View {
                 y += spacing
             }
 
-            context.stroke(path, with: .color(Color.white.opacity(0.045)), lineWidth: 1)
+            context.stroke(
+                path,
+                with: .color(Color(nsColor: .separatorColor).opacity(0.45)),
+                lineWidth: 1
+            )
         }
         .padding(16)
+        .allowsHitTesting(false)
     }
 }
 
-private struct SpriteCapabilityTag: View {
-    let title: String
-
-    init(_ title: String) {
-        self.title = title
-    }
-
-    var body: some View {
-        Text(title)
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 4)
-            .background(Color.white.opacity(0.08), in: Capsule())
-    }
-}
-
-private struct BehaviorSettingsPanel: View {
+private struct PetDetailsSection: View {
     @ObservedObject var store: PetStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        GroupBox {
+            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
+                GridRow {
+                    Text("Name")
+                        .foregroundStyle(.secondary)
+
+                    TextField("", text: nameBinding)
+                        .accessibilityLabel("Name")
+                }
+
+                GridRow {
+                    Text("Style")
+                        .foregroundStyle(.secondary)
+
+                    Picker("Pixelation", selection: pixelationBinding) {
+                        ForEach(PetSpritePixelation.allCases, id: \.self) { pixelation in
+                            Text(pixelation.displayName)
+                                .tag(pixelation)
+                                .disabled(pixelation > PetCatalog.maximumPixelation(for: selectedPet.petID))
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: .infinity)
+                }
+
+                GridRow {
+                    Text("Context")
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 10) {
+                        Slider(
+                            value: contextLineCountSliderBinding,
+                            in: contextLineCountSliderRange,
+                            step: 1
+                        )
+
+                        Text("\(selectedPet.sessionContextLineCount)")
+                            .monospacedDigit()
+                            .frame(width: 22, alignment: .trailing)
+                    }
+                }
+            }
+            .padding(.top, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } label: {
+            Text("Pet Details")
+                .font(.headline)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var selectedPet: PetInstance {
+        store.selectedPetInstance ?? PetInstance.defaultInstance()
+    }
+
+    private var nameBinding: Binding<String> {
+        Binding(
+            get: { store.selectedPetInstance?.name ?? "" },
+            set: { store.updateSelectedPetName($0) }
+        )
+    }
+
+    private var pixelationBinding: Binding<PetSpritePixelation> {
+        Binding(
+            get: { store.selectedPetInstance?.pixelation ?? .off },
+            set: { store.updateSelectedPetPixelation($0) }
+        )
+    }
+
+    private var contextLineCountSliderBinding: Binding<Double> {
+        Binding(
+            get: {
+                Double(
+                    store.selectedPetInstance?.sessionContextLineCount
+                        ?? PetSessionContextLineCount.defaultValue
+                )
+            },
+            set: { store.updateSelectedPetContextLineCount(Int($0.rounded())) }
+        )
+    }
+
+    private var contextLineCountSliderRange: ClosedRange<Double> {
+        let lowerBound = Double(PetSessionContextLineCount.supportedRange.lowerBound)
+        let upperBound = Double(PetSessionContextLineCount.supportedRange.upperBound)
+        return lowerBound...upperBound
+    }
+}
+
+private struct PetAppearanceSection: View {
+    let pet: PetInstance
+    let changeSprite: () -> Void
+
+    var body: some View {
+        GroupBox {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(PetCatalog.displayName(for: pet.petID))
+                        .font(.body.weight(.medium))
+
+                    Text(spriteDescription)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button("Change Sprite...") {
+                    changeSprite()
+                }
+            }
+            .padding(.top, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } label: {
+            Text("Appearance")
+                .font(.headline)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var spriteDescription: String {
+        let familyName = PetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
+        return "\(familyName) · \(pet.pixelation.displayName)"
+    }
+}
+
+private struct PetBehaviorSection: View {
+    @ObservedObject var store: PetStore
+
+    var body: some View {
+        GroupBox {
+            VStack(spacing: 12) {
+                SettingSwitchRow("Hover bounce", isOn: animationBinding(\.isHoverBounceEnabled))
+                SettingSwitchRow("Idle motion", isOn: animationBinding(\.isIdleMotionEnabled))
+                SettingSwitchRow("Status moods", isOn: animationBinding(\.areStatusMoodsEnabled))
+            }
+            .padding(.top, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } label: {
             Text("Behavior")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-
-            SettingSwitchRow("Hover bounce", isOn: animationBinding(\.isHoverBounceEnabled))
-            SettingSwitchRow("Idle motion", isOn: animationBinding(\.isIdleMotionEnabled))
-            SettingSwitchRow("Status moods", isOn: animationBinding(\.areStatusMoodsEnabled))
-
-            Spacer(minLength: 0)
+                .font(.headline)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
-        .background(SettingsDesignPalette.panel, in: RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(SettingsDesignPalette.border)
-        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var selectedPet: PetInstance {
@@ -532,134 +541,8 @@ private struct SettingSwitchRow: View {
 
             Toggle(title, isOn: $isOn)
                 .labelsHidden()
-                .toggleStyle(GradientSettingsToggleStyle())
+                .toggleStyle(.switch)
         }
-    }
-}
-
-private struct GradientSettingsToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        Button {
-            withAnimation(.spring(response: 0.24, dampingFraction: 0.82)) {
-                configuration.isOn.toggle()
-            }
-        } label: {
-            ZStack(alignment: configuration.isOn ? .trailing : .leading) {
-                Capsule()
-                    .fill(trackFill(isOn: configuration.isOn))
-
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 18, height: 18)
-                    .shadow(color: Color.black.opacity(0.28), radius: 3, x: 0, y: 2)
-                    .padding(3)
-            }
-            .frame(width: 42, height: 24)
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityValue(configuration.isOn ? "On" : "Off")
-    }
-
-    private func trackFill(isOn: Bool) -> AnyShapeStyle {
-        if isOn {
-            return AnyShapeStyle(
-                LinearGradient(colors: [SettingsDesignPalette.switchPink, SettingsDesignPalette.switchTeal],
-                               startPoint: .leading,
-                               endPoint: .trailing)
-            )
-        }
-
-        return AnyShapeStyle(Color.white.opacity(0.12))
-    }
-}
-
-private struct PetDetailsSettingsPanel: View {
-    @ObservedObject var store: PetStore
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Pet Details")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
-                GridRow {
-                    Text("Name")
-                        .foregroundStyle(.secondary)
-                    TextField("", text: nameBinding)
-                        .accessibilityLabel("Name")
-                }
-
-                GridRow {
-                    Text("Style")
-                        .foregroundStyle(.secondary)
-                    Picker("Pixelation", selection: pixelationBinding) {
-                        ForEach(PetSpritePixelation.allCases, id: \.self) { pixelation in
-                            Text(pixelation.displayName)
-                                .tag(pixelation)
-                                .disabled(pixelation > PetCatalog.maximumPixelation(for: selectedPet.petID))
-                        }
-                    }
-                    .labelsHidden()
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: .infinity)
-                }
-
-                GridRow {
-                    Text("Context")
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 10) {
-                        Slider(
-                            value: contextLineCountSliderBinding,
-                            in: contextLineCountSliderRange,
-                            step: 1
-                        )
-
-                        Text("\(selectedPet.sessionContextLineCount)")
-                            .monospacedDigit()
-                            .frame(width: 22, alignment: .trailing)
-                    }
-                }
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
-        .background(SettingsDesignPalette.panel, in: RoundedRectangle(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(SettingsDesignPalette.border)
-        }
-    }
-
-    private var selectedPet: PetInstance {
-        store.selectedPetInstance ?? PetInstance.defaultInstance()
-    }
-
-    private var nameBinding: Binding<String> {
-        Binding(
-            get: { store.selectedPetInstance?.name ?? "" },
-            set: { store.updateSelectedPetName($0) }
-        )
-    }
-
-    private var pixelationBinding: Binding<PetSpritePixelation> {
-        Binding(
-            get: { store.selectedPetInstance?.pixelation ?? .off },
-            set: { store.updateSelectedPetPixelation($0) }
-        )
-    }
-
-    private var contextLineCountSliderBinding: Binding<Double> {
-        Binding(
-            get: { Double(store.selectedPetInstance?.sessionContextLineCount ?? PetSessionContextLineCount.defaultValue) },
-            set: { store.updateSelectedPetContextLineCount(Int($0.rounded())) }
-        )
-    }
-
-    private var contextLineCountSliderRange: ClosedRange<Double> {
-        Double(PetSessionContextLineCount.supportedRange.lowerBound)...Double(PetSessionContextLineCount.supportedRange.upperBound)
     }
 }
 
@@ -759,11 +642,11 @@ private struct SpritePickerCard: View {
         .buttonStyle(.plain)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(isSelected ? SettingsDesignPalette.selectedFill : Color.secondary.opacity(0.08))
+                .fill(isSelected ? Color.accentColor.opacity(0.18) : Color.secondary.opacity(0.08))
         )
         .overlay {
             RoundedRectangle(cornerRadius: 14)
-                .stroke(isSelected ? SettingsDesignPalette.accent.opacity(0.65) : Color.clear, lineWidth: 1)
+                .stroke(isSelected ? Color.accentColor.opacity(0.7) : Color.clear, lineWidth: 1)
         }
     }
 }
