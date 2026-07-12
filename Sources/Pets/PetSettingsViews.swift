@@ -2,30 +2,45 @@ import AppKit
 import SwiftUI
 import PetsCore
 
+private enum PetSettingsTab: Hashable {
+    case general
+    case pets
+}
+
 struct PetSettingsView: View {
     @ObservedObject var store: PetStore
     let toggleOpenAtLogin: (Bool) -> Void
     let respawnSelectedPet: () -> Void
+    @State private var selectedTab = PetSettingsTab.pets
 
     var body: some View {
-        TabView {
-            GeneralSettingsPane(
-                store: store,
-                toggleOpenAtLogin: toggleOpenAtLogin
-            )
-            .tabItem {
-                Label("General", systemImage: "gearshape")
-            }
-
-            PetConfigurationPane(
-                store: store,
-                respawnSelectedPet: respawnSelectedPet
-            )
-            .tabItem {
-                Label("Pets", systemImage: "pawprint")
+        Group {
+            switch selectedTab {
+            case .general:
+                GeneralSettingsPane(
+                    store: store,
+                    toggleOpenAtLogin: toggleOpenAtLogin
+                )
+            case .pets:
+                PetConfigurationPane(
+                    store: store,
+                    respawnSelectedPet: respawnSelectedPet
+                )
             }
         }
         .frame(width: 900, height: 620)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Picker("Settings Section", selection: $selectedTab) {
+                    Label("General", systemImage: "gearshape")
+                        .tag(PetSettingsTab.general)
+                    Label("Pets", systemImage: "pawprint")
+                        .tag(PetSettingsTab.pets)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+            }
+        }
     }
 }
 
@@ -58,22 +73,21 @@ private struct PetConfigurationPane: View {
     var body: some View {
         NavigationSplitView {
             PetSidebar(store: store)
-                .background {
-                    EdgeToEdgeSidebarBackground()
-                }
                 .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 260)
         } detail: {
-            if let selectedPet {
-                PetDetailPane(
-                    store: store,
-                    pet: selectedPet,
-                    respawnSelectedPet: respawnSelectedPet,
-                    changeSprite: { isSpritePickerPresented = true },
-                    deletePet: { isDeleteConfirmationPresented = true }
-                )
-            } else {
-                EmptyPetCollectionView {
-                    store.addPet()
+            Group {
+                if let selectedPet {
+                    PetDetailPane(
+                        store: store,
+                        pet: selectedPet,
+                        respawnSelectedPet: respawnSelectedPet,
+                        changeSprite: { isSpritePickerPresented = true },
+                        deletePet: { isDeleteConfirmationPresented = true }
+                    )
+                } else {
+                    EmptyPetCollectionView {
+                        store.addPet()
+                    }
                 }
             }
         }
@@ -99,14 +113,6 @@ private struct PetConfigurationPane: View {
 
     private var selectedPet: PetInstance? {
         store.selectedPetInstance
-    }
-}
-
-private struct EdgeToEdgeSidebarBackground: View {
-    var body: some View {
-        Rectangle()
-            .fill(.thinMaterial)
-            .ignoresSafeArea(.container, edges: [.top, .leading, .bottom])
     }
 }
 

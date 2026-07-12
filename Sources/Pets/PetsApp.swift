@@ -4,12 +4,16 @@ import Combine
 import ServiceManagement
 import SwiftUI
 
+private enum PetsWindowID {
+    static let configuration = "configuration"
+}
+
 @main
 struct PetsApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        Settings {
+        Window("Pets", id: PetsWindowID.configuration) {
             PetSettingsView(
                 store: appDelegate.store,
                 toggleOpenAtLogin: { isEnabled in
@@ -20,6 +24,7 @@ struct PetsApp: App {
                 }
             )
         }
+        .windowResizability(.contentSize)
 
         MenuBarExtra("Pets", systemImage: "pawprint.circle") {
             PetMenuView(
@@ -206,7 +211,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 private struct PetMenuView: View {
-    @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
 
     @ObservedObject var store: PetStore
     let togglePetVisibility: () -> Void
@@ -225,7 +230,7 @@ private struct PetMenuView: View {
         .disabled(store.petInstances.isEmpty)
 
         Button {
-            openSettings()
+            openWindow(id: PetsWindowID.configuration)
             bringConfigurationToFront()
         } label: {
             Label("Configure...", systemImage: "slider.horizontal.3")
