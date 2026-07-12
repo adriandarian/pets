@@ -3,7 +3,7 @@ import Foundation
 public final class CumulusCloudPetDefinition: PetDefinition, @unchecked Sendable {
     public init() {
         let artPack = PetArtPack(
-            idle: cloudAnimation(slug: "cute-cloud", state: "idle", duration: 1.1, motion: .breathe),
+            idle: cloudIdleAnimation(slug: "cute-cloud", motion: .breathe),
             busy: cloudAnimation(slug: "cute-cloud", state: "busy", duration: 0.72, motion: .bob),
             waiting: cloudAnimation(slug: "cute-cloud", state: "waiting", duration: 0.85, motion: .sway),
             excited: cloudAnimation(slug: "cute-cloud", state: "excited", duration: 0.55, motion: .pulse),
@@ -137,6 +137,33 @@ private extension PetCapabilities {
         supportsStatusMoods: false,
         supportsHoverExcitement: true
     )
+}
+
+private let cloudIdleFrameTiming: [(duration: TimeInterval, blend: TimeInterval)] = [
+    (2.00, 0.22),
+    (0.65, 0.18),
+    (0.55, 0.20),
+    (0.65, 0.18),
+    (1.45, 0.12),
+    (0.08, 0.04),
+    (0.10, 0.04),
+    (0.08, 0.04),
+]
+
+private func cloudIdleAnimation(slug: String, motion: PetMotionPreset) -> PetAnimation {
+    let frames = cloudIdleFrameTiming.enumerated().map { index, timing in
+        PetAnimationFrame(
+            resourceName: String(format: "frame-%03d", index),
+            resourceExtension: "png",
+            subdirectory: "PetArt/\(slug)/idle",
+            duration: timing.duration,
+            blendDuration: timing.blend
+        )
+    }
+    guard let animation = PetAnimation(frames: frames, loopBehavior: .loop, motion: motion) else {
+        preconditionFailure("Cloud idle animation must contain valid frames")
+    }
+    return animation
 }
 
 private func cloudAnimation(
