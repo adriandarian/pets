@@ -4,7 +4,7 @@
 
 **Goal:** Make the pet sidebar a true edge-to-edge window column while preserving the General/Pets tabs and hidden detail scrollbar.
 
-**Architecture:** Replace the special inset `Settings` scene with an on-demand singleton SwiftUI `Window`. Make `NavigationSplitView` the root of `PetSettingsView`, keep the General/Pets `TabView` in its detail column, and show the native `PetSidebar` only for the Pets tab.
+**Architecture:** Replace the special inset `Settings` scene with an on-demand singleton SwiftUI `Window`. Use a centered toolbar selector to switch between the General root and the Pets root; the Pets root is a `NavigationSplitView` whose direct sidebar column is `PetSidebar`.
 
 **Tech Stack:** Swift 6, SwiftUI, Swift Testing, Swift Package Manager.
 
@@ -12,7 +12,7 @@
 
 - Preserve `ScrollView(.vertical, showsIndicators: false)` and vertical scrolling.
 - Preserve sidebar selection, width, pet rows, and the Add Pet action.
-- Preserve the General/Pets tab controls and collapse the sidebar on General.
+- Preserve a native General/Pets selector and show no sidebar on General.
 - Preserve automatic Light/Dark appearance and system accent behavior.
 - Do not add a custom background, safe-area extension, rounded perimeter, or AppKit bridge.
 
@@ -46,9 +46,15 @@ Update the menu/scene assertions to require:
 Replace the sidebar assertions that require `EdgeToEdgeSidebarBackground` with:
 
 ```swift
-#expect(source.contains("NavigationSplitView(columnVisibility: $columnVisibility)"))
-#expect(source.contains("PetSidebar(store: store)\n            .navigationSplitViewColumnWidth"))
-#expect(source.contains("TabView(selection: $selectedTab)"))
+#expect(source.contains("ToolbarItem(placement: .principal)"))
+#expect(source.contains("Picker(\"Settings Section\", selection: $selectedTab)"))
+#expect(source.contains(".pickerStyle(.segmented)"))
+#expect(source.contains("switch selectedTab"))
+#expect(source.contains("private struct PetConfigurationPane: View"))
+#expect(source.contains("NavigationSplitView {"))
+#expect(source.contains("PetSidebar(store: store)\n                .navigationSplitViewColumnWidth"))
+#expect(!source.contains("NavigationSplitView(columnVisibility:"))
+#expect(!source.contains("TabView(selection: $selectedTab)"))
 #expect(!source.contains("EdgeToEdgeSidebarBackground"))
 #expect(!source.contains(".ignoresSafeArea(.container, edges: [.top, .leading, .bottom])"))
 #expect(source.contains("ScrollView(.vertical, showsIndicators: false)"))
@@ -62,7 +68,7 @@ Run:
 swift test --filter PetOverlayTransparencyTests
 ```
 
-Expected: the menu/scene and settings layout tests fail because the app still uses the special `Settings` scene and the split view is nested inside the Pets tab.
+Expected: the settings layout test fails because the current split-visibility/tab coupling has no toolbar selector and resets the tab selection during the General transition.
 
 - [ ] **Step 3: Implement the dedicated window and root split composition**
 
@@ -86,10 +92,10 @@ openWindow(id: PetsWindowID.configuration)
 bringConfigurationToFront()
 ```
 
-Make the settings root a split view:
+Make the settings root switch between General and Pets under a native toolbar selector:
 
 ```swift
-private enum PetSettingsTab: Hashable {
+private enum PetSettingsTab: Hashable, CaseIterable {
     case general
     case pets
 }
@@ -99,62 +105,65 @@ struct PetSettingsView: View {
     let toggleOpenAtLogin: (Bool) -> Void
     let respawnSelectedPet: () -> Void
     @State private var selectedTab = PetSettingsTab.pets
-    @State private var columnVisibility = NavigationSplitViewVisibility.all
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            PetSidebar(store: store)
-                .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 260)
-        } detail: {
-            TabView(selection: $selectedTab) {
+        Group {
+            switch selectedTab {
+            case .general:
                 GeneralSettingsPane(
                     store: store,
                     toggleOpenAtLogin: toggleOpenAtLogin
                 )
-                .tabItem {
-                    Label("General", systemImage: "gearshape")
-                }
-                .tag(PetSettingsTab.general)
-
-                PetConfigurationDetailPane(
+            case .pets:
+                PetConfigurationPane(
                     store: store,
                     respawnSelectedPet: respawnSelectedPet
                 )
-                .tabItem {
-                    Label("Pets", systemImage: "pawprint")
-                }
-                .tag(PetSettingsTab.pets)
             }
         }
         .frame(width: 900, height: 620)
-        .onChange(of: selectedTab) { _, newTab in
-            columnVisibility = newTab == .pets ? .all : .detailOnly
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Picker("Settings Section", selection: $selectedTab) {
+                    Label("General", systemImage: "gearshape")
+                        .tag(PetSettingsTab.general)
+                    Label("Pets", systemImage: "pawprint")
+                        .tag(PetSettingsTab.pets)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+            }
         }
     }
 }
 ```
 
-Rename `PetConfigurationPane` to `PetConfigurationDetailPane` and replace its nested `NavigationSplitView` with the existing detail selection group:
+Restore `PetConfigurationPane` as the Pets root and wrap the existing detail selection group in its native split view:
 
 ```swift
-Group {
-    if let selectedPet {
-        PetDetailPane(
-            store: store,
-            pet: selectedPet,
-            respawnSelectedPet: respawnSelectedPet,
-            changeSprite: { isSpritePickerPresented = true },
-            deletePet: { isDeleteConfirmationPresented = true }
-        )
-    } else {
-        EmptyPetCollectionView {
-            store.addPet()
+NavigationSplitView {
+    PetSidebar(store: store)
+        .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 260)
+} detail: {
+    Group {
+        if let selectedPet {
+            PetDetailPane(
+                store: store,
+                pet: selectedPet,
+                respawnSelectedPet: respawnSelectedPet,
+                changeSprite: { isSpritePickerPresented = true },
+                deletePet: { isDeleteConfirmationPresented = true }
+            )
+        } else {
+            EmptyPetCollectionView {
+                store.addPet()
+            }
         }
     }
 }
 ```
 
-Keep the existing sheet and confirmation-dialog modifiers on that group. Delete the complete `EdgeToEdgeSidebarBackground` type. Do not change `PetSidebarRow` or `PetDetailPane`.
+Keep the existing sheet and confirmation-dialog modifiers on the split view. Delete the complete `EdgeToEdgeSidebarBackground` type. Do not change `PetSidebarRow` or `PetDetailPane`.
 
 - [ ] **Step 4: Run focused and full verification**
 
@@ -175,7 +184,7 @@ Run:
 ./scripts/run_app.sh --verify
 ```
 
-Open Configure and confirm the sidebar reaches the configuration window's top, leading, and bottom content edges with no inset rounded perimeter or containing outline. Switch to General and back to Pets to confirm the sidebar collapses and restores, then confirm the detail view scrolls without a visible scrollbar.
+Open Configure and confirm the sidebar reaches the configuration window's top, leading, and bottom content edges with no inset rounded perimeter or containing outline. Switch to General and back to Pets to confirm the root content changes without resetting the selector, then confirm the detail view scrolls without a visible scrollbar.
 
 - [ ] **Step 6: Commit the correction**
 

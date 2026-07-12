@@ -11,7 +11,7 @@ Refine the approved native Pets settings layout so the detail pane remains verti
 - The sidebar uses the native `NavigationSplitView` and `.sidebar` list surface directly as the configuration window's root column.
 - No custom sidebar background, safe-area extension, rounded perimeter, stroke, or outer container is drawn.
 - The configuration surface uses a singleton SwiftUI `Window` with standard macOS titlebar chrome instead of the special `Settings` scene, whose root content is always inset and rounded.
-- The existing General/Pets tabs remain in the detail column. The sidebar is visible for Pets and collapses for General, preserving the existing tab behavior.
+- A native centered toolbar selector preserves the General/Pets navigation. General shows its form without a sidebar; Pets switches the root content to the native split view.
 - The detail pane keeps its existing padding and scroll behavior.
 - The sidebar list, selection, Add Pet bar, divider, column width, and all pet behavior remain unchanged.
 - Light/Dark adaptation and the user's system accent color remain unchanged.
@@ -22,14 +22,14 @@ Use SwiftUI's native controls:
 
 1. Change the detail scroll container to `ScrollView(.vertical, showsIndicators: false)`.
 2. Replace the special `Settings` scene with an on-demand singleton `Window` and open it with `openWindow(id:)` from the menu.
-3. Make `NavigationSplitView` the root of `PetSettingsView`, with `PetSidebar` as its direct sidebar column and the existing `TabView` in the detail column.
-4. Collapse the sidebar when General is selected and restore it when Pets is selected. Do not add a background or ignore safe areas around the sidebar.
+3. Replace the inset `TabView` container with a centered segmented `Picker` in the window toolbar.
+4. Switch the root content between `GeneralSettingsPane` and `PetConfigurationPane`; the Pets root is a `NavigationSplitView` with `PetSidebar` as its direct sidebar column. Do not add a background or ignore safe areas around the sidebar.
 
 This is preferred over a custom material background, AppKit bridge, or manual split implementation because it preserves native selection, resizing, scrolling, accessibility, and window integration without creating a second visual surface.
 
 ## Verification
 
-- Extend the settings source regression tests to require the dedicated configuration `Window`, `openWindow(id:)`, root split-view composition, and hidden vertical indicator while rejecting `Settings`, `openSettings`, and custom sidebar background/safe-area modifiers.
+- Extend the settings source regression tests to require the dedicated configuration `Window`, `openWindow(id:)`, toolbar selector, Pets root split-view composition, and hidden vertical indicator while rejecting `Settings`, `openSettings`, nested tab/split visibility coupling, and custom sidebar background/safe-area modifiers.
 - Verify the new assertions fail before implementation and pass afterward.
 - Run `./scripts/check.sh`.
 - Rebuild and launch `dist/Pets.app` with `./scripts/run_app.sh --verify`.
