@@ -290,7 +290,11 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("private func beginCompletionReaction()"))
         #expect(source.contains("private func setLastError(_ error: String?)"))
         #expect(source.contains("completionReactionTask?.cancel()"))
+        #expect(source.contains("private var completionReactionExpiry = PetCompletionReactionExpiry()"))
+        #expect(source.contains("completionReactionExpiry.cancel()"))
+        #expect(source.contains("let generation = completionReactionExpiry.restart()"))
         #expect(source.contains("guard let self, self.currentReaction == .completion else { return }"))
+        #expect(source.contains("completionReactionExpiry.invalidate(ifCurrent: generation)"))
         #expect(!source.contains("lastError = error.localizedDescription"))
         #expect(!source.contains("lastError = nil"))
     }

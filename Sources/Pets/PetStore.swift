@@ -18,6 +18,7 @@ final class PetStore: ObservableObject {
     private var refreshTask: Task<Void, Never>?
     private var sessionTransitionDetector = PetSessionTransitionDetector()
     private var completionReactionTask: Task<Void, Never>?
+    private var completionReactionExpiry = PetCompletionReactionExpiry()
     private static let refreshInterval: Duration = .seconds(5)
     private static let completionReactionDuration: Duration = .seconds(4)
 
@@ -324,6 +325,7 @@ final class PetStore: ObservableObject {
         if error != nil {
             completionReactionTask?.cancel()
             completionReactionTask = nil
+            completionReactionExpiry.cancel()
             currentReaction = .error
         } else if currentReaction == .error {
             currentReaction = nil
@@ -336,6 +338,7 @@ final class PetStore: ObservableObject {
 
     private func beginCompletionReaction() {
         completionReactionTask?.cancel()
+        let generation = completionReactionExpiry.restart()
         currentReaction = .completion
 
         completionReactionTask = Task { @MainActor [weak self] in
@@ -346,6 +349,7 @@ final class PetStore: ObservableObject {
             }
 
             guard let self, self.currentReaction == .completion else { return }
+            guard self.completionReactionExpiry.invalidate(ifCurrent: generation) else { return }
             self.currentReaction = nil
             self.completionReactionTask = nil
         }
