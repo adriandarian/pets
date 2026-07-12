@@ -95,7 +95,7 @@ public final class LenticularCloudPetDefinition: PetDefinition, @unchecked Senda
                 transitionDuration: 0.16
             ),
             renderSource: .assetPack(
-                PetArtPack(idle: cloudAnimation(slug: "lenticular-cloud", motion: .breathe))
+                PetArtPack(idle: cloudIdleAnimation(slug: "lenticular-cloud", motion: .breathe))
             )
         )
     }

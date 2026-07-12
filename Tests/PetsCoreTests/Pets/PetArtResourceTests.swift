@@ -21,6 +21,11 @@ struct PetArtResourceTests {
     }
 
     @Test
+    func lenticularHasCompleteIdleLoop() throws {
+        try assertCompleteIdleLoop(petID: .lenticularCloud)
+    }
+
+    @Test
     func locatorFindsBundledFrameAndRejectsMissingFrame() {
         let existing = PetAnimationFrame(
             resourceName: "frame-000",
@@ -102,6 +107,25 @@ struct PetArtResourceTests {
         }
     }
 
+    @Test
+    func alphaBoundsIgnoreDetachedSpecks() throws {
+        let context = try #require(CGContext(
+            data: nil,
+            width: 32,
+            height: 32,
+            bitsPerComponent: 8,
+            bytesPerRow: 32 * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        context.setFillColor(NSColor.white.cgColor)
+        context.fill(CGRect(x: 8, y: 9, width: 6, height: 5))
+        context.fill(CGRect(x: 0, y: 0, width: 2, height: 1))
+
+        let image = try #require(context.makeImage())
+        #expect(alphaBounds(in: image) == CGRect(x: 8, y: 18, width: 6, height: 5))
+    }
+
     private func assertCompleteIdleLoop(petID: PetID) throws {
         let definition = try #require(PetCatalog.definition(for: petID))
         guard case let .assetPack(pack) = definition.renderSource else {
@@ -118,21 +142,59 @@ struct PetArtResourceTests {
 
     private func alphaBounds(in image: CGImage) -> CGRect? {
         let bitmap = NSBitmapImageRep(cgImage: image)
-        var minX = image.width
-        var minY = image.height
-        var maxX = -1
-        var maxY = -1
-
-        for y in 0..<image.height {
-            for x in 0..<image.width where (bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.01 {
-                minX = min(minX, x)
-                minY = min(minY, y)
-                maxX = max(maxX, x)
-                maxY = max(maxY, y)
+        let width = image.width
+        let height = image.height
+        var occupied = [Bool](repeating: false, count: width * height)
+        for y in 0..<height {
+            for x in 0..<width {
+                occupied[y * width + x] = (bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.01
             }
         }
 
-        guard maxX >= minX, maxY >= minY else { return nil }
-        return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+        var visited = [Bool](repeating: false, count: occupied.count)
+        var largest: (pixelCount: Int, bounds: CGRect)?
+
+        for start in occupied.indices where occupied[start] && !visited[start] {
+            var queue = [start]
+            var cursor = 0
+            visited[start] = true
+            var minX = start % width
+            var maxX = minX
+            var minY = start / width
+            var maxY = minY
+
+            while cursor < queue.count {
+                let index = queue[cursor]
+                cursor += 1
+                let x = index % width
+                let y = index / width
+                minX = min(minX, x)
+                maxX = max(maxX, x)
+                minY = min(minY, y)
+                maxY = max(maxY, y)
+
+                for neighborY in max(0, y - 1)...min(height - 1, y + 1) {
+                    for neighborX in max(0, x - 1)...min(width - 1, x + 1) {
+                        let neighbor = neighborY * width + neighborX
+                        if occupied[neighbor] && !visited[neighbor] {
+                            visited[neighbor] = true
+                            queue.append(neighbor)
+                        }
+                    }
+                }
+            }
+
+            let bounds = CGRect(
+                x: minX,
+                y: minY,
+                width: maxX - minX + 1,
+                height: maxY - minY + 1
+            )
+            if queue.count > (largest?.pixelCount ?? 0) {
+                largest = (queue.count, bounds)
+            }
+        }
+
+        return largest?.bounds
     }
 }
