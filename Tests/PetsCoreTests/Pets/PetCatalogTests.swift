@@ -39,7 +39,7 @@ struct PetCatalogTests {
     }
 
     @Test
-    func cumulusOwnsEveryAnimationState() throws {
+    func cumulusOwnsEverySteadyAnimationState() throws {
         let cumulus = try #require(PetCatalog.definition(for: .cuteCloud))
 
         #expect(cumulus.capabilities.maximumPixelation == .medium)
@@ -47,7 +47,13 @@ struct PetCatalogTests {
             Issue.record("Cumulus must use an asset pack")
             return
         }
-        for state in PetVisualState.allCases {
+        for state in [
+            PetVisualState.idle,
+            .busy,
+            .waiting,
+            .excited,
+            .sleeping,
+        ] {
             #expect(pack.animation(for: state) != nil)
         }
     }

@@ -39,6 +39,10 @@ struct PetAnimationTests {
         #expect(pack.resolvedAnimation(for: .waiting) == idle)
         #expect(pack.resolvedAnimation(for: .excited) == idle)
         #expect(pack.resolvedAnimation(for: .sleeping) == idle)
+        #expect(pack.animation(for: .completion) == nil)
+        #expect(pack.animation(for: .error) == nil)
+        #expect(pack.resolvedAnimation(for: .completion) == idle)
+        #expect(pack.resolvedAnimation(for: .error) == idle)
     }
 
     @Test

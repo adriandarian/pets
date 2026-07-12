@@ -68,6 +68,45 @@ struct PetVisualStateResolverTests {
         #expect(PetVisualStateResolver.requestedState(for: context) == .busy)
     }
 
+    @Test
+    func reactionsOverrideHoverAndSteadyStatusMoods() {
+        let completion = PetVisualContext(
+            status: .waiting,
+            hasActiveSessions: true,
+            isHovered: true,
+            animationSettings: .default,
+            reaction: .completion
+        )
+        let error = PetVisualContext(
+            status: .busy,
+            hasActiveSessions: true,
+            isHovered: true,
+            animationSettings: .default,
+            reaction: .error
+        )
+
+        #expect(PetVisualStateResolver.requestedState(for: completion) == .completion)
+        #expect(PetVisualStateResolver.requestedState(for: error) == .error)
+    }
+
+    @Test
+    func disabledSteadyStatusMoodsDoNotSuppressReactions() {
+        let settings = PetAnimationSettings(
+            isHoverBounceEnabled: false,
+            isIdleMotionEnabled: false,
+            areStatusMoodsEnabled: false
+        )
+        let context = PetVisualContext(
+            status: .busy,
+            hasActiveSessions: true,
+            isHovered: false,
+            animationSettings: settings,
+            reaction: .completion
+        )
+
+        #expect(PetVisualStateResolver.requestedState(for: context) == .completion)
+    }
+
     private func context(status: HarnessSessionStatus) -> PetVisualContext {
         PetVisualContext(
             status: status,

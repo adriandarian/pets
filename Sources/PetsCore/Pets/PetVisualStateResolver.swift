@@ -3,22 +3,34 @@ public struct PetVisualContext: Equatable, Sendable {
     public let hasActiveSessions: Bool
     public let isHovered: Bool
     public let animationSettings: PetAnimationSettings
+    public let reaction: PetReaction?
 
     public init(
         status: HarnessSessionStatus,
         hasActiveSessions: Bool,
         isHovered: Bool,
-        animationSettings: PetAnimationSettings
+        animationSettings: PetAnimationSettings,
+        reaction: PetReaction? = nil
     ) {
         self.status = status
         self.hasActiveSessions = hasActiveSessions
         self.isHovered = isHovered
         self.animationSettings = animationSettings
+        self.reaction = reaction
     }
 }
 
 public enum PetVisualStateResolver {
     public static func requestedState(for context: PetVisualContext) -> PetVisualState {
+        switch context.reaction {
+        case .some(.completion):
+            return .completion
+        case .some(.error):
+            return .error
+        case nil:
+            break
+        }
+
         if context.isHovered && context.animationSettings.isHoverBounceEnabled {
             return .excited
         }

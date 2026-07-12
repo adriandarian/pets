@@ -6,6 +6,8 @@ public enum PetVisualState: String, CaseIterable, Sendable {
     case waiting
     case excited
     case sleeping
+    case completion
+    case error
 }
 
 public enum PetMotionPreset: Equatable, Sendable {
@@ -89,19 +91,25 @@ public struct PetArtPack: Equatable, Sendable {
     public let waiting: PetAnimation?
     public let excited: PetAnimation?
     public let sleeping: PetAnimation?
+    public let completion: PetAnimation?
+    public let error: PetAnimation?
 
     public init(
         idle: PetAnimation,
         busy: PetAnimation? = nil,
         waiting: PetAnimation? = nil,
         excited: PetAnimation? = nil,
-        sleeping: PetAnimation? = nil
+        sleeping: PetAnimation? = nil,
+        completion: PetAnimation? = nil,
+        error: PetAnimation? = nil
     ) {
         self.idle = idle
         self.busy = busy
         self.waiting = waiting
         self.excited = excited
         self.sleeping = sleeping
+        self.completion = completion
+        self.error = error
     }
 
     public func animation(for state: PetVisualState) -> PetAnimation? {
@@ -116,6 +124,10 @@ public struct PetArtPack: Equatable, Sendable {
             excited
         case .sleeping:
             sleeping
+        case .completion:
+            completion
+        case .error:
+            error
         }
     }
 

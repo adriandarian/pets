@@ -28,7 +28,15 @@ struct PetArtResourceTests {
     func registeredAssetPacksUseValidProductionFrames() throws {
         for definition in PetCatalog.definitions {
             guard case let .assetPack(pack) = definition.renderSource else { continue }
-            let animations = [pack.idle, pack.busy, pack.waiting, pack.excited, pack.sleeping].compactMap { $0 }
+            let animations = [
+                pack.idle,
+                pack.busy,
+                pack.waiting,
+                pack.excited,
+                pack.sleeping,
+                pack.completion,
+                pack.error,
+            ].compactMap { $0 }
 
             for animation in animations {
                 for frame in animation.frames {
