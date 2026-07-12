@@ -186,6 +186,7 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("Menu {"))
         #expect(source.contains("Button(\"Duplicate\")"))
         #expect(source.contains("Button(\"Delete\", role: .destructive)"))
+        #expect(source.contains("Color(nsColor: .controlAccentColor)"))
         #expect(source.contains("Button(\"Change Sprite...\")"))
         #expect(source.contains("SpritePickerSheet"))
         #expect(source.contains("Button(\"Delete Pet\", role: .destructive)"))

@@ -235,6 +235,7 @@ private struct PetDetailPane: View {
                 respawnSelectedPet()
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color(nsColor: .controlAccentColor))
 
             Button(pet.isVisible ? "Hide" : "Show") {
                 store.updatePetVisibility(pet.id, isVisible: !pet.isVisible)
