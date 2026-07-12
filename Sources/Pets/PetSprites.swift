@@ -83,8 +83,23 @@ private struct AssetPetSprite: View {
 
     @ViewBuilder
     private func renderedFrame(at date: Date) -> some View {
-        let elapsed = date.timeIntervalSinceReferenceDate
-        let frame = animation.frames[animation.frameIndex(at: elapsed)]
+        let rawElapsed = date.timeIntervalSinceReferenceDate
+        let phasedElapsed = rawElapsed
+            + animation.totalDuration * visualContext.animationPhaseOffset
+        let isAmbientMotionEnabled = visualContext.animationSettings.isIdleMotionEnabled
+            && visualContext.reaction == nil
+        let playbackElapsed = isAmbientMotionEnabled ? phasedElapsed : 0
+        let playback = animation.playbackSample(at: playbackElapsed)
+        let primaryFrame = animation.frames[playback.primaryFrameIndex]
+        let secondaryFrame = playback.secondaryFrameIndex.map { animation.frames[$0] }
+        let primaryImage = PetArtImageCache.shared.image(for: primaryFrame)
+        let secondaryImage = secondaryFrame.flatMap(PetArtImageCache.shared.image(for:))
+        let motionElapsed = rawElapsed
+            + animation.motion.cycleDuration * visualContext.animationPhaseOffset
+        let motion = sampledMotion(
+            at: motionElapsed,
+            isAmbientMotionEnabled: isAmbientMotionEnabled
+        )
 
         GeometryReader { proxy in
             let unit = min(proxy.size.width, proxy.size.height) / 128
@@ -96,29 +111,26 @@ private struct AssetPetSprite: View {
                         width: definition.presentation.shadowWidth * unit,
                         height: definition.presentation.shadowHeight * unit
                     )
+                    .scaleEffect(x: motion.shadowScale, y: 1)
+                    .opacity(motion.shadowOpacityMultiplier)
                     .offset(y: 45 * unit)
 
-                if let image = PetArtImageCache.shared.image(for: frame) {
-                    Image(nsImage: image)
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFit()
+                if let primaryImage {
+                    blendedPetImage(
+                        primary: primaryImage,
+                        secondary: secondaryImage,
+                        secondaryOpacity: playback.secondaryOpacity
+                    )
                         .scaleEffect(definition.presentation.contentScale)
                         .offset(
                             x: definition.presentation.anchorX * unit,
                             y: definition.presentation.anchorY * unit
                         )
-                        .modifier(
-                            PetMotionModifier(
-                                preset: animation.motion,
-                                elapsed: elapsed,
-                                isEnabled: visualContext.animationSettings.isIdleMotionEnabled
-                            )
-                        )
+                        .modifier(PetMotionSampleModifier(sample: motion))
                         .modifier(
                             PetReactionVisualModifier(
                                 reaction: visualContext.reaction,
-                                elapsed: elapsed,
+                                elapsed: rawElapsed,
                                 isMotionEnabled: visualContext.animationSettings.isIdleMotionEnabled
                             )
                         )
@@ -129,6 +141,35 @@ private struct AssetPetSprite: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
+    }
+
+    private func sampledMotion(
+        at phasedElapsed: TimeInterval,
+        isAmbientMotionEnabled: Bool
+    ) -> PetMotionSample {
+        animation.motion.sample(at: phasedElapsed, isEnabled: isAmbientMotionEnabled)
+    }
+
+    @ViewBuilder
+    private func blendedPetImage(
+        primary: NSImage,
+        secondary: NSImage?,
+        secondaryOpacity: Double
+    ) -> some View {
+        ZStack {
+            petImage(primary)
+            if let secondary {
+                petImage(secondary)
+                    .opacity(secondaryOpacity)
+            }
+        }
+    }
+
+    private func petImage(_ image: NSImage) -> some View {
+        Image(nsImage: image)
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
     }
 
     private var missingArtPlaceholder: some View {
@@ -142,30 +183,14 @@ private struct AssetPetSprite: View {
     }
 }
 
-private struct PetMotionModifier: ViewModifier {
-    let preset: PetMotionPreset
-    let elapsed: TimeInterval
-    let isEnabled: Bool
-
-    private var phase: CGFloat {
-        CGFloat(sin(elapsed * 2.4))
-    }
+private struct PetMotionSampleModifier: ViewModifier {
+    let sample: PetMotionSample
 
     func body(content: Content) -> some View {
-        guard isEnabled else { return AnyView(content) }
-
-        switch preset {
-        case .none:
-            return AnyView(content)
-        case .breathe:
-            return AnyView(content.scaleEffect(1 + phase * 0.018))
-        case .bob:
-            return AnyView(content.offset(y: phase * 2.5))
-        case .sway:
-            return AnyView(content.rotationEffect(.degrees(Double(phase) * 2.2)))
-        case .pulse:
-            return AnyView(content.scaleEffect(1 + phase * 0.04))
-        }
+        content
+            .scaleEffect(sample.scale)
+            .rotationEffect(.degrees(sample.rotationDegrees))
+            .offset(x: sample.xOffset, y: sample.yOffset)
     }
 }
 

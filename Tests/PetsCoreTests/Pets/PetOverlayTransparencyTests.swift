@@ -315,6 +315,15 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("reaction: store.currentReaction"))
     }
 
+    @Test
+    func liveOverlayProvidesStablePerInstanceAnimationPhase() throws {
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+
+        #expect(source.contains("animationPhaseOffset: PetAnimationPhaseOffset.normalized("))
+        #expect(source.contains("for: petInstance.id.uuidString"))
+    }
+
     private func sourceFile(_ path: String) throws -> URL {
         try repositoryRoot().appending(path: path)
     }

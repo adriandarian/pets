@@ -18,13 +18,27 @@ struct PetSpriteSourceTests {
     }
 
     @Test
-    func petSpriteRetainsFramePlaybackMotionAndPixelation() throws {
+    func petSpriteBlendsFramesBeforeOneAmbientTransform() throws {
         let source = try source("Sources/Pets/PetSprites.swift")
 
-        #expect(source.contains("animation.frameIndex(at: elapsed)"))
-        #expect(source.contains("PetMotionModifier("))
+        #expect(source.contains("animation.playbackSample(at: playbackElapsed)"))
+        #expect(source.contains("secondaryFrameIndex"))
+        #expect(source.contains("secondaryOpacity"))
+        #expect(source.contains("PetMotionSampleModifier("))
+        #expect(source.contains("shadowScale"))
+        #expect(source.contains("shadowOpacityMultiplier"))
+        #expect(!source.contains("private struct PetMotionModifier"))
         #expect(source.contains("pixelatedSpriteEffect"))
         #expect(source.contains("PixelatedSpriteRasterizer(pixelation: pixelation)"))
+    }
+
+    @Test
+    func reactionsFreezeIdlePlaybackAndAmbientMotion() throws {
+        let source = try source("Sources/Pets/PetSprites.swift")
+
+        #expect(source.contains("visualContext.reaction == nil"))
+        #expect(source.contains("let playbackElapsed = isAmbientMotionEnabled ? phasedElapsed : 0"))
+        #expect(source.contains("sample(at: phasedElapsed, isEnabled: isAmbientMotionEnabled)"))
     }
 
     @Test
