@@ -211,10 +211,14 @@ private struct PetDetailPane: View {
 
                 PetDetailsSection(store: store)
 
+                Divider()
+
                 PetAppearanceSection(
                     pet: pet,
                     changeSprite: changeSprite
                 )
+
+                Divider()
 
                 PetBehaviorSection(store: store)
             }
@@ -374,11 +378,31 @@ private struct SpritePreviewGridBackground: View {
     }
 }
 
+private struct FlatSettingsSection<Content: View>: View {
+    let title: String
+    private let content: Content
+
+    init(_ title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.headline)
+
+            content
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 private struct PetDetailsSection: View {
     @ObservedObject var store: PetStore
 
     var body: some View {
-        GroupBox {
+        FlatSettingsSection("Pet Details") {
             Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 12) {
                 GridRow {
                     Text("Name")
@@ -421,13 +445,8 @@ private struct PetDetailsSection: View {
                     }
                 }
             }
-            .padding(.top, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
-        } label: {
-            Text("Pet Details")
-                .font(.headline)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var selectedPet: PetInstance {
@@ -472,7 +491,7 @@ private struct PetAppearanceSection: View {
     let changeSprite: () -> Void
 
     var body: some View {
-        GroupBox {
+        FlatSettingsSection("Appearance") {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(PetCatalog.displayName(for: pet.petID))
@@ -489,13 +508,8 @@ private struct PetAppearanceSection: View {
                     changeSprite()
                 }
             }
-            .padding(.top, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
-        } label: {
-            Text("Appearance")
-                .font(.headline)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var spriteDescription: String {
@@ -508,19 +522,20 @@ private struct PetBehaviorSection: View {
     @ObservedObject var store: PetStore
 
     var body: some View {
-        GroupBox {
-            VStack(spacing: 12) {
+        FlatSettingsSection("Behavior") {
+            VStack(spacing: 0) {
                 SettingSwitchRow("Hover bounce", isOn: animationBinding(\.isHoverBounceEnabled))
+
+                Divider()
+
                 SettingSwitchRow("Idle motion", isOn: animationBinding(\.isIdleMotionEnabled))
+
+                Divider()
+
                 SettingSwitchRow("Status moods", isOn: animationBinding(\.areStatusMoodsEnabled))
             }
-            .padding(.top, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
-        } label: {
-            Text("Behavior")
-                .font(.headline)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var selectedPet: PetInstance {
@@ -561,6 +576,7 @@ private struct SettingSwitchRow: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
         }
+        .padding(.vertical, 6)
     }
 }
 
