@@ -26,6 +26,25 @@ struct PetArtResourceTests {
     }
 
     @Test
+    func snowHasCompleteIdleLoop() throws {
+        try assertCompleteIdleLoop(petID: .snowCloud)
+    }
+
+    @Test
+    func everyCloudHasExactlyEightIdleFrames() throws {
+        for definition in PetCatalog.definitions {
+            guard case let .assetPack(pack) = definition.renderSource else {
+                Issue.record("Every cloud must use an asset pack")
+                continue
+            }
+            #expect(pack.idle.frames.count == 8)
+            #expect(pack.idle.frames.map(\.resourceName) == (0..<8).map {
+                String(format: "frame-%03d", $0)
+            })
+        }
+    }
+
+    @Test
     func locatorFindsBundledFrameAndRejectsMissingFrame() {
         let existing = PetAnimationFrame(
             resourceName: "frame-000",

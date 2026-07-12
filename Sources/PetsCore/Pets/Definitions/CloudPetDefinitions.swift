@@ -119,7 +119,7 @@ public final class SnowCloudPetDefinition: PetDefinition, @unchecked Sendable {
                 transitionDuration: 0.16
             ),
             renderSource: .assetPack(
-                PetArtPack(idle: cloudAnimation(slug: "snow-cloud", motion: .breathe))
+                PetArtPack(idle: cloudIdleAnimation(slug: "snow-cloud", motion: .breathe))
             )
         )
     }
