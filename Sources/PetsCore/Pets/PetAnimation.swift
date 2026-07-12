@@ -28,17 +28,36 @@ public struct PetAnimationFrame: Equatable, Sendable {
     public let resourceExtension: String
     public let subdirectory: String
     public let duration: TimeInterval
+    public let blendDuration: TimeInterval
 
     public init(
         resourceName: String,
         resourceExtension: String,
         subdirectory: String,
-        duration: TimeInterval
+        duration: TimeInterval,
+        blendDuration: TimeInterval = 0
     ) {
         self.resourceName = resourceName
         self.resourceExtension = resourceExtension
         self.subdirectory = subdirectory
         self.duration = duration
+        self.blendDuration = blendDuration
+    }
+}
+
+public struct PetAnimationPlaybackSample: Equatable, Sendable {
+    public let primaryFrameIndex: Int
+    public let secondaryFrameIndex: Int?
+    public let secondaryOpacity: Double
+
+    public init(
+        primaryFrameIndex: Int,
+        secondaryFrameIndex: Int?,
+        secondaryOpacity: Double
+    ) {
+        self.primaryFrameIndex = primaryFrameIndex
+        self.secondaryFrameIndex = secondaryFrameIndex
+        self.secondaryOpacity = secondaryOpacity
     }
 }
 
@@ -47,41 +66,96 @@ public struct PetAnimation: Equatable, Sendable {
     public let loopBehavior: PetAnimationLoopBehavior
     public let motion: PetMotionPreset
 
+    public var totalDuration: TimeInterval {
+        frames.reduce(0) { $0 + $1.duration }
+    }
+
     public init?(
         frames: [PetAnimationFrame],
         loopBehavior: PetAnimationLoopBehavior,
         motion: PetMotionPreset
     ) {
-        guard !frames.isEmpty, frames.allSatisfy({ $0.duration > 0 }) else { return nil }
+        guard !frames.isEmpty,
+              frames.allSatisfy({
+                  $0.duration > 0
+                      && $0.blendDuration >= 0
+                      && $0.blendDuration <= $0.duration
+              })
+        else { return nil }
         self.frames = frames
         self.loopBehavior = loopBehavior
         self.motion = motion
     }
 
     public func frameIndex(at elapsed: TimeInterval) -> Int {
-        guard frames.count > 1 else { return 0 }
+        playbackSample(at: elapsed).primaryFrameIndex
+    }
 
-        let totalDuration = frames.reduce(0) { $0 + $1.duration }
+    public func playbackSample(at elapsed: TimeInterval) -> PetAnimationPlaybackSample {
+        guard frames.count > 1 else {
+            return PetAnimationPlaybackSample(
+                primaryFrameIndex: 0,
+                secondaryFrameIndex: nil,
+                secondaryOpacity: 0
+            )
+        }
+
         let nonnegativeElapsed = max(0, elapsed)
-        let position: TimeInterval
-        switch loopBehavior {
-        case .loop:
-            position = nonnegativeElapsed.truncatingRemainder(dividingBy: totalDuration)
-        case .once:
-            if nonnegativeElapsed >= totalDuration {
-                return frames.index(before: frames.endIndex)
-            }
-            position = nonnegativeElapsed
+        if loopBehavior == .once, nonnegativeElapsed >= totalDuration {
+            return PetAnimationPlaybackSample(
+                primaryFrameIndex: frames.index(before: frames.endIndex),
+                secondaryFrameIndex: nil,
+                secondaryOpacity: 0
+            )
         }
 
-        var boundary: TimeInterval = 0
+        let position = loopBehavior == .loop
+            ? nonnegativeElapsed.truncatingRemainder(dividingBy: totalDuration)
+            : nonnegativeElapsed
+
+        var frameStart: TimeInterval = 0
         for (index, frame) in frames.enumerated() {
-            boundary += frame.duration
-            if position < boundary {
-                return index
+            let frameEnd = frameStart + frame.duration
+            if position < frameEnd {
+                let timeInFrame = position - frameStart
+                let blendStart = frame.duration - frame.blendDuration
+                guard frame.blendDuration > 0, timeInFrame >= blendStart else {
+                    return PetAnimationPlaybackSample(
+                        primaryFrameIndex: index,
+                        secondaryFrameIndex: nil,
+                        secondaryOpacity: 0
+                    )
+                }
+
+                let nextIndex: Int?
+                if index < frames.index(before: frames.endIndex) {
+                    nextIndex = frames.index(after: index)
+                } else {
+                    nextIndex = loopBehavior == .loop ? 0 : nil
+                }
+                guard let nextIndex else {
+                    return PetAnimationPlaybackSample(
+                        primaryFrameIndex: index,
+                        secondaryFrameIndex: nil,
+                        secondaryOpacity: 0
+                    )
+                }
+
+                let opacity = min(1, max(0, (timeInFrame - blendStart) / frame.blendDuration))
+                return PetAnimationPlaybackSample(
+                    primaryFrameIndex: index,
+                    secondaryFrameIndex: nextIndex,
+                    secondaryOpacity: opacity
+                )
             }
+            frameStart = frameEnd
         }
-        return frames.index(before: frames.endIndex)
+
+        return PetAnimationPlaybackSample(
+            primaryFrameIndex: frames.index(before: frames.endIndex),
+            secondaryFrameIndex: nil,
+            secondaryOpacity: 0
+        )
     }
 }
 
