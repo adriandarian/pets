@@ -46,6 +46,7 @@ public final class NimbusCloudPetDefinition: PetDefinition, @unchecked Sendable 
                 shadowOpacity: 0.16,
                 transitionDuration: 0.16
             ),
+            ambientEffect: .storm,
             renderSource: .assetPack(
                 PetArtPack(idle: cloudIdleAnimation(slug: "nimbus-cloud", motion: .bob))
             )
@@ -70,6 +71,7 @@ public final class CirrusCloudPetDefinition: PetDefinition, @unchecked Sendable 
                 shadowOpacity: 0.13,
                 transitionDuration: 0.16
             ),
+            ambientEffect: .wind,
             renderSource: .assetPack(
                 PetArtPack(idle: cloudIdleAnimation(slug: "cirrus-cloud", motion: .sway))
             )
@@ -118,6 +120,7 @@ public final class SnowCloudPetDefinition: PetDefinition, @unchecked Sendable {
                 shadowOpacity: 0.15,
                 transitionDuration: 0.16
             ),
+            ambientEffect: .snow,
             renderSource: .assetPack(
                 PetArtPack(idle: cloudIdleAnimation(slug: "snow-cloud", motion: .breathe))
             )

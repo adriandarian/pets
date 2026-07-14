@@ -105,6 +105,7 @@ open class PetDefinition: @unchecked Sendable {
     public let capabilities: PetCapabilities
     public let defaults: PetDefaultConfiguration
     public let presentation: PetPresentationConfiguration
+    public let ambientEffect: PetAmbientEffectKind
     public let renderSource: PetRenderSource
 
     public init(
@@ -114,6 +115,7 @@ open class PetDefinition: @unchecked Sendable {
         capabilities: PetCapabilities,
         defaults: PetDefaultConfiguration,
         presentation: PetPresentationConfiguration,
+        ambientEffect: PetAmbientEffectKind = .none,
         renderSource: PetRenderSource
     ) {
         self.id = id
@@ -122,6 +124,7 @@ open class PetDefinition: @unchecked Sendable {
         self.capabilities = capabilities
         self.defaults = defaults
         self.presentation = presentation
+        self.ambientEffect = ambientEffect
         self.renderSource = renderSource
     }
 
