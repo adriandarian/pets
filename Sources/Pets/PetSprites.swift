@@ -59,6 +59,7 @@ private struct AssetPetSprite: View {
             && (
                 animation.frames.count > 1
                     || animation.motion != .none
+                    || definition.ambientEffect != .none
                     || visualContext.reaction != nil
             )
     }
@@ -100,6 +101,11 @@ private struct AssetPetSprite: View {
             at: motionElapsed,
             isAmbientMotionEnabled: isAmbientMotionEnabled
         )
+        let ambient = definition.ambientEffect.sample(
+            at: rawElapsed,
+            phaseOffset: visualContext.animationPhaseOffset,
+            isEnabled: isAmbientMotionEnabled
+        )
 
         GeometryReader { proxy in
             let unit = min(proxy.size.width, proxy.size.height) / 128
@@ -116,11 +122,27 @@ private struct AssetPetSprite: View {
                     .offset(y: 45 * unit)
 
                 if let primaryImage {
-                    blendedPetImage(
-                        primary: primaryImage,
-                        secondary: secondaryImage,
-                        secondaryOpacity: playback.secondaryOpacity
-                    )
+                    ZStack {
+                        PetAmbientEffectView(
+                            kind: definition.ambientEffect,
+                            sample: ambient,
+                            unit: unit,
+                            layer: .background
+                        )
+
+                        blendedPetImage(
+                            primary: primaryImage,
+                            secondary: secondaryImage,
+                            secondaryOpacity: playback.secondaryOpacity
+                        )
+
+                        PetAmbientEffectView(
+                            kind: definition.ambientEffect,
+                            sample: ambient,
+                            unit: unit,
+                            layer: .foreground
+                        )
+                    }
                         .scaleEffect(definition.presentation.contentScale)
                         .offset(
                             x: definition.presentation.anchorX * unit,
