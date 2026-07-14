@@ -1,36 +1,35 @@
-# Pet Collection Hub design QA
+# Pet Collection Family Browser design QA
 
 ## Evidence
 
-- Source visual truth: `.artifacts/pet-collection-qa/source-direction-board.png`, approved direction A (Collection Hub).
-- Rendered implementation: `.artifacts/pet-collection-qa/implementation-collection.png`, packaged `dist/Pets.app` in macOS dark mode.
-- Combined comparison: `.artifacts/pet-collection-qa/comparison-source-vs-implementation.png`.
-- Rendered viewport: 900 x 672 screenshot, containing the 900 x 620 Settings content window plus native window chrome.
-- Compared state: live provider usage after opening one Common chest; 0 keys, 157,567,808 / 500,000,000 tokens toward the next key, and 3 / 5 pets discovered.
+- Source visual truth: `.artifacts/pet-collection-family-browser/source.png`.
+- Rendered implementation: `.artifacts/pet-collection-family-browser/implementation.png`.
+- Combined comparison: `.artifacts/pet-collection-family-browser/comparison-source-vs-implementation.png`.
+- Viewport: 900 x 672 native app screenshot.
+- State: Cloud Pets family, persisted 3 of 5 ownership state.
 
-The full-view comparison is sufficient because the source direction is a single compact Collection Hub card and the implementation keeps every corresponding primary region legible in the same frame: progress, provider contributions, all three chest tiers, and the start of the collection grid. A separate focused-region comparison would duplicate the same evidence without exposing additional detail.
+## Required fidelity surfaces
 
-## Comparison findings
-
-- The implementation preserves the approved hierarchy: Collection navigation, shared token progress, provider contribution rows, chest choices, and owned-pet collection.
-- Generated chest art replaces the source concept art with purpose-built Common, Rare, and Legendary assets sized for the native cards.
-- The implementation uses the app's existing semantic dark-mode surfaces, native controls, spacing, typography, system icons, and pet artwork rather than copying the illustrative green presentation frame.
-- The collection grid continues below the fold inside the existing Settings scroll surface. This is intentional native behavior, not clipping.
-- Source and implementation numbers differ intentionally: the source is illustrative, while the implementation displays live local usage and persisted ownership.
-- No P0, P1, or P2 visual defects remain. No actionable P3 defect was identified.
+- Typography: Native system hierarchy remains consistent with the approved Collection screen and every status label is legible without truncation.
+- Spacing and layout rhythm: The family picker, progress text, and five-card Cloud Pets grid fit the 900 x 672 capture without horizontal clipping.
+- Colors and visual tokens: Obtained and missing states use semantic accent and secondary colors with sufficient dark-mode contrast.
+- Image quality and asset fidelity: Existing `PetSprite` assets remain sharp; obtained sprites stay full color and missing sprites remain recognizable when desaturated.
+- Copy and content: The selected family reads Cloud Pets, progress reads 3 of 5 obtained, and cards use only Obtained or Missing plus rarity.
+- Symbols and actions: Obtained cards use check symbols, missing cards use lock symbols, and the Collection cards contain no Add controls.
 
 ## Interaction verification
 
-- Opened the Collection tab in the packaged app.
-- Verified live Claude and Codex usage scanning and source status rows.
-- Refreshed usage and observed progress increase without minting a duplicate key.
-- Opened an enabled Common chest and revealed Nimbus.
-- Added Nimbus to the desktop from the reveal sheet.
-- Verified key spending, updated ownership, disabled chest reasons, and the 3 / 5 discovered count.
-- Verified locked pets remain unavailable in the pet picker.
+- Family picker is visible with Cloud Pets selected, and the selected category renders as one five-card family row.
+- Cumulus, Nimbus, and Snow Cloud are full-color and explicitly marked Obtained.
+- Cirrus and Lenticular are subdued and explicitly marked Missing · Rare.
+- Collection contains no Add action.
+- Unlock reveal is browse-only. The persisted state had 0 keys, so the reveal could not be reopened naturally; the passing `unlockRevealIsBrowseOnly()` source regression verifies that the reveal contains only Done.
+- Pets retains desktop-pet creation through Add Pet and lets the user choose Cumulus, Nimbus, or Snow Cloud while Cirrus and Lenticular remain visibly locked.
 
 ## Comparison history
 
-1. Pass 1: source direction A and the packaged native implementation were placed together at readable scale. The hierarchy, assets, controls, and native layout matched the approved direction with no actionable P0, P1, or P2 mismatch.
+1. Evidence preflight: The supplied 1770 x 456 Retina reference and exact 900 x 672 Computer Use capture were opened and accepted. An initial composite command accidentally included the reference twice and produced a 4464 x 672 artifact; it was rejected before visual QA and replaced.
+2. Pass 1: The source and packaged implementation were inspected together in a 2694 x 672 native-pixel composite. No implementation P0/P1/P2 issue was found, but the Retina source appeared at twice the implementation's effective scale, a P2 comparison-quality issue that made direct spacing judgment weaker.
+3. Pass 2: The source was normalized once to its 885 x 228 logical size with a sharp Lanczos downsample and centered in a 900 x 672 pane beside the unscaled 900 x 672 implementation. The final 1824 x 672 PNG shows matching five-card order, sharp sprites, legible labels, correct lock/check semantics, explicit ownership status, no Add controls, and the approved native Cloud Pets picker. No P0/P1/P2 issue remains.
 
 final result: passed

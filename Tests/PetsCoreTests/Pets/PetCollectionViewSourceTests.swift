@@ -23,8 +23,29 @@ struct PetCollectionViewSourceTests {
         #expect(source.contains("store.openChest(rarity)"))
         #expect(source.contains("PetArtResourceLocator.url(for:"))
         #expect(source.contains("\"Pet Collection\""))
-        #expect(source.contains("store.addPet(petID: petID)"))
         #expect(source.contains("UnlockedPetSheet"))
+    }
+
+    @Test
+    func collectionBrowsesOneCatalogFamilyAtATime() throws {
+        let source = try source("Sources/Pets/PetCollectionViews.swift")
+
+        #expect(source.contains("@State private var selectedCategoryID"))
+        #expect(source.contains("Picker(\"Pet family\", selection: $selectedCategoryID)"))
+        #expect(source.contains("ForEach(PetCatalog.builtInCategories"))
+        #expect(source.contains("ForEach(selectedCategory.petIDs"))
+        #expect(source.contains("\"Obtained\""))
+        #expect(source.contains("\"Missing · \\(PetCatalog.rarity(for: petID).displayName)\""))
+        #expect(!source.contains("Label(\"Add\", systemImage: \"plus\")"))
+    }
+
+    @Test
+    func unlockRevealIsBrowseOnly() throws {
+        let source = try source("Sources/Pets/PetCollectionViews.swift")
+
+        #expect(source.contains("Button(\"Done\")"))
+        #expect(!source.contains("Add to Desktop"))
+        #expect(!source.contains("store.addPet(petID: petID)"))
     }
 
     @Test

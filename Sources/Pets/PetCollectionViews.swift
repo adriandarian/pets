@@ -4,6 +4,7 @@ import SwiftUI
 
 struct PetCollectionView: View {
     @ObservedObject var store: PetStore
+    @State private var selectedCategoryID = PetCatalog.builtInCategories.first?.id
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -26,14 +27,22 @@ struct PetCollectionView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     sectionHeader(
                         "Pet Collection",
-                        detail: "\(ownedCatalogCount) of \(PetCatalog.builtInPetIDs.count) discovered"
+                        detail: "\(selectedFamilyOwnedCount) of \(selectedCategory.petIDs.count) obtained"
                     )
+
+                    Picker("Pet family", selection: $selectedCategoryID) {
+                        ForEach(PetCatalog.builtInCategories, id: \.id) { category in
+                            Text(category.displayName)
+                                .tag(Optional(category.id))
+                        }
+                    }
+                    .pickerStyle(.segmented)
 
                     LazyVGrid(
                         columns: [GridItem(.adaptive(minimum: 142), spacing: 12)],
                         spacing: 12
                     ) {
-                        ForEach(PetCatalog.builtInPetIDs, id: \.self) { petID in
+                        ForEach(selectedCategory.petIDs, id: \.self) { petID in
                             PetCollectionCard(store: store, petID: petID)
                         }
                     }
@@ -129,8 +138,13 @@ struct PetCollectionView: View {
         .background(cardBackground)
     }
 
-    private var ownedCatalogCount: Int {
-        PetCatalog.builtInPetIDs.count(where: store.isPetOwned)
+    private var selectedCategory: PetCatalogCategory {
+        PetCatalog.builtInCategories.first { $0.id == selectedCategoryID }
+            ?? PetCatalog.builtInCategories[0]
+    }
+
+    private var selectedFamilyOwnedCount: Int {
+        selectedCategory.petIDs.count(where: store.isPetOwned)
     }
 
     private var unlockSheetBinding: Binding<Bool> {
@@ -335,13 +349,11 @@ private struct PetCollectionCard: View {
                 .opacity(isOwned ? 1 : 0.34)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                if !isOwned {
-                    Image(systemName: "lock.fill")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(7)
-                        .accessibilityLabel("Locked")
-                }
+                Image(systemName: isOwned ? "checkmark.circle.fill" : "lock.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(isOwned ? Color.accentColor : Color.secondary)
+                    .padding(7)
+                    .accessibilityLabel(isOwned ? "Obtained" : "Missing")
             }
             .frame(height: 92)
 
@@ -350,18 +362,18 @@ private struct PetCollectionCard: View {
                 .lineLimit(1)
 
             if isOwned {
-                Button {
-                    store.addPet(petID: petID)
-                } label: {
-                    Label("Add", systemImage: "plus")
-                        .frame(maxWidth: .infinity)
-                }
-                .controlSize(.small)
-            } else {
-                Label(PetCatalog.rarity(for: petID).displayName, systemImage: "lock.fill")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Label("Obtained", systemImage: "checkmark.circle.fill")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Color.accentColor)
                     .frame(height: 22)
+            } else {
+                Label(
+                    "Missing · \(PetCatalog.rarity(for: petID).displayName)",
+                    systemImage: "lock.fill"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(height: 22)
             }
         }
         .padding(10)
@@ -414,21 +426,11 @@ private struct UnlockedPetSheet: View {
                     .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 10) {
-                Button("Done") {
-                    store.dismissUnlockedPet()
-                }
-                .keyboardShortcut(.cancelAction)
-
-                Button {
-                    store.addPet(petID: petID)
-                    store.dismissUnlockedPet()
-                } label: {
-                    Label("Add to Desktop", systemImage: "plus")
-                }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
+            Button("Done") {
+                store.dismissUnlockedPet()
             }
+            .buttonStyle(.borderedProminent)
+            .keyboardShortcut(.defaultAction)
         }
         .padding(30)
         .frame(width: 420, height: 430)
