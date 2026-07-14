@@ -5,7 +5,7 @@
 
 ## Goal
 
-Add a durable pet-reward loop to the native Pets settings app. Combined token usage earns keys, keys open rarity-specific chests, and each chest unlocks a pet that can then be added to the desktop.
+Add a durable pet-reward loop to the native Pets settings app. Combined token usage earns keys, keys open rarity-specific chests, and each chest unlocks a pet in a family-aware collection browser.
 
 The first release should make the loop real without introducing duplicate rewards, trading, shops, paid currency, or a large live-ops economy.
 
@@ -24,7 +24,8 @@ The first release should make the loop real without introducing duplicate reward
   - Legendary: 4 keys
 - A chest selects an unowned pet from the chosen rarity. If the rarity is exhausted, that chest is disabled and no keys are spent.
 - Duplicate pet rewards are excluded in this release.
-- Unlocking a pet adds it to the collection; it does not automatically create a desktop pet. The reveal offers an explicit **Add to Desktop** action.
+- Unlocking a pet adds it to the collection; it does not automatically create a desktop pet.
+- Collection is browse-only. Creating and managing desktop pet instances remains exclusively in the Pets tab.
 
 ## Initial Catalog Rarities
 
@@ -68,12 +69,15 @@ The Collection screen is a vertically scrolling hub with four sections:
    - Each tile shows rarity, key cost, remaining eligible pets, and an Open button.
    - Disabled reasons are explicit: not enough keys, all collected, or refresh in progress.
 
-4. **Pet collection**
-   - All catalog pets are visible in a compact grid.
-   - Owned pets render normally. Locked pets use subdued styling plus the system lock icon.
-   - Owned pets offer **Add to Desktop**. Already configured species remain addable because multiple desktop instances are still supported.
+4. **Family collection browser**
+   - A segmented family picker is sourced directly from `PetCatalog.builtInCategories` and remains visible even while Clouds is the only family.
+   - Selecting a family filters the compact pet grid to that category and updates family progress such as **3 of 5 obtained**.
+   - Obtained pets render in full color with a subtle checkmark and the text **Obtained**.
+   - Missing pets remain identifiable through a subdued sprite, system lock icon, and explicit text such as **Missing · Rare**.
+   - Collection cards have no buttons or actions. They communicate ownership and rarity without creating desktop pet instances.
+   - Future catalog families appear automatically as new picker segments without changing Collection view structure.
 
-Opening a chest presents a native reveal sheet with the unlocked pet sprite, name, rarity, and actions for **Add to Desktop** or **Done**.
+Opening a chest presents a native reveal sheet with the unlocked pet sprite, name, rarity, and a single **Done** action. Adding the unlocked species to the desktop happens later through the Pets tab.
 
 ## Visual Direction
 
@@ -101,19 +105,24 @@ On load, state normalization always unions Cumulus and all configured pet IDs in
 
 The reward refresh runs once at app start and then on a slower cadence than session scanning. Manual refresh is always available from Collection.
 
+The selected family is ephemeral view state. On appearance it uses the first catalog family; if a selected family disappears during development, the view falls back to the first available category. Family browsing does not mutate collection or pet-instance persistence.
+
 ## Error Handling
 
 - Corrupt collection persistence falls back to normalized starter ownership and reports a collection-specific status without destroying pet configuration.
 - A command that is unavailable or returns malformed data produces an error on that provider row.
 - Token totals that move backward never subtract progress or keys.
 - Opening a chest is an atomic state transition: eligibility and key balance are validated before mutation, then ownership and key spend are persisted together.
+- A missing or obsolete selected family ID falls back to the first registered catalog family instead of producing an empty or broken collection grid.
 
 ## Accessibility
 
 - Every chest image has a text accessibility label.
 - Progress exposes a combined value such as “442 million of 500 million tokens.”
 - Locked state and disabled reasons are present in text, not color alone.
-- Reveal actions are keyboard reachable and use standard button styles.
+- Obtained and missing states use text and symbols in addition to color and saturation.
+- The reveal's Done action is keyboard reachable and uses a standard button style.
+- The family picker has a descriptive **Pet family** label for accessibility even when its visible style is segmented.
 - The layout remains legible in light and dark appearance through semantic colors.
 
 ## Scope Boundaries
@@ -127,7 +136,9 @@ This release does not include duplicate conversion, pity systems, limited-time b
 - Reapplying the same usage readings awards nothing twice.
 - 500M carried tokens award exactly one key and retain the correct remainder.
 - A chest never returns an owned pet and never spends keys when it cannot open.
-- Only owned pets can be selected or added to the desktop.
-- The Collection tab, manual refresh, all three chest controls, reveal sheet, and Add to Desktop path work in the packaged macOS app.
+- Only owned pets can be selected or added to the desktop from the Pets tab.
+- Collection displays each registered family through the family picker and filters its grid to the selected family.
+- Collection cards show explicit Obtained or Missing state and contain no Add actions.
+- The Collection tab, manual refresh, all three chest controls, browse-only reveal sheet, and family browser work in the packaged macOS app.
 - Generated chest resources load from `PetsCore` in the packaged app.
 - Focused tests, the full test suite, build, packaged launch, and image-to-code visual QA all pass.
