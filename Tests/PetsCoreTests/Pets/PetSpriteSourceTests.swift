@@ -42,6 +42,39 @@ struct PetSpriteSourceTests {
     }
 
     @Test
+    func petSpriteComposesIndependentAmbientEffectsInsideWholePetMotion() throws {
+        let source = try source("Sources/Pets/PetSprites.swift")
+
+        #expect(source.contains("definition.ambientEffect.sample("))
+        #expect(source.contains("PetAmbientEffectView("))
+        #expect(source.contains("layer: .background"))
+        #expect(source.contains("layer: .foreground"))
+        #expect(source.contains("isEnabled: isAmbientMotionEnabled"))
+
+        let background = try #require(source.range(of: "layer: .background"))
+        let body = try #require(source.range(of: "blendedPetImage("))
+        let foreground = try #require(source.range(of: "layer: .foreground"))
+        let wholePetMotion = try #require(source.range(of: "PetMotionSampleModifier(sample: motion)"))
+
+        #expect(background.lowerBound < body.lowerBound)
+        #expect(body.lowerBound < foreground.lowerBound)
+        #expect(foreground.lowerBound < wholePetMotion.lowerBound)
+    }
+
+    @Test
+    func ambientEffectViewContainsStormWindAndSnowRenderers() {
+        let source = (try? source("Sources/Pets/PetAmbientEffects.swift")) ?? ""
+
+        #expect(source.contains("case (.storm, .foreground)"))
+        #expect(source.contains("case (.wind, .background)"))
+        #expect(source.contains("case (.snow, .foreground)"))
+        #expect(source.contains("VoxelRaindrop"))
+        #expect(source.contains("VoxelLightningBolt"))
+        #expect(source.contains("VoxelWindRibbon"))
+        #expect(source.contains("VoxelSnowflake"))
+    }
+
+    @Test
     func petSpriteAppliesTransparentReactionTreatmentsBeforePixelation() throws {
         let source = try source("Sources/Pets/PetSprites.swift")
 
