@@ -189,7 +189,7 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("private struct PetSidebar: View"))
         #expect(source.contains("List(selection: selectedPetBinding)"))
         #expect(source.contains(".listStyle(.sidebar)"))
-        #expect(source.contains("PetSidebar(store: store)\n                .navigationSplitViewColumnWidth"))
+        #expect(source.contains("PetSidebar("))
         #expect(!source.contains("EdgeToEdgeSidebarBackground"))
         #expect(!source.contains(".ignoresSafeArea(.container, edges: [.top, .leading, .bottom])"))
         #expect(source.contains("private struct PetDetailPane: View"))
@@ -211,7 +211,7 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("Button(\"Change Sprite...\")"))
         #expect(source.contains("SpritePickerSheet"))
         #expect(source.contains("Button(\"Delete Pet\", role: .destructive)"))
-        #expect(source.contains("store.removeSelectedPet()"))
+        #expect(source.contains("store.removePet(pet.id)"))
         #expect(source.contains("EmptyPetCollectionView"))
         #expect(!source.contains(".disabled(store.petInstances.count <= 1)"))
         #expect(source.contains("SettingSwitchRow(\"Hover bounce\""))
@@ -232,10 +232,73 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("get: { store.selectedPetInstanceID }"))
         #expect(source.contains("store.selectPetInstance(selectedID)"))
         #expect(source.contains("ForEach(store.petInstances)"))
-        #expect(source.contains("PetSidebarRow(pet: pet)"))
+        #expect(source.contains("PetSidebarRow("))
+        #expect(source.contains("pet: pet,"))
         #expect(source.contains("store.addPet()"))
         #expect(!source.contains("carouselContentWidth"))
         #expect(!source.contains("PetCarouselArrow"))
+    }
+
+    @Test
+    func petSidebarContextMenuTargetsTheClickedPet() throws {
+        let settingsSourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
+        let storeSourceURL = try sourceFile("Sources/Pets/PetStore.swift")
+        let appSourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
+        let settingsSource = try String(contentsOf: settingsSourceURL, encoding: .utf8)
+        let storeSource = try String(contentsOf: storeSourceURL, encoding: .utf8)
+        let appSource = try String(contentsOf: appSourceURL, encoding: .utf8)
+        let sidebarStart = try #require(settingsSource.range(of: "private struct PetSidebar: View"))
+        let sidebarEnd = try #require(
+            settingsSource.range(
+                of: "private struct PetSidebarRow: View",
+                range: sidebarStart.upperBound..<settingsSource.endIndex
+            )
+        )
+        let sidebarSource = String(settingsSource[sidebarStart.lowerBound..<sidebarEnd.lowerBound])
+
+        #expect(sidebarSource.contains(".contextMenu"))
+        #expect(sidebarSource.contains("Button(pet.isVisible ? \"Hide\" : \"Show\")"))
+        #expect(sidebarSource.contains("respawnPet(pet.id)"))
+        #expect(sidebarSource.contains("store.duplicatePet(pet.id)"))
+        #expect(sidebarSource.contains("store.removePet(pet.id)"))
+        #expect(!sidebarSource.contains("deletePet"))
+        #expect(settingsSource.contains("@State private var petPendingDeletionID: PetInstance.ID?"))
+        #expect(settingsSource.contains("store.removePet(pet.id)"))
+        #expect(storeSource.contains("func duplicatePet(_ id: PetInstance.ID)"))
+        #expect(storeSource.contains("func removePet(_ id: PetInstance.ID)"))
+        #expect(appSource.contains("func respawnPet(_ id: PetInstance.ID)"))
+    }
+
+    @Test
+    func petSidebarContextMenuSupportsInlineRename() throws {
+        let settingsSourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
+        let storeSourceURL = try sourceFile("Sources/Pets/PetStore.swift")
+        let settingsSource = try String(contentsOf: settingsSourceURL, encoding: .utf8)
+        let storeSource = try String(contentsOf: storeSourceURL, encoding: .utf8)
+
+        #expect(settingsSource.contains("Button(\"Rename\")"))
+        #expect(settingsSource.contains("beginRenaming(pet)"))
+        #expect(settingsSource.contains("petBeingRenamedID == pet.id"))
+        #expect(settingsSource.contains("TextField(\"Pet name\", text: $renameDraft)"))
+        #expect(settingsSource.contains(".onSubmit(commitRename)"))
+        #expect(settingsSource.contains(".onExitCommand {"))
+        #expect(settingsSource.contains("isCancellingRename = true"))
+        #expect(settingsSource.contains(".onChange(of: isRenameFieldFocused)"))
+        #expect(settingsSource.contains("#selector(NSText.selectAll(_:))"))
+        #expect(settingsSource.contains("store.updatePetName(id, name: renameDraft)"))
+        #expect(storeSource.contains("func updatePetName(_ id: PetInstance.ID, name: String)"))
+    }
+
+    @Test
+    func petSidebarRowDoesNotShowVisibilitySubtext() throws {
+        let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let rowStart = try #require(source.range(of: "private struct PetSidebarRow: View"))
+        let rowEnd = try #require(source.range(of: "private struct PetDetailPane: View", range: rowStart.upperBound..<source.endIndex))
+        let rowSource = String(source[rowStart.lowerBound..<rowEnd.lowerBound])
+
+        #expect(!rowSource.contains("\"Visible\""))
+        #expect(!rowSource.contains("\"Hidden\""))
     }
 
     @Test
@@ -266,19 +329,20 @@ struct PetOverlayTransparencyTests {
         let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("ForEach(PetCatalog.builtInPetIDs"))
+        #expect(source.contains("ForEach(PetCatalog.builtInPetIDs.filter(store.isPetOwned)"))
         #expect(source.contains("store.selectPet("))
         #expect(source.contains(".contextMenu"))
     }
 
     @Test
-    func petStoreDoesNotSeedPetsOnFirstLaunchOrAfterDeletion() throws {
+    func petStoreSeedsCumulusOnFirstLaunchButPreservesAnExplicitlyEmptyCollection() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetStore.swift")
         let persistenceSourceURL = try sourceFile("Sources/Pets/PetSettingsPersistence.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
         let persistenceSource = try String(contentsOf: persistenceSourceURL, encoding: .utf8)
 
-        #expect(persistenceSource.contains("return ([], nil)"))
+        #expect(persistenceSource.contains("let migrated = PetInstance.migratedDefault("))
+        #expect(persistenceSource.contains("return ([migrated], nil)"))
         #expect(persistenceSource.contains("return (decoded.map { $0.normalizedForCurrentCatalog() }, nil)"))
         #expect(!source.contains("cloudFamilyCollection(from:"))
         #expect(!source.contains("starterCloudFamilyInstances"))

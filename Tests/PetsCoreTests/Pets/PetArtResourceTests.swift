@@ -64,6 +64,27 @@ struct PetArtResourceTests {
     }
 
     @Test
+    func lootChestArtworkIsBundledAndTransparent() throws {
+        for chest in PetChestArtResource.allCases {
+            let url = try #require(PetArtResourceLocator.url(for: chest))
+            let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+            let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+            let bitmap = NSBitmapImageRep(cgImage: image)
+
+            #expect(image.width == image.height)
+            #expect(image.width >= 1_000)
+            #expect(image.alphaInfo != .none)
+            let corners = [
+                bitmap.colorAt(x: 0, y: 0),
+                bitmap.colorAt(x: image.width - 1, y: 0),
+                bitmap.colorAt(x: 0, y: image.height - 1),
+                bitmap.colorAt(x: image.width - 1, y: image.height - 1),
+            ]
+            #expect(corners.allSatisfy { ($0?.alphaComponent ?? 1) == 0 })
+        }
+    }
+
+    @Test
     func registeredAssetPacksUseValidProductionFrames() throws {
         for definition in PetCatalog.definitions {
             guard case let .assetPack(pack) = definition.renderSource else { continue }

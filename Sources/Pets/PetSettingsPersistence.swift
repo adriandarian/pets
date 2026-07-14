@@ -77,11 +77,11 @@ struct PetSettingsPersistence {
             }
         }
 
-        _ = PetInstance.migratedDefault(
+        let migrated = PetInstance.migratedDefault(
             petID: migratedPetID,
             pixelation: migratedPixelation,
             sessionContextLineCount: migratedContextLineCount
         )
-        return ([], nil)
+        return ([migrated], nil)
     }
 }

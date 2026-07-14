@@ -101,6 +101,7 @@ public enum PetRenderSource: Equatable, Sendable {
 open class PetDefinition: @unchecked Sendable {
     public let id: PetID
     public let displayName: String
+    public let rarity: PetRarity
     public let category: PetCategoryDescriptor
     public let capabilities: PetCapabilities
     public let defaults: PetDefaultConfiguration
@@ -111,6 +112,7 @@ open class PetDefinition: @unchecked Sendable {
     public init(
         id: PetID,
         displayName: String,
+        rarity: PetRarity,
         category: PetCategoryDescriptor,
         capabilities: PetCapabilities,
         defaults: PetDefaultConfiguration,
@@ -120,6 +122,7 @@ open class PetDefinition: @unchecked Sendable {
     ) {
         self.id = id
         self.displayName = displayName
+        self.rarity = rarity
         self.category = category
         self.capabilities = capabilities
         self.defaults = defaults

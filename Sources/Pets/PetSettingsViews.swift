@@ -5,12 +5,13 @@ import PetsCore
 private enum PetSettingsTab: Hashable {
     case general
     case pets
+    case collection
 }
 
 struct PetSettingsView: View {
     @ObservedObject var store: PetStore
     let toggleOpenAtLogin: (Bool) -> Void
-    let respawnSelectedPet: () -> Void
+    let respawnPet: (PetInstance.ID) -> Void
     @State private var selectedTab = PetSettingsTab.pets
 
     var body: some View {
@@ -24,8 +25,10 @@ struct PetSettingsView: View {
             case .pets:
                 PetConfigurationPane(
                     store: store,
-                    respawnSelectedPet: respawnSelectedPet
+                    respawnPet: respawnPet
                 )
+            case .collection:
+                PetCollectionView(store: store)
             }
         }
         .frame(width: 900, height: 620)
@@ -36,6 +39,8 @@ struct PetSettingsView: View {
                         .tag(PetSettingsTab.general)
                     Label("Pets", systemImage: "pawprint")
                         .tag(PetSettingsTab.pets)
+                    Label("Collection", systemImage: "square.grid.2x2")
+                        .tag(PetSettingsTab.collection)
                 }
                 .labelsHidden()
                 .pickerStyle(.segmented)
@@ -66,13 +71,16 @@ private struct GeneralSettingsPane: View {
 
 private struct PetConfigurationPane: View {
     @ObservedObject var store: PetStore
-    let respawnSelectedPet: () -> Void
+    let respawnPet: (PetInstance.ID) -> Void
     @State private var isSpritePickerPresented = false
-    @State private var isDeleteConfirmationPresented = false
+    @State private var petPendingDeletionID: PetInstance.ID?
 
     var body: some View {
         NavigationSplitView {
-            PetSidebar(store: store)
+            PetSidebar(
+                store: store,
+                respawnPet: respawnPet
+            )
                 .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 260)
         } detail: {
             Group {
@@ -80,9 +88,9 @@ private struct PetConfigurationPane: View {
                     PetDetailPane(
                         store: store,
                         pet: selectedPet,
-                        respawnSelectedPet: respawnSelectedPet,
+                        respawnPet: { respawnPet(selectedPet.id) },
                         changeSprite: { isSpritePickerPresented = true },
-                        deletePet: { isDeleteConfirmationPresented = true }
+                        deletePet: { petPendingDeletionID = selectedPet.id }
                     )
                 } else {
                     EmptyPetCollectionView {
@@ -98,34 +106,86 @@ private struct PetConfigurationPane: View {
             )
         }
         .confirmationDialog(
-            "Delete \(selectedPet?.name ?? "Pet")?",
-            isPresented: $isDeleteConfirmationPresented
-        ) {
+            "Delete \(petPendingDeletion?.name ?? "Pet")?",
+            isPresented: isDeleteConfirmationPresented,
+            presenting: petPendingDeletion
+        ) { pet in
             Button("Delete Pet", role: .destructive) {
-                store.removeSelectedPet()
+                store.removePet(pet.id)
+                petPendingDeletionID = nil
             }
 
             Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This removes the selected pet from your collection.")
+        } message: { pet in
+            Text("This removes \(pet.name) from your collection.")
         }
     }
 
     private var selectedPet: PetInstance? {
         store.selectedPetInstance
     }
+
+    private var petPendingDeletion: PetInstance? {
+        guard let petPendingDeletionID else { return nil }
+        return store.petInstance(for: petPendingDeletionID)
+    }
+
+    private var isDeleteConfirmationPresented: Binding<Bool> {
+        Binding(
+            get: { petPendingDeletionID != nil },
+            set: { isPresented in
+                if !isPresented {
+                    petPendingDeletionID = nil
+                }
+            }
+        )
+    }
 }
 
 private struct PetSidebar: View {
     @ObservedObject var store: PetStore
+    let respawnPet: (PetInstance.ID) -> Void
+    @State private var petBeingRenamedID: PetInstance.ID?
+    @State private var renameDraft = ""
 
     var body: some View {
         VStack(spacing: 0) {
             List(selection: selectedPetBinding) {
                 Section("My Pets") {
                     ForEach(store.petInstances) { pet in
-                        PetSidebarRow(pet: pet)
+                        PetSidebarRow(
+                            pet: pet,
+                            isRenaming: petBeingRenamedID == pet.id,
+                            renameDraft: $renameDraft,
+                            commitRename: { commitRename(pet.id) },
+                            cancelRename: { cancelRename(pet.id) }
+                        )
                             .tag(pet.id)
+                            .contextMenu {
+                                Button("Rename") {
+                                    beginRenaming(pet)
+                                }
+
+                                Divider()
+
+                                Button(pet.isVisible ? "Hide" : "Show") {
+                                    store.updatePetVisibility(pet.id, isVisible: !pet.isVisible)
+                                }
+
+                                Button("Respawn") {
+                                    respawnPet(pet.id)
+                                }
+
+                                Button("Duplicate") {
+                                    store.duplicatePet(pet.id)
+                                }
+
+                                Divider()
+
+                                Button("Delete", role: .destructive) {
+                                    store.removePet(pet.id)
+                                }
+                            }
                     }
                 }
             }
@@ -158,10 +218,35 @@ private struct PetSidebar: View {
             }
         )
     }
+
+    private func beginRenaming(_ pet: PetInstance) {
+        store.selectPetInstance(pet.id)
+        renameDraft = pet.name
+        petBeingRenamedID = pet.id
+    }
+
+    private func commitRename(_ id: PetInstance.ID) {
+        guard petBeingRenamedID == id else { return }
+        store.updatePetName(id, name: renameDraft)
+        petBeingRenamedID = nil
+        renameDraft = ""
+    }
+
+    private func cancelRename(_ id: PetInstance.ID) {
+        guard petBeingRenamedID == id else { return }
+        petBeingRenamedID = nil
+        renameDraft = ""
+    }
 }
 
 private struct PetSidebarRow: View {
     let pet: PetInstance
+    let isRenaming: Bool
+    @Binding var renameDraft: String
+    let commitRename: () -> Void
+    let cancelRename: () -> Void
+    @FocusState private var isRenameFieldFocused: Bool
+    @State private var isCancellingRename = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -177,13 +262,34 @@ private struct PetSidebarRow: View {
             )
             .frame(width: 34, height: 34)
 
-            VStack(alignment: .leading, spacing: 2) {
+            if isRenaming {
+                TextField("Pet name", text: $renameDraft)
+                    .labelsHidden()
+                    .textFieldStyle(.plain)
+                    .focused($isRenameFieldFocused)
+                    .onSubmit(commitRename)
+                    .onExitCommand {
+                        isCancellingRename = true
+                        cancelRename()
+                    }
+                    .onAppear {
+                        isCancellingRename = false
+                        isRenameFieldFocused = true
+                        DispatchQueue.main.async {
+                            NSApp.sendAction(
+                                #selector(NSText.selectAll(_:)),
+                                to: nil,
+                                from: nil
+                            )
+                        }
+                    }
+                    .onChange(of: isRenameFieldFocused) { _, isFocused in
+                        if !isFocused && isRenaming && !isCancellingRename {
+                            commitRename()
+                        }
+                    }
+            } else {
                 Text(pet.name)
-                    .lineLimit(1)
-
-                Text(pet.isVisible ? "Visible" : "Hidden")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         }
@@ -195,7 +301,7 @@ private struct PetSidebarRow: View {
 private struct PetDetailPane: View {
     @ObservedObject var store: PetStore
     let pet: PetInstance
-    let respawnSelectedPet: () -> Void
+    let respawnPet: () -> Void
     let changeSprite: () -> Void
     let deletePet: () -> Void
 
@@ -253,7 +359,7 @@ private struct PetDetailPane: View {
             Spacer(minLength: 16)
 
             Button("Respawn") {
-                respawnSelectedPet()
+                respawnPet()
             }
             .buttonStyle(.borderedProminent)
             .tint(Color(nsColor: .controlAccentColor))
@@ -264,7 +370,7 @@ private struct PetDetailPane: View {
 
             Menu {
                 Button("Duplicate") {
-                    store.duplicateSelectedPet()
+                    store.duplicatePet(pet.id)
                 }
 
                 Divider()
@@ -607,7 +713,8 @@ private struct SpritePickerSheet: View {
                 ForEach(selectedCategory.petIDs, id: \.self) { petID in
                     SpritePickerCard(
                         petID: petID,
-                        isSelected: petID == store.selectedPetInstance?.petID
+                        isSelected: petID == store.selectedPetInstance?.petID,
+                        isOwned: store.isPetOwned(petID)
                     ) {
                         store.updateSelectedPetID(petID)
                         isPresented = false
@@ -642,6 +749,7 @@ private struct SpritePickerSheet: View {
 private struct SpritePickerCard: View {
     let petID: PetID
     let isSelected: Bool
+    let isOwned: Bool
     let action: () -> Void
 
     var body: some View {
@@ -668,12 +776,20 @@ private struct SpritePickerCard: View {
                 Text(PetCatalog.displayName(for: petID))
                     .font(.headline)
                     .lineLimit(1)
+
+                if !isOwned {
+                    Label("Locked", systemImage: "lock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .padding(12)
             .frame(maxWidth: .infinity)
             .contentShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
+        .disabled(!isOwned)
+        .opacity(isOwned ? 1 : 0.58)
         .background(
             RoundedRectangle(cornerRadius: 14)
                 .fill(isSelected ? Color.accentColor.opacity(0.18) : Color.secondary.opacity(0.08))

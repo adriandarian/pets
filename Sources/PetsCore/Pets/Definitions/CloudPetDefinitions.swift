@@ -12,6 +12,7 @@ public final class CumulusCloudPetDefinition: PetDefinition, @unchecked Sendable
         super.init(
             id: .cuteCloud,
             displayName: "Cumulus",
+            rarity: .common,
             category: .cloudPets,
             capabilities: .cloudWithMoods,
             defaults: .standard,
@@ -34,6 +35,7 @@ public final class NimbusCloudPetDefinition: PetDefinition, @unchecked Sendable 
         super.init(
             id: .nimbusCloud,
             displayName: "Nimbus",
+            rarity: .common,
             category: .cloudPets,
             capabilities: .cloudWithoutMoods,
             defaults: .standard,
@@ -59,6 +61,7 @@ public final class CirrusCloudPetDefinition: PetDefinition, @unchecked Sendable 
         super.init(
             id: .cirrusCloud,
             displayName: "Cirrus",
+            rarity: .rare,
             category: .cloudPets,
             capabilities: .cloudWithoutMoods,
             defaults: .standard,
@@ -84,6 +87,7 @@ public final class LenticularCloudPetDefinition: PetDefinition, @unchecked Senda
         super.init(
             id: .lenticularCloud,
             displayName: "Lenticular",
+            rarity: .rare,
             category: .cloudPets,
             capabilities: .cloudWithoutMoods,
             defaults: .standard,
@@ -108,6 +112,7 @@ public final class SnowCloudPetDefinition: PetDefinition, @unchecked Sendable {
         super.init(
             id: .snowCloud,
             displayName: "Snow Cloud",
+            rarity: .legendary,
             category: .cloudPets,
             capabilities: .cloudWithoutMoods,
             defaults: .standard,

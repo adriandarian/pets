@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Pet Collection Design QA</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #111315; color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    main { width: 1320px; min-height: 690px; padding: 14px; }
+    header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    h1 { margin: 0; font-size: 20px; }
+    p { margin: 0; color: #9ca4aa; font-size: 12px; }
+    .compare { display: grid; grid-template-columns: 480px 800px; gap: 12px; align-items: start; }
+    section { min-width: 0; }
+    h2 { margin: 0 0 5px; font-size: 13px; color: #cbd1d5; }
+    .frame { height: 598px; overflow: hidden; border: 1px solid #3b4247; border-radius: 14px; background: #202428; position: relative; }
+    .source img { position: absolute; width: 1534px; height: 872px; max-width: none; left: -23px; top: -212px; }
+    .implementation img { width: 800px; height: 598px; display: block; object-fit: contain; }
+  </style>
+</head>
+<body>
+  <main>
+    <header><h1>Collection Hub comparison</h1><p>Approved direction A → packaged native macOS implementation</p></header>
+    <div class="compare">
+      <section><h2>Source visual truth — Collection Hub card</h2><div class="frame source"><img src="source-direction-board.png" alt="Approved Collection Hub direction"></div></section>
+      <section><h2>Rendered implementation — Pets.app at 900 × 672</h2><div class="frame implementation"><img src="implementation-collection.png" alt="Native Collection implementation"></div></section>
+    </div>
+  </main>
+</body>
+</html>

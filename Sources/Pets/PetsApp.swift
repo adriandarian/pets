@@ -19,8 +19,8 @@ struct PetsApp: App {
                 toggleOpenAtLogin: { isEnabled in
                     appDelegate.setOpenAtLogin(isEnabled)
                 },
-                respawnSelectedPet: {
-                    appDelegate.respawnSelectedPet()
+                respawnPet: { petID in
+                    appDelegate.respawnPet(petID)
                 }
             )
         }
@@ -94,11 +94,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             && window.styleMask.contains(.closable)
     }
 
-    func respawnSelectedPet() {
-        guard let selectedID = store.selectedPetInstanceID else { return }
-        panels[selectedID]?.close()
-        panels.removeValue(forKey: selectedID)
-        store.updatePetVisibility(selectedID, isVisible: true)
+    func respawnPet(_ id: PetInstance.ID) {
+        guard store.petInstance(for: id) != nil else { return }
+        panels[id]?.close()
+        panels.removeValue(forKey: id)
+        store.updatePetVisibility(id, isVisible: true)
         syncPetPanels()
     }
 

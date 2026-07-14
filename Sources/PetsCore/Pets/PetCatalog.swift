@@ -64,6 +64,14 @@ public enum PetCatalog {
         definition(for: resolvedPetID(petID))?.capabilities.maximumPixelation ?? .medium
     }
 
+    public static func rarity(for petID: PetID) -> PetRarity {
+        definition(for: resolvedPetID(petID))?.rarity ?? .common
+    }
+
+    public static func petIDs(for rarity: PetRarity) -> [PetID] {
+        definitions.lazy.filter { $0.rarity == rarity }.map(\.id)
+    }
+
     public static func definition(for petID: PetID) -> PetDefinition? {
         definitionsByID[petID]
     }

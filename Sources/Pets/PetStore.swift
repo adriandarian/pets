@@ -2,6 +2,22 @@ import PetsCore
 import CoreGraphics
 import Foundation
 
+struct PetUsageSourceStatus: Identifiable, Equatable {
+    let id: String
+    let displayName: String
+    var tokens: Int64?
+    var periodID: String?
+    var errorMessage: String?
+    var updatedAt: Date?
+}
+
+private struct PetUsageSourceResult: Sendable {
+    let id: String
+    let displayName: String
+    let reading: PetUsageReading?
+    let errorMessage: String?
+}
+
 @MainActor
 final class PetStore: ObservableObject {
     @Published private(set) var sessions: [HarnessSession] = []
@@ -11,27 +27,56 @@ final class PetStore: ObservableObject {
     @Published private(set) var isOpenAtLoginEnabled = false
     @Published private(set) var petInstances: [PetInstance]
     @Published private(set) var selectedPetInstanceID: PetInstance.ID?
+    @Published private(set) var collectionState: PetCollectionState
+    @Published private(set) var usageSourceStatuses: [PetUsageSourceStatus]
+    @Published private(set) var isRefreshingRewardUsage = false
+    @Published private(set) var unlockedPetID: PetID?
+    @Published private(set) var collectionError: String?
     @Published private var dismissedSessions: Set<PetDismissedSession> = []
 
     private let harness: any PetHarness
     private let settingsPersistence: PetSettingsPersistence
+    private let collectionPersistence: PetCollectionPersistence
+    private let usageSources: [any PetUsageSource]
     private var refreshTask: Task<Void, Never>?
+    private var rewardRefreshTask: Task<Void, Never>?
+    private var manualRewardRefreshTask: Task<Void, Never>?
     private var sessionObservationCoordinator = PetSessionObservationCoordinator()
     private var completionReactionTask: Task<Void, Never>?
     private var completionReactionExpiry = PetCompletionReactionExpiry()
     private static let refreshInterval: Duration = .seconds(5)
+    private static let rewardRefreshInterval: Duration = .seconds(15 * 60)
     private static let completionReactionDuration: Duration = .seconds(4)
 
     init(
         harness: any PetHarness = ClaudeHarness(),
-        defaults: UserDefaults = .standard
+        defaults: UserDefaults = .standard,
+        usageSources: [any PetUsageSource] = [BuildCLIUsageSource(), CodexUsageSource()]
     ) {
         self.harness = harness
         self.settingsPersistence = PetSettingsPersistence(defaults: defaults)
+        self.collectionPersistence = PetCollectionPersistence(defaults: defaults)
+        self.usageSources = usageSources
         let loadedPetConfiguration = settingsPersistence.loadPetConfiguration()
         let loadedInstances = loadedPetConfiguration.instances
+        let loadedCollection = collectionPersistence.load(
+            grandfathering: loadedInstances.map(\.petID)
+        )
         self.petInstances = loadedInstances
         self.selectedPetInstanceID = loadedPetConfiguration.selectedID
+        self.collectionState = loadedCollection.state
+        self.collectionError = loadedCollection.error
+        self.usageSourceStatuses = usageSources.map { source in
+            let checkpoint = loadedCollection.state.providerCheckpoints[source.id]
+            return PetUsageSourceStatus(
+                id: source.id,
+                displayName: source.displayName,
+                tokens: checkpoint?.observedTokens,
+                periodID: checkpoint?.periodID,
+                errorMessage: nil,
+                updatedAt: nil
+            )
+        }
         self.lastError = loadedPetConfiguration.error
         self.currentReaction = loadedPetConfiguration.error == nil ? nil : .error
         self.sessionObservationCoordinator.recordError(loadedPetConfiguration.error)
@@ -39,22 +84,41 @@ final class PetStore: ObservableObject {
 
     deinit {
         refreshTask?.cancel()
+        rewardRefreshTask?.cancel()
+        manualRewardRefreshTask?.cancel()
         completionReactionTask?.cancel()
     }
 
     func start() {
-        guard refreshTask == nil else { return }
-        refreshTask = Task { [weak self] in
-            guard let self else { return }
-            await refresh()
-
-            while !Task.isCancelled {
-                do {
-                    try await Task.sleep(for: Self.refreshInterval)
-                } catch {
-                    return
-                }
+        if refreshTask == nil {
+            refreshTask = Task { [weak self] in
+                guard let self else { return }
                 await refresh()
+
+                while !Task.isCancelled {
+                    do {
+                        try await Task.sleep(for: Self.refreshInterval)
+                    } catch {
+                        return
+                    }
+                    await refresh()
+                }
+            }
+        }
+
+        if rewardRefreshTask == nil {
+            rewardRefreshTask = Task { [weak self] in
+                guard let self else { return }
+                await performRewardRefresh()
+
+                while !Task.isCancelled {
+                    do {
+                        try await Task.sleep(for: Self.rewardRefreshInterval)
+                    } catch {
+                        return
+                    }
+                    await performRewardRefresh()
+                }
             }
         }
     }
@@ -121,7 +185,19 @@ final class PetStore: ObservableObject {
     }
 
     func addPet() {
-        var instance = PetInstance.defaultInstance()
+        addPet(petID: PetCatalog.defaultPetID)
+    }
+
+    func addPet(petID: PetID) {
+        guard isPetOwned(petID) else { return }
+        guard let definition = PetCatalog.definition(for: petID) else { return }
+        var instance = PetInstance(
+            name: definition.displayName,
+            petID: definition.id,
+            pixelation: definition.defaults.pixelation,
+            sessionContextLineCount: definition.defaults.sessionContextLineCount,
+            animationSettings: definition.defaults.animationSettings
+        )
         instance.name = uniquePetName(baseName: instance.name)
         petInstances.append(instance)
         selectedPetInstanceID = instance.id
@@ -129,8 +205,8 @@ final class PetStore: ObservableObject {
         persistSelectedPetInstanceID()
     }
 
-    func duplicateSelectedPet() {
-        guard var instance = selectedPetInstance else { return }
+    func duplicatePet(_ id: PetInstance.ID) {
+        guard var instance = petInstance(for: id) else { return }
         instance.id = UUID()
         instance.name = uniquePetName(baseName: instance.name)
         petInstances.append(instance)
@@ -174,10 +250,13 @@ final class PetStore: ObservableObject {
         updateSelectedPetContextLineCount(requestedLineCount)
     }
 
-    func removeSelectedPet() {
-        guard let selectedPetInstanceID else { return }
-        petInstances.removeAll { $0.id == selectedPetInstanceID }
-        self.selectedPetInstanceID = petInstances.first?.id
+    func removePet(_ id: PetInstance.ID) {
+        guard let index = petInstances.firstIndex(where: { $0.id == id }) else { return }
+        let wasSelected = selectedPetInstanceID == id
+        petInstances.remove(at: index)
+        if wasSelected {
+            selectedPetInstanceID = petInstances.first?.id
+        }
         persistSelectedPetInstanceID()
         persistPetInstances()
     }
@@ -190,19 +269,72 @@ final class PetStore: ObservableObject {
         persistSelectedPetInstanceID()
     }
 
-    func updateSelectedPetName(_ name: String) {
+    func updatePetName(_ id: PetInstance.ID, name: String) {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        updateSelectedPet { pet in
+        updatePet(id) { pet in
             pet.name = trimmedName.isEmpty
                 ? PetCatalog.displayName(for: pet.petID)
                 : trimmedName
         }
     }
 
+    func updateSelectedPetName(_ name: String) {
+        guard let selectedPetInstanceID else { return }
+        updatePetName(selectedPetInstanceID, name: name)
+    }
+
     func updateSelectedPetID(_ petID: PetID) {
+        guard isPetOwned(petID) else { return }
         updateSelectedPet { pet in
             pet.changePetID(petID)
         }
+    }
+
+    func isPetOwned(_ petID: PetID) -> Bool {
+        collectionState.ownedPetIDs.contains(PetCatalog.resolvedPetID(petID))
+    }
+
+    func unownedPetIDs(for rarity: PetRarity) -> [PetID] {
+        collectionState.unownedPetIDs(
+            for: rarity,
+            eligiblePetIDs: PetCatalog.petIDs(for: rarity)
+        )
+    }
+
+    func refreshRewardUsage() {
+        guard manualRewardRefreshTask == nil, !isRefreshingRewardUsage else { return }
+        manualRewardRefreshTask = Task { [weak self] in
+            guard let self else { return }
+            await performRewardRefresh()
+            manualRewardRefreshTask = nil
+        }
+    }
+
+    func openChest(_ rarity: PetRarity) {
+        var updatedState = collectionState
+        let candidates = updatedState.unownedPetIDs(
+            for: rarity,
+            eligiblePetIDs: PetCatalog.petIDs(for: rarity)
+        )
+        let selectionIndex = candidates.isEmpty ? 0 : Int.random(in: candidates.indices)
+
+        do {
+            let petID = try updatedState.openChest(
+                rarity: rarity,
+                eligiblePetIDs: PetCatalog.petIDs(for: rarity),
+                selectionIndex: selectionIndex
+            )
+            collectionState = updatedState
+            unlockedPetID = petID
+            collectionError = nil
+            collectionPersistence.persist(updatedState)
+        } catch {
+            collectionError = error.localizedDescription
+        }
+    }
+
+    func dismissUnlockedPet() {
+        unlockedPetID = nil
     }
 
     func updateSelectedPetPixelation(_ pixelation: PetSpritePixelation) {
@@ -273,6 +405,70 @@ final class PetStore: ObservableObject {
                 setLastError(error.localizedDescription)
                 lastUpdated = Date()
             }
+        }
+    }
+
+    private func performRewardRefresh() async {
+        guard !isRefreshingRewardUsage else { return }
+        isRefreshingRewardUsage = true
+        defer { isRefreshingRewardUsage = false }
+
+        let sources = usageSources
+        let results = await Task.detached(priority: .utility) {
+            sources.map { source in
+                do {
+                    return PetUsageSourceResult(
+                        id: source.id,
+                        displayName: source.displayName,
+                        reading: try source.read(),
+                        errorMessage: nil
+                    )
+                } catch {
+                    return PetUsageSourceResult(
+                        id: source.id,
+                        displayName: source.displayName,
+                        reading: nil,
+                        errorMessage: error.localizedDescription
+                    )
+                }
+            }
+        }.value
+        guard !Task.isCancelled else { return }
+
+        let refreshedAt = Date()
+        var updatedState = collectionState
+        var hadSuccessfulReading = false
+        usageSourceStatuses = results.map { result in
+            if let reading = result.reading {
+                hadSuccessfulReading = true
+                _ = updatedState.apply(reading)
+                return PetUsageSourceStatus(
+                    id: result.id,
+                    displayName: result.displayName,
+                    tokens: reading.tokens,
+                    periodID: reading.periodID,
+                    errorMessage: nil,
+                    updatedAt: refreshedAt
+                )
+            }
+
+            let previous = usageSourceStatuses.first { $0.id == result.id }
+            return PetUsageSourceStatus(
+                id: result.id,
+                displayName: result.displayName,
+                tokens: previous?.tokens,
+                periodID: previous?.periodID,
+                errorMessage: result.errorMessage,
+                updatedAt: refreshedAt
+            )
+        }
+
+        if updatedState != collectionState {
+            collectionState = updatedState
+            collectionPersistence.persist(updatedState)
+        }
+        if hadSuccessfulReading {
+            collectionError = nil
         }
     }
 

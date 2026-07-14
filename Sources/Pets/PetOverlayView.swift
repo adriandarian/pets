@@ -97,7 +97,7 @@ struct PetOverlayView: View {
                                     isPetHovered = petInstance.animationSettings.isHoverBounceEnabled && hovering
                                 }
                                 .contextMenu {
-                                    ForEach(PetCatalog.builtInPetIDs, id: \.self) { petID in
+                                    ForEach(PetCatalog.builtInPetIDs.filter(store.isPetOwned), id: \.self) { petID in
                                         Button {
                                             store.selectPetInstance(petInstance.id)
                                             store.selectPet(petID)

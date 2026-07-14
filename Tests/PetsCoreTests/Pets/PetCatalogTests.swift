@@ -39,6 +39,19 @@ struct PetCatalogTests {
     }
 
     @Test
+    func cloudRaritiesDriveChestEligibility() {
+        #expect(PetCatalog.rarity(for: .cuteCloud) == .common)
+        #expect(PetCatalog.rarity(for: .nimbusCloud) == .common)
+        #expect(PetCatalog.rarity(for: .cirrusCloud) == .rare)
+        #expect(PetCatalog.rarity(for: .lenticularCloud) == .rare)
+        #expect(PetCatalog.rarity(for: .snowCloud) == .legendary)
+
+        #expect(PetCatalog.petIDs(for: .common) == [.cuteCloud, .nimbusCloud])
+        #expect(PetCatalog.petIDs(for: .rare) == [.cirrusCloud, .lenticularCloud])
+        #expect(PetCatalog.petIDs(for: .legendary) == [.snowCloud])
+    }
+
+    @Test
     func cumulusOwnsEverySteadyAnimationState() throws {
         let cumulus = try #require(PetCatalog.definition(for: .cuteCloud))
 
