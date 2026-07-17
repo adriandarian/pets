@@ -3,25 +3,18 @@ import SwiftUI
 import PetsCore
 
 private enum PetSettingsTab: Hashable {
-    case general
     case pets
     case collection
 }
 
 struct PetSettingsView: View {
     @ObservedObject var store: PetStore
-    let toggleOpenAtLogin: (Bool) -> Void
     let respawnPet: (PetInstance.ID) -> Void
     @State private var selectedTab = PetSettingsTab.pets
 
     var body: some View {
         Group {
             switch selectedTab {
-            case .general:
-                GeneralSettingsPane(
-                    store: store,
-                    toggleOpenAtLogin: toggleOpenAtLogin
-                )
             case .pets:
                 PetConfigurationPane(
                     store: store,
@@ -35,8 +28,6 @@ struct PetSettingsView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Picker("Settings Section", selection: $selectedTab) {
-                    Label("General", systemImage: "gearshape")
-                        .tag(PetSettingsTab.general)
                     Label("Pets", systemImage: "pawprint")
                         .tag(PetSettingsTab.pets)
                     Label("Collection", systemImage: "square.grid.2x2")
@@ -46,26 +37,6 @@ struct PetSettingsView: View {
                 .pickerStyle(.segmented)
             }
         }
-    }
-}
-
-private struct GeneralSettingsPane: View {
-    @ObservedObject var store: PetStore
-    let toggleOpenAtLogin: (Bool) -> Void
-
-    var body: some View {
-        Form {
-            Toggle("Open at Login", isOn: openAtLoginBinding)
-        }
-        .formStyle(.grouped)
-        .padding(20)
-    }
-
-    private var openAtLoginBinding: Binding<Bool> {
-        Binding(
-            get: { store.isOpenAtLoginEnabled },
-            set: { toggleOpenAtLogin($0) }
-        )
     }
 }
 

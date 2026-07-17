@@ -24,7 +24,6 @@ final class PetStore: ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var currentReaction: PetReaction?
     private(set) var lastUpdated: Date?
-    @Published private(set) var isOpenAtLoginEnabled = false
     @Published private(set) var petInstances: [PetInstance]
     @Published private(set) var selectedPetInstanceID: PetInstance.ID?
     @Published private(set) var collectionState: PetCollectionState
@@ -231,11 +230,6 @@ final class PetStore: ObservableObject {
         updatePet(id) { pet in
             pet.isVisible = isVisible
         }
-    }
-
-    func updateOpenAtLoginEnabled(_ isEnabled: Bool) {
-        guard isOpenAtLoginEnabled != isEnabled else { return }
-        isOpenAtLoginEnabled = isEnabled
     }
 
     func updateSpritePixelation(_ requestedPixelation: PetSpritePixelation) {

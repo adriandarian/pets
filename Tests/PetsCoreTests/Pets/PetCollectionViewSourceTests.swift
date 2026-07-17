@@ -4,9 +4,12 @@ import Testing
 @Suite
 struct PetCollectionViewSourceTests {
     @Test
-    func settingsExposeCollectionAsAThirdNativeTab() throws {
+    func settingsExposeCollectionAlongsidePets() throws {
         let source = try source("Sources/Pets/PetSettingsViews.swift")
 
+        #expect(!source.contains("case general"))
+        #expect(!source.contains("Label(\"General\""))
+        #expect(source.contains("case pets"))
         #expect(source.contains("case collection"))
         #expect(source.contains("PetCollectionView(store: store)"))
         #expect(source.contains("Label(\"Collection\", systemImage: \"square.grid.2x2\")"))

@@ -16,9 +16,6 @@ struct PetsApp: App {
         Window("Pets", id: PetsWindowID.configuration) {
             PetSettingsView(
                 store: appDelegate.store,
-                toggleOpenAtLogin: { isEnabled in
-                    appDelegate.setOpenAtLogin(isEnabled)
-                },
                 respawnPet: { petID in
                     appDelegate.respawnPet(petID)
                 }
@@ -54,7 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        store.updateOpenAtLoginEnabled(LoginItemController.isEnabled)
+        disableLegacyOpenAtLogin()
 
         store.$petInstances
             .sink { [weak self] _ in
@@ -66,6 +63,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .store(in: &cancellables)
         syncPetPanels()
         store.start()
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
+    private func disableLegacyOpenAtLogin() {
+        let status = SMAppService.mainApp.status
+        guard status == .enabled || status == .requiresApproval else { return }
+
+        do {
+            try SMAppService.mainApp.unregister()
+        } catch {
+            store.recordError(error.localizedDescription)
+        }
     }
 
     func setAllPetsVisible(_ isVisible: Bool) {
@@ -103,16 +115,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panels.removeValue(forKey: id)
         store.updatePetVisibility(id, isVisible: true)
         syncPetPanels()
-    }
-
-    func setOpenAtLogin(_ isEnabled: Bool) {
-        do {
-            try LoginItemController.setEnabled(isEnabled)
-            store.updateOpenAtLoginEnabled(LoginItemController.isEnabled)
-        } catch {
-            store.updateOpenAtLoginEnabled(LoginItemController.isEnabled)
-            store.recordError(error.localizedDescription)
-        }
     }
 
     private func makePanel(for petInstance: PetInstance, index: Int) -> PetPanel {
@@ -243,24 +245,6 @@ private struct PetMenuView: View {
 
         Button("Quit Pets") {
             NSApplication.shared.terminate(nil)
-        }
-    }
-}
-
-private enum LoginItemController {
-    static var isEnabled: Bool {
-        SMAppService.mainApp.status == .enabled
-    }
-
-    static func setEnabled(_ isEnabled: Bool) throws {
-        if isEnabled {
-            if SMAppService.mainApp.status != .enabled {
-                try SMAppService.mainApp.register()
-            }
-        } else {
-            if SMAppService.mainApp.status == .enabled {
-                try SMAppService.mainApp.unregister()
-            }
         }
     }
 }
