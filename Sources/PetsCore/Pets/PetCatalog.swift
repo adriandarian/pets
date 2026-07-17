@@ -35,6 +35,7 @@ public enum PetCatalog {
         CirrusCloudPetDefinition(),
         LenticularCloudPetDefinition(),
         SnowCloudPetDefinition(),
+        KnotlingPetDefinition(),
     ]
 
     private static let definitionsByID = Dictionary(
@@ -46,6 +47,11 @@ public enum PetCatalog {
             id: PetCategoryDescriptor.cloudPets.id,
             displayName: PetCategoryDescriptor.cloudPets.displayName,
             petIDs: [.cuteCloud, .nimbusCloud, .cirrusCloud, .lenticularCloud, .snowCloud]
+        ),
+        PetCatalogCategory(
+            id: PetCategoryDescriptor.tesslings.id,
+            displayName: PetCategoryDescriptor.tesslings.displayName,
+            petIDs: [.knotling]
         )
     ]
     public static let builtInPetIDs: [PetID] = builtInCategories.flatMap(\.petIDs)

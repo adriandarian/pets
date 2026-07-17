@@ -14,7 +14,25 @@ struct PetCatalogTests {
     }
 
     @Test
-    func cloudFamilyIsTheOnlyRegisteredFamily() throws {
+    func knotlingDefinitionOwnsItsCatalogAndAnimationContract() throws {
+        let definition = try #require(PetCatalog.definition(for: .knotling))
+        #expect(definition is KnotlingPetDefinition)
+        #expect(definition.displayName == "Knotling")
+        #expect(definition.rarity == .common)
+        #expect(definition.capabilities.maximumPixelation == .chunky)
+        guard case let .assetPack(pack) = definition.renderSource else {
+            Issue.record("Knotling must use an asset pack")
+            return
+        }
+        #expect(pack.idle.frames.count == 8)
+        #expect(pack.busy?.frames.count == 4)
+        #expect(pack.waiting?.frames.count == 4)
+        #expect(pack.excited?.frames.count == 5)
+        #expect(pack.sleeping?.frames.count == 4)
+    }
+
+    @Test
+    func registeredFamiliesIncludeCloudsAndKnotling() throws {
         let cloudPetIDs: [PetID] = [
             .cuteCloud,
             .nimbusCloud,
@@ -22,15 +40,20 @@ struct PetCatalogTests {
             .lenticularCloud,
             .snowCloud,
         ]
+        let allPetIDs = cloudPetIDs + [.knotling]
 
-        #expect(PetCatalog.definitions.map(\.id) == cloudPetIDs)
-        #expect(PetCatalog.builtInPetIDs == cloudPetIDs)
+        #expect(PetCatalog.definitions.map(\.id) == allPetIDs)
+        #expect(PetCatalog.builtInPetIDs == allPetIDs)
 
-        let category = try #require(PetCatalog.builtInCategories.first)
-        #expect(PetCatalog.builtInCategories.count == 1)
-        #expect(category.id == "cloud-pets")
-        #expect(category.displayName == "Cloud Pets")
-        #expect(category.petIDs == cloudPetIDs)
+        #expect(PetCatalog.builtInCategories.count == 2)
+        let cloudCategory = try #require(PetCatalog.builtInCategories.first)
+        #expect(cloudCategory.id == "cloud-pets")
+        #expect(cloudCategory.displayName == "Cloud Pets")
+        #expect(cloudCategory.petIDs == cloudPetIDs)
+        let tesslingCategory = PetCatalog.builtInCategories[1]
+        #expect(tesslingCategory.id == "tesslings")
+        #expect(tesslingCategory.displayName == "Tesslings")
+        #expect(tesslingCategory.petIDs == [.knotling])
     }
 
     @Test
@@ -56,7 +79,7 @@ struct PetCatalogTests {
         #expect(PetCatalog.rarity(for: .lenticularCloud) == .rare)
         #expect(PetCatalog.rarity(for: .snowCloud) == .legendary)
 
-        #expect(PetCatalog.petIDs(for: .common) == [.cuteCloud, .nimbusCloud])
+        #expect(PetCatalog.petIDs(for: .common) == [.cuteCloud, .nimbusCloud, .knotling])
         #expect(PetCatalog.petIDs(for: .rare) == [.cirrusCloud, .lenticularCloud])
         #expect(PetCatalog.petIDs(for: .legendary) == [.snowCloud])
     }
@@ -109,9 +132,10 @@ struct PetCatalogTests {
 
     @Test
     func pixelationUsesCloudFamilyCapabilities() {
-        for petID in PetCatalog.builtInPetIDs {
+        for petID in [PetID.cuteCloud, .nimbusCloud, .cirrusCloud, .lenticularCloud, .snowCloud] {
             #expect(PetCatalog.pixelation(.chunky, allowedFor: petID) == .medium)
         }
+        #expect(PetCatalog.pixelation(.chunky, allowedFor: .knotling) == .chunky)
         #expect(PetCatalog.pixelation(.chunky, allowedFor: PetID(rawValue: "helper-cloud")) == .medium)
     }
 }
