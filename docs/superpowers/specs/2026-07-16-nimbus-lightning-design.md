@@ -12,12 +12,12 @@ Make Nimbus lightning easier to see by extending the bolt farther below the clou
 
 ## Cadence
 
-- Reduce the double-flash cycle from 4.8 seconds to 3.2 seconds.
+- Reduce the double-flash cycle from 4.8 seconds to 1.8 seconds, making the sequence nearly three times as frequent without changing its two-pulse shape.
 - Preserve the existing two-pulse shape, relative pulse brightness, and phase offset between pets.
 - Keep lightning disabled when ambient motion is disabled.
 
 ## Verification
 
-- Add sampling tests that fail with the 4.8-second cadence and pass when strong flashes repeat 3.2 seconds apart.
+- Add sampling tests that fail with the 4.8-second cadence and pass when strong flashes repeat 1.8 seconds apart.
 - Add renderer source checks that require a 42-point bolt and the downward-adjusted center in both rendering paths.
 - Run the full project check, rebuild `dist/Pets.app`, and relaunch through a normal application quit/open flow.
