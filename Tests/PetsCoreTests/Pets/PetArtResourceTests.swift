@@ -76,10 +76,10 @@ struct PetArtResourceTests {
     }
 
     @Test
-    func everyCloudHasExactlyEightIdleFrames() throws {
+    func everyRegisteredPetHasExactlyEightIdleFrames() throws {
         for definition in PetCatalog.definitions {
             guard case let .assetPack(pack) = definition.renderSource else {
-                Issue.record("Every cloud must use an asset pack")
+                Issue.record("Every registered pet must use an asset pack")
                 continue
             }
             #expect(pack.idle.frames.count == 8)
@@ -169,8 +169,8 @@ struct PetArtResourceTests {
     }
 
     @Test
-    func idleFramesStayAnchoredToCanonicalBounds() throws {
-        for definition in PetCatalog.definitions {
+    func cloudIdleFramesStayAnchoredToCanonicalBounds() throws {
+        for definition in PetCatalog.definitions where definition.category == .cloudPets {
             guard case let .assetPack(pack) = definition.renderSource else { continue }
             let images = try pack.idle.frames.map { frame -> CGImage in
                 let url = try #require(PetArtResourceLocator.url(for: frame))
@@ -188,6 +188,29 @@ struct PetArtResourceTests {
                 #expect(abs(bounds.midY - canonical.midY) <= 8)
                 #expect(abs(bounds.width - canonical.width) / canonical.width <= sizeTolerance)
                 #expect(abs(bounds.height - canonical.height) / canonical.height <= sizeTolerance)
+            }
+        }
+    }
+
+    @Test
+    func tesslingIdleFramesStayInsideTheirReconfigurationEnvelope() throws {
+        for definition in PetCatalog.definitions where definition.category == .tesslings {
+            guard case let .assetPack(pack) = definition.renderSource else { continue }
+
+            for frame in pack.idle.frames {
+                let url = try #require(PetArtResourceLocator.url(for: frame))
+                let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+                let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+                let bounds = try #require(alphaBounds(in: image))
+
+                #expect(bounds.minX >= 28)
+                #expect(bounds.minY >= 28)
+                #expect(bounds.maxX <= 488)
+                #expect(bounds.maxY <= 488)
+                #expect(abs(bounds.midX - 256) <= 48)
+                #expect(abs(bounds.midY - 256) <= 48)
+                #expect(bounds.width >= 280)
+                #expect(bounds.height >= 220)
             }
         }
     }

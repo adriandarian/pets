@@ -90,6 +90,28 @@ struct PetCollectionStateTests {
     }
 
     @Test
+    func everyTesslingCanBeUnlockedFromItsRarityChest() throws {
+        let tesslings: [(petID: PetID, rarity: PetRarity)] = [
+            (.knotling, .common),
+            (.prismite, .rare),
+            (.orbitling, .legendary),
+        ]
+
+        for tessling in tesslings {
+            var state = PetCollectionState(keyCount: tessling.rarity.keyCost)
+            let unlocked = try state.openChest(
+                rarity: tessling.rarity,
+                eligiblePetIDs: [tessling.petID],
+                selectionIndex: 0
+            )
+
+            #expect(unlocked == tessling.petID)
+            #expect(state.ownedPetIDs.contains(tessling.petID))
+            #expect(state.keyCount == 0)
+        }
+    }
+
+    @Test
     func chestValidationNeverSpendsKeys() {
         var insufficient = PetCollectionState(keyCount: 1)
         #expect(throws: PetChestOpenError.insufficientKeys(required: 2)) {
