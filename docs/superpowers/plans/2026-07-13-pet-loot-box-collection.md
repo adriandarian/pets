@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to execute this plan task-by-task with review checkpoints.
 
-**Goal:** Ship the approved native Collection Hub so 500M combined Claude/Codex tokens earn a shared key and rarity chests unlock non-duplicate pets.
+**Goal:** Ship the approved native Collection Hub so 500M combined Claude/Codex tokens earn a Common Key, keys upgrade upward at 5:1, and rarity chests unlock non-duplicate pets of their exact tier.
 
 **Architecture:** Put reward economy, catalog rarity, usage readings, and pure parsers in `PetsCore`; keep `UserDefaults`, refresh orchestration, and SwiftUI presentation in the `Pets` executable. Persist a single normalized collection state, apply provider readings idempotently, and expose the result through `PetStore` to a new third settings tab.
 
@@ -12,9 +12,10 @@
 
 ## Global Constraints
 
-- One Pet Key is earned per exactly `500_000_000` newly observed combined tokens, with remainder carried forward.
+- One Common Key is earned per exactly `500_000_000` newly observed combined tokens, with remainder carried forward.
 - Cumulus and every already-configured pet are always normalized into ownership.
-- Common costs 1 key, Rare 2 keys, Legendary 4 keys.
+- Five Common Keys upgrade to one Rare Key; five Rare Keys upgrade to one Legendary Key.
+- Every chest costs one key matching its rarity, and its reward is filtered to that exact rarity.
 - A chest can only select an unowned catalog pet of its rarity; an exhausted tier or insufficient balance spends nothing.
 - The first successful reading for a provider period counts that period's current total. Reapplying a reading or observing a lower corrected total adds zero.
 - Claude comes from `build-cli usage --period weekly --format json --no-cache --no-update-check`; Codex comes from local session JSONL cumulative token events.
@@ -32,9 +33,9 @@
 - Modify: `Tests/PetsCoreTests/Pets/PetDefinitionTests.swift`
 - Modify: `Tests/PetsCoreTests/Pets/PetCatalogTests.swift`
 
-- [ ] Write failing tests for the five agreed rarity assignments, key costs, and rarity filtering.
+- [ ] Write failing tests for the agreed rarity assignments, the 5:1 upgrade path, and rarity filtering.
 - [ ] Run `swift test --filter 'PetDefinitionTests|PetCatalogTests'` and confirm the new tests fail for missing APIs.
-- [ ] Add `PetRarity: String, Codable, CaseIterable, Sendable` with display name and key cost.
+- [ ] Add `PetRarity: String, Codable, CaseIterable, Sendable` with display name and upgrade target.
 - [ ] Add `rarity` to `PetDefinition` and every cloud definition.
 - [ ] Add `PetCatalog.rarity(for:)` and `PetCatalog.petIDs(for:)`.
 - [ ] Rerun focused tests and confirm they pass.
@@ -45,11 +46,11 @@
 - Create: `Sources/PetsCore/Pets/PetCollectionState.swift`
 - Create: `Tests/PetsCoreTests/Pets/PetCollectionStateTests.swift`
 
-- [ ] Write failing tests for starter/grandfather ownership, 500M threshold/remainder math, combined providers, repeated/lower readings, period rollover, costs, non-duplicates, exhausted tiers, and insufficient keys.
+- [ ] Write failing tests for starter/grandfather ownership, 500M threshold/remainder math, combined providers, repeated/lower readings, period rollover, 5:1 upgrades, matching-rarity key spend, non-duplicates, exhausted tiers, and insufficient keys.
 - [ ] Run `swift test --filter PetCollectionStateTests` and confirm failure.
-- [ ] Implement `PetUsageReading`, `PetUsageCheckpoint`, `PetCollectionState`, and typed chest errors.
+- [ ] Implement `PetUsageReading`, `PetUsageCheckpoint`, `PetKeyInventory`, `PetCollectionState`, and typed upgrade/chest errors.
 - [ ] Make `apply(_:)` return the number of newly earned keys and preserve the highest observed total for a period.
-- [ ] Make chest opening validate before mutation and accept a deterministic selection index for tests.
+- [ ] Make key upgrades and chest opening validate before mutation; chest opening accepts a deterministic selection index for tests.
 - [ ] Rerun the focused tests and confirm they pass.
 
 ### Task 3: Read Claude and Codex weekly token totals
@@ -81,7 +82,7 @@
 - [ ] Load collection state after pet instances, normalize starter plus configured IDs, and publish collection/status/reveal properties.
 - [ ] Start one reward refresh at app launch and repeat every 15 minutes independently of the five-second harness session scanner.
 - [ ] Run usage readers off the main actor, apply successful readings individually, preserve errors per source, and persist every state mutation.
-- [ ] Add `refreshRewardUsage()`, `openChest(_:)`, `dismissUnlockedPet()`, `addPet(petID:)`, and `isPetOwned(_:)`.
+- [ ] Add `refreshRewardUsage()`, `upgradeKeys(from:)`, `openChest(_:)`, `dismissUnlockedPet()`, `addPet(petID:)`, and `isPetOwned(_:)`.
 - [ ] Reject locked IDs in `updateSelectedPetID(_:)` and create new instances using the selected definition's defaults.
 - [ ] Rerun focused tests and confirm they pass.
 
@@ -108,7 +109,7 @@
 - Create: `Tests/PetsCoreTests/Pets/PetCollectionViewSourceTests.swift`
 - Preserve: `Tests/PetsCoreTests/Pets/PetOverlayTransparencyTests.swift`
 
-- [ ] Write failing source tests for the Collection toolbar tab, progress header, source rows, three chest tiers, collection grid, reveal sheet, refresh control, and locked sprite-picker cards.
+- [ ] Write failing source tests for the Collection toolbar tab, progress header, three key balances, 5:1 upgrade controls, source rows, three chest tiers, collection grid, reveal sheet, refresh control, and locked sprite-picker cards.
 - [ ] Add `.collection` to `PetSettingsTab` and route it to `PetCollectionView` without altering General or Pets roots.
 - [ ] Build a scrolling hub with semantic colors, system symbols, generated chest images, explicit disabled reasons, and accessible progress/status labels.
 - [ ] Present a native unlock sheet from store reveal state and wire **Add to Desktop**.

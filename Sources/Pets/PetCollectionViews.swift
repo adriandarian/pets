@@ -14,7 +14,7 @@ struct PetCollectionView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     sectionHeader(
                         "Open a Chest",
-                        detail: "Keys unlock a random pet you do not own yet."
+                        detail: "Each chest uses its matching key and always unlocks that rarity."
                     )
 
                     HStack(alignment: .top, spacing: 12) {
@@ -70,21 +70,12 @@ struct PetCollectionView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Pet Keys")
                         .font(.headline)
-                    Text("Every 500 million combined tokens earns one key.")
+                    Text("Every 500 million combined tokens earns one Common Key.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer(minLength: 20)
-
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text(store.collectionState.keyCount.formatted())
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                    Text(store.collectionState.keyCount == 1 ? "key available" : "keys available")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
 
                 Button {
                     store.refreshRewardUsage()
@@ -101,6 +92,12 @@ struct PetCollectionView: View {
                 .disabled(store.isRefreshingRewardUsage)
                 .help("Refresh token usage")
                 .accessibilityLabel("Refresh token usage")
+            }
+
+            HStack(alignment: .top, spacing: 10) {
+                ForEach(PetRarity.allCases, id: \.self) { rarity in
+                    PetKeyBalanceCard(store: store, rarity: rarity)
+                }
             }
 
             VStack(alignment: .leading, spacing: 7) {
@@ -183,6 +180,85 @@ struct PetCollectionView: View {
     }
 }
 
+private struct PetKeyBalanceCard: View {
+    @ObservedObject var store: PetStore
+    let rarity: PetRarity
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 7) {
+                Image(systemName: "key.fill")
+                    .foregroundStyle(rarityColor)
+                Text("\(rarity.displayName) Keys")
+                    .font(.subheadline.weight(.semibold))
+                Spacer(minLength: 8)
+                Text(keyCount.formatted())
+                    .font(.title3.bold().monospacedDigit())
+            }
+
+            if let nextRarity = rarity.nextRarity {
+                Text(upgradeDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Button {
+                    store.upgradeKeys(from: rarity)
+                } label: {
+                    Label("Upgrade to \(nextRarity.displayName)", systemImage: "arrow.up.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .disabled(keyCount < PetRarity.keyUpgradeCost)
+                .help(upgradeHelp(nextRarity: nextRarity))
+            } else {
+                Text("Opens Legendary Chests")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(rarityColor.opacity(0.08))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .stroke(rarityColor.opacity(0.25), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var keyCount: Int {
+        store.collectionState.keyInventory.count(for: rarity)
+    }
+
+    private var upgradeDescription: String {
+        switch rarity {
+        case .common: "5 Common Keys → 1 Rare Key"
+        case .rare: "5 Rare Keys → 1 Legendary Key"
+        case .legendary: ""
+        }
+    }
+
+    private func upgradeHelp(nextRarity: PetRarity) -> String {
+        if keyCount >= PetRarity.keyUpgradeCost {
+            return "Convert 5 \(rarity.displayName.lowercased()) keys into 1 \(nextRarity.displayName.lowercased()) key"
+        }
+        let missing = PetRarity.keyUpgradeCost - keyCount
+        return "Need \(missing) more \(rarity.displayName.lowercased()) \(missing == 1 ? "key" : "keys")"
+    }
+
+    private var rarityColor: Color {
+        switch rarity {
+        case .common: .secondary
+        case .rare: .blue
+        case .legendary: .orange
+        }
+    }
+}
+
 private struct PetUsageSourceRow: View {
     let status: PetUsageSourceStatus
 
@@ -226,13 +302,13 @@ private struct PetChestCard: View {
                 Text(rarity.displayName)
                     .font(.headline)
                 Spacer()
-                Label("\(rarity.keyCost)", systemImage: "key.fill")
+                Label("1 \(rarity.displayName) Key", systemImage: "key.fill")
                     .font(.caption.weight(.semibold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(rarityColor.opacity(0.13), in: Capsule())
                     .foregroundStyle(rarityColor)
-                    .accessibilityLabel("Costs \(rarity.keyCost) \(rarity.keyCost == 1 ? "key" : "keys")")
+                    .accessibilityLabel("Costs 1 \(rarity.displayName.lowercased()) key")
             }
 
             PetChestArtwork(rarity: rarity)
@@ -246,7 +322,7 @@ private struct PetChestCard: View {
             Button {
                 store.openChest(rarity)
             } label: {
-                Label("Open Chest", systemImage: "key.fill")
+                Label("Open \(rarity.displayName) Chest", systemImage: "key.fill")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -274,9 +350,8 @@ private struct PetChestCard: View {
         if remainingPetIDs.isEmpty {
             return "All collected"
         }
-        let missingKeys = rarity.keyCost - store.collectionState.keyCount
-        if missingKeys > 0 {
-            return "Need \(missingKeys) more \(missingKeys == 1 ? "key" : "keys")"
+        if store.collectionState.keyInventory.count(for: rarity) < 1 {
+            return "Need 1 \(rarity.displayName) Key"
         }
         return nil
     }

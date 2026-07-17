@@ -74,6 +74,24 @@ struct PetSpriteSourceTests {
     }
 
     @Test
+    func steadyLayerRendererLimitsAndCoalescesContinuousUpdates() {
+        let source = (try? source("Sources/Pets/PetLayerRenderer.swift")) ?? ""
+
+        #expect(source.contains("private static let frameInterval = 1.0 / 12.0"))
+        #expect(source.contains("timer.tolerance = Self.frameInterval * 0.25"))
+        #expect(!source.contains("private static let frameInterval = 1.0 / 30.0"))
+    }
+
+    @Test
+    func steadyLayerRendererPausesWhenItsWindowIsOccluded() {
+        let source = (try? source("Sources/Pets/PetLayerRenderer.swift")) ?? ""
+
+        #expect(source.contains("NSWindow.didChangeOcclusionStateNotification"))
+        #expect(source.contains("window.occlusionState.contains(.visible)"))
+        #expect(source.contains("windowOcclusionDidChange"))
+    }
+
+    @Test
     func layerRendererDecodesAndDownsamplesEachSpriteAssetOnce() {
         let source = (try? source("Sources/Pets/PetLayerRenderer.swift")) ?? ""
 

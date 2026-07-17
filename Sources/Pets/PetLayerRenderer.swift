@@ -32,7 +32,7 @@ struct LayerBackedAssetPetSprite: NSViewRepresentable {
 
 @MainActor
 final class PetLayerRenderView: NSView {
-    private static let frameInterval = 1.0 / 30.0
+    private static let frameInterval = 1.0 / 12.0
 
     private var definition: PetDefinition
     private var artPack: PetArtPack
@@ -73,14 +73,32 @@ final class PetLayerRenderView: NSView {
         render(at: Date())
     }
 
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if let window {
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSWindow.didChangeOcclusionStateNotification,
+                object: window
+            )
+        }
+        super.viewWillMove(toWindow: newWindow)
+    }
+
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        if window == nil {
+        guard let window else {
             stopAnimating()
-        } else {
-            render(at: Date())
-            updateAnimationTimer()
+            return
         }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowOcclusionDidChange(_:)),
+            name: NSWindow.didChangeOcclusionStateNotification,
+            object: window
+        )
+        render(at: Date())
+        updateAnimationTimer()
     }
 
     func update(
@@ -118,7 +136,10 @@ final class PetLayerRenderView: NSView {
     }
 
     private func updateAnimationTimer() {
-        guard window != nil, needsContinuousUpdates else {
+        guard let window,
+              window.occlusionState.contains(.visible),
+              needsContinuousUpdates
+        else {
             stopAnimating()
             return
         }
@@ -131,9 +152,18 @@ final class PetLayerRenderView: NSView {
             userInfo: nil,
             repeats: true
         )
-        timer.tolerance = Self.frameInterval * 0.15
+        timer.tolerance = Self.frameInterval * 0.25
         RunLoop.main.add(timer, forMode: .common)
         animationTimer = timer
+    }
+
+    @objc
+    private func windowOcclusionDidChange(_ notification: Notification) {
+        guard notification.object as? NSWindow === window else { return }
+        if let window, window.occlusionState.contains(.visible) {
+            render(at: Date())
+        }
+        updateAnimationTimer()
     }
 
     @objc

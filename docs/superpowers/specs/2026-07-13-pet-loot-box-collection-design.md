@@ -1,7 +1,7 @@
 # Pet Loot Box Collection Design
 
 **Date:** 2026-07-13
-**Status:** Approved direction A — Collection Hub
+**Status:** Implemented direction A — Collection Hub; key tiers updated 2026-07-17
 
 ## Goal
 
@@ -13,16 +13,19 @@ The first release should make the loop real without introducing duplicate reward
 
 - Every account starts with Cumulus unlocked.
 - Any pet already configured before this feature ships is grandfathered into the owned collection.
-- Every **500,000,000 newly observed tokens** across supported providers awards one shared Pet Key.
+- Every **500,000,000 newly observed tokens** across supported providers awards one Common Key.
 - Token progress carries across refreshes and provider periods. Only newly observed usage is added, so rereading the same provider total cannot mint keys twice.
 - The first successful scan counts the current provider-period total. This lets an existing user receive the progress they already generated during that period.
 - Provider failures are isolated: one failed source cannot erase progress or block successful sources.
-- Keys are a single currency used by all chest tiers.
-- Chest costs are:
-  - Common: 1 key
-  - Rare: 2 keys
-  - Legendary: 4 keys
+- Keys have Common, Rare, and Legendary tiers.
+- Keys upgrade upward at a fixed 5:1 rate:
+  - 5 Common Keys become 1 Rare Key.
+  - 5 Rare Keys become 1 Legendary Key.
+  - Legendary Keys cannot be upgraded further.
+- Every chest costs exactly one key matching its rarity.
+- Keys cannot be converted downward.
 - A chest selects an unowned pet from the chosen rarity. If the rarity is exhausted, that chest is disabled and no keys are spent.
+- The rarity filter is enforced by collection state, not only by the view: a Legendary Chest can only return a Legendary pet, including when families are added to the catalog later.
 - Duplicate pet rewards are excluded in this release.
 - Unlocking a pet adds it to the collection; it does not automatically create a desktop pet.
 - Collection is browse-only. Creating and managing desktop pet instances remains exclusively in the Pets tab.
@@ -55,7 +58,8 @@ Collection is a third centered segment beside General and Pets in the existing s
 The Collection screen is a vertically scrolling hub with four sections:
 
 1. **Progress header**
-   - Key balance is the strongest value.
+   - Common, Rare, and Legendary key balances are shown together.
+   - Common and Rare balances provide an inline 5:1 upgrade action when enough keys are available.
    - A progress bar shows carried token progress toward the next 500M key.
    - Supporting copy shows exact progress and how many tokens remain.
    - A refresh button reruns usage collection without blocking the rest of Settings.
@@ -66,8 +70,8 @@ The Collection screen is a vertically scrolling hub with four sections:
 
 3. **Chest shelf**
    - Three equal tiles use real generated chest artwork for Common, Rare, and Legendary.
-   - Each tile shows rarity, key cost, remaining eligible pets, and an Open button.
-   - Disabled reasons are explicit: not enough keys, all collected, or refresh in progress.
+   - Each tile shows rarity, its one matching-key cost, remaining eligible pets, and an Open button.
+   - Disabled reasons are explicit: missing the matching key, all collected, or refresh in progress.
 
 4. **Family collection browser**
    - A segmented family picker is sourced directly from `PetCatalog.builtInCategories` and remains visible even while Clouds is the only family.
@@ -96,12 +100,14 @@ No emoji, placeholder boxes, cropped contact sheets, custom-drawn fake icons, or
 `PetCollectionState` is a versionable Codable value persisted separately from pet-instance settings. It owns:
 
 - owned pet IDs;
-- available key count;
+- Common, Rare, and Legendary key inventory;
 - carried token remainder below 500M;
 - per-provider checkpoints keyed by provider and period;
 - last successful provider readings for display.
 
 On load, state normalization always unions Cumulus and all configured pet IDs into ownership. Unknown catalog IDs are retained in persistence for forward compatibility but ignored by current UI selection.
+
+Legacy collection state with a single shared key count migrates every existing key into the Common balance. This preserves all earned value while routing it through the new upgrade path.
 
 The reward refresh runs once at app start and then on a slower cadence than session scanning. Manual refresh is always available from Collection.
 
@@ -112,7 +118,7 @@ The selected family is ephemeral view state. On appearance it uses the first cat
 - Corrupt collection persistence falls back to normalized starter ownership and reports a collection-specific status without destroying pet configuration.
 - A command that is unavailable or returns malformed data produces an error on that provider row.
 - Token totals that move backward never subtract progress or keys.
-- Opening a chest is an atomic state transition: eligibility and key balance are validated before mutation, then ownership and key spend are persisted together.
+- Key upgrades and chest openings are atomic state transitions: eligibility and balances are validated before mutation, then the conversion or ownership change is persisted together.
 - A missing or obsolete selected family ID falls back to the first registered catalog family instead of producing an empty or broken collection grid.
 
 ## Accessibility
@@ -127,15 +133,17 @@ The selected family is ephemeral view state. On appearance it uses the first cat
 
 ## Scope Boundaries
 
-This release does not include duplicate conversion, pity systems, limited-time boxes, purchases, key rarity, pet leveling, trading, cloud sync, social sharing, or remote usage APIs.
+This release does not include duplicate conversion, pity systems, limited-time boxes, purchases, downward key conversion, pet leveling, trading, cloud sync, social sharing, or remote usage APIs.
 
 ## Acceptance Criteria
 
 - A clean install owns Cumulus.
 - Existing configured pets are owned after migration.
 - Reapplying the same usage readings awards nothing twice.
-- 500M carried tokens award exactly one key and retain the correct remainder.
-- A chest never returns an owned pet and never spends keys when it cannot open.
+- 500M carried tokens award exactly one Common Key and retain the correct remainder.
+- Five Common Keys upgrade to one Rare Key, and five Rare Keys upgrade to one Legendary Key, without partial spending on failure.
+- A chest never returns an owned pet, never returns a pet outside its rarity, and never spends a key when it cannot open.
+- Each chest spends exactly one key matching its rarity; lower-rarity balances cannot open higher-rarity chests directly.
 - Only owned pets can be selected or added to the desktop from the Pets tab.
 - Collection displays each registered family through the family picker and filters its grid to the selected family.
 - Collection cards show explicit Obtained or Missing state and contain no Add actions.

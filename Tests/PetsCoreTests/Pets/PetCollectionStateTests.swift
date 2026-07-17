@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import PetsCore
 
@@ -27,7 +28,9 @@ struct PetCollectionStateTests {
             tokens: 225_000_000
         )) == 1)
 
-        #expect(state.keyCount == 1)
+        #expect(state.keyInventory.count(for: .common) == 1)
+        #expect(state.keyInventory.count(for: .rare) == 0)
+        #expect(state.keyInventory.count(for: .legendary) == 0)
         #expect(state.tokenRemainder == 100_000_000)
     }
 
@@ -47,7 +50,7 @@ struct PetCollectionStateTests {
             periodID: "2026-07-13",
             tokens: 500_000_000
         )) == 0)
-        #expect(state.keyCount == 1)
+        #expect(state.keyInventory.count(for: .common) == 1)
         #expect(state.tokenRemainder == 88_000_000)
         #expect(state.providerCheckpoints["claude"]?.observedTokens == 588_000_000)
     }
@@ -67,15 +70,47 @@ struct PetCollectionStateTests {
             tokens: 20_000_000
         )) == 1)
 
-        #expect(state.keyCount == 1)
+        #expect(state.keyInventory.count(for: .common) == 1)
         #expect(state.tokenRemainder == 10_000_000)
     }
 
     @Test
-    func openingAChestSpendsKeysAndSelectsOnlyAnUnownedPet() throws {
+    func keysUpgradeUpwardAtFiveToOne() throws {
+        var state = PetCollectionState(
+            keyInventory: PetKeyInventory(common: 10, rare: 4)
+        )
+
+        #expect(try state.upgradeKeys(from: .common) == .rare)
+        #expect(state.keyInventory == PetKeyInventory(common: 5, rare: 5))
+
+        #expect(try state.upgradeKeys(from: .rare) == .legendary)
+        #expect(state.keyInventory == PetKeyInventory(common: 5, legendary: 1))
+    }
+
+    @Test
+    func invalidKeyUpgradesNeverSpendKeys() {
+        var insufficient = PetCollectionState(
+            keyInventory: PetKeyInventory(common: 4)
+        )
+        #expect(throws: PetKeyUpgradeError.insufficientKeys(rarity: .common, required: 5)) {
+            try insufficient.upgradeKeys(from: .common)
+        }
+        #expect(insufficient.keyInventory == PetKeyInventory(common: 4))
+
+        var highestTier = PetCollectionState(
+            keyInventory: PetKeyInventory(legendary: 5)
+        )
+        #expect(throws: PetKeyUpgradeError.highestRarity(.legendary)) {
+            try highestTier.upgradeKeys(from: .legendary)
+        }
+        #expect(highestTier.keyInventory == PetKeyInventory(legendary: 5))
+    }
+
+    @Test
+    func openingAChestSpendsOnlyItsMatchingKey() throws {
         var state = PetCollectionState(
             ownedPetIDs: [.cuteCloud],
-            keyCount: 3
+            keyInventory: PetKeyInventory(common: 1, rare: 2, legendary: 3)
         )
 
         let unlocked = try state.openChest(
@@ -86,7 +121,7 @@ struct PetCollectionStateTests {
 
         #expect(unlocked == .nimbusCloud)
         #expect(state.ownedPetIDs.contains(.nimbusCloud))
-        #expect(state.keyCount == 2)
+        #expect(state.keyInventory == PetKeyInventory(rare: 2, legendary: 3))
     }
 
     @Test
@@ -98,7 +133,9 @@ struct PetCollectionStateTests {
         ]
 
         for tessling in tesslings {
-            var state = PetCollectionState(keyCount: tessling.rarity.keyCost)
+            var state = PetCollectionState(
+                keyInventory: PetKeyInventory(rarity: tessling.rarity, count: 1)
+            )
             let unlocked = try state.openChest(
                 rarity: tessling.rarity,
                 eligiblePetIDs: [tessling.petID],
@@ -107,25 +144,43 @@ struct PetCollectionStateTests {
 
             #expect(unlocked == tessling.petID)
             #expect(state.ownedPetIDs.contains(tessling.petID))
-            #expect(state.keyCount == 0)
+            #expect(state.keyInventory.count(for: tessling.rarity) == 0)
         }
     }
 
     @Test
+    func legendaryChestCanOnlyReturnALegendaryPet() throws {
+        var state = PetCollectionState(
+            keyInventory: PetKeyInventory(legendary: 1)
+        )
+
+        let unlocked = try state.openChest(
+            rarity: .legendary,
+            eligiblePetIDs: [.knotling, .prismite, .orbitling],
+            selectionIndex: 0
+        )
+
+        #expect(unlocked == .orbitling)
+        #expect(PetCatalog.rarity(for: unlocked) == .legendary)
+    }
+
+    @Test
     func chestValidationNeverSpendsKeys() {
-        var insufficient = PetCollectionState(keyCount: 1)
-        #expect(throws: PetChestOpenError.insufficientKeys(required: 2)) {
+        var insufficient = PetCollectionState(
+            keyInventory: PetKeyInventory(common: 99)
+        )
+        #expect(throws: PetChestOpenError.insufficientKeys(rarity: .rare, required: 1)) {
             try insufficient.openChest(
                 rarity: .rare,
                 eligiblePetIDs: [.cirrusCloud],
                 selectionIndex: 0
             )
         }
-        #expect(insufficient.keyCount == 1)
+        #expect(insufficient.keyInventory == PetKeyInventory(common: 99))
 
         var exhausted = PetCollectionState(
             ownedPetIDs: [.cuteCloud, .nimbusCloud],
-            keyCount: 4
+            keyInventory: PetKeyInventory(common: 1)
         )
         #expect(throws: PetChestOpenError.allPetsCollected(rarity: .common)) {
             try exhausted.openChest(
@@ -134,12 +189,14 @@ struct PetCollectionStateTests {
                 selectionIndex: 0
             )
         }
-        #expect(exhausted.keyCount == 4)
+        #expect(exhausted.keyInventory == PetKeyInventory(common: 1))
     }
 
     @Test
     func selectionIndexIsClampedToTheUnownedCandidates() throws {
-        var state = PetCollectionState(keyCount: 4)
+        var state = PetCollectionState(
+            keyInventory: PetKeyInventory(rare: 1)
+        )
         let unlocked = try state.openChest(
             rarity: .rare,
             eligiblePetIDs: [.cirrusCloud, .lenticularCloud],
@@ -147,6 +204,28 @@ struct PetCollectionStateTests {
         )
 
         #expect(unlocked == .lenticularCloud)
-        #expect(state.keyCount == 2)
+        #expect(state.keyInventory.count(for: .rare) == 0)
+    }
+
+    @Test
+    func legacySharedKeysMigrateToCommonKeys() throws {
+        struct LegacyCollectionState: Codable {
+            let ownedPetIDs: Set<PetID>
+            let keyCount: Int
+            let tokenRemainder: Int64
+            let providerCheckpoints: [String: PetUsageCheckpoint]
+        }
+
+        let data = try JSONEncoder().encode(LegacyCollectionState(
+            ownedPetIDs: [.cuteCloud, .cirrusCloud],
+            keyCount: 7,
+            tokenRemainder: 25,
+            providerCheckpoints: [:]
+        ))
+
+        let state = try JSONDecoder().decode(PetCollectionState.self, from: data)
+        #expect(state.ownedPetIDs.contains(.cirrusCloud))
+        #expect(state.keyInventory == PetKeyInventory(common: 7))
+        #expect(state.tokenRemainder == 25)
     }
 }

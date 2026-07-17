@@ -310,6 +310,18 @@ final class PetStore: ObservableObject {
         }
     }
 
+    func upgradeKeys(from rarity: PetRarity) {
+        var updatedState = collectionState
+        do {
+            _ = try updatedState.upgradeKeys(from: rarity)
+            collectionState = updatedState
+            collectionError = nil
+            collectionPersistence.persist(updatedState)
+        } catch {
+            collectionError = error.localizedDescription
+        }
+    }
+
     func openChest(_ rarity: PetRarity) {
         var updatedState = collectionState
         let candidates = updatedState.unownedPetIDs(

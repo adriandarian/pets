@@ -25,10 +25,11 @@ struct PetDefinitionTests {
     }
 
     @Test
-    func rarityDefinesTheSharedChestCosts() {
-        #expect(PetRarity.common.keyCost == 1)
-        #expect(PetRarity.rare.keyCost == 2)
-        #expect(PetRarity.legendary.keyCost == 4)
+    func rarityDefinesTheKeyUpgradePath() {
+        #expect(PetRarity.common.nextRarity == .rare)
+        #expect(PetRarity.rare.nextRarity == .legendary)
+        #expect(PetRarity.legendary.nextRarity == nil)
+        #expect(PetRarity.keyUpgradeCost == 5)
         #expect(PetRarity.allCases.map(\.displayName) == ["Common", "Rare", "Legendary"])
     }
 }

@@ -11,11 +11,13 @@ public enum PetRarity: String, Codable, CaseIterable, Equatable, Hashable, Senda
         }
     }
 
-    public var keyCost: Int {
+    public static let keyUpgradeCost = 5
+
+    public var nextRarity: PetRarity? {
         switch self {
-        case .common: 1
-        case .rare: 2
-        case .legendary: 4
+        case .common: .rare
+        case .rare: .legendary
+        case .legendary: nil
         }
     }
 }

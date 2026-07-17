@@ -20,6 +20,7 @@ struct PetCollectionIntegrationSourceTests {
         #expect(source.contains("@Published private(set) var collectionState"))
         #expect(source.contains("@Published private(set) var unlockedPetID"))
         #expect(source.contains("func refreshRewardUsage()"))
+        #expect(source.contains("func upgradeKeys(from rarity: PetRarity)"))
         #expect(source.contains("func openChest(_ rarity: PetRarity)"))
         #expect(source.contains("func addPet(petID: PetID)"))
     }

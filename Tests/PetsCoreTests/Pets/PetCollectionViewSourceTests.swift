@@ -19,11 +19,22 @@ struct PetCollectionViewSourceTests {
         #expect(source.contains("struct PetCollectionView: View"))
         #expect(source.contains("ProgressView(value: store.collectionState.progressFraction)"))
         #expect(source.contains("store.refreshRewardUsage()"))
+        #expect(source.contains("store.upgradeKeys(from: rarity)"))
+        #expect(source.contains("5 Common Keys → 1 Rare Key"))
+        #expect(source.contains("5 Rare Keys → 1 Legendary Key"))
         #expect(source.contains("ForEach(PetRarity.allCases"))
         #expect(source.contains("store.openChest(rarity)"))
         #expect(source.contains("PetArtResourceLocator.url(for:"))
         #expect(source.contains("\"Pet Collection\""))
         #expect(source.contains("UnlockedPetSheet"))
+    }
+
+    @Test
+    func eachChestUsesTheMatchingRarityKey() throws {
+        let source = try source("Sources/Pets/PetCollectionViews.swift")
+
+        #expect(source.contains("store.collectionState.keyInventory.count(for: rarity)"))
+        #expect(source.contains(#"1 \(rarity.displayName) Key"#))
     }
 
     @Test
