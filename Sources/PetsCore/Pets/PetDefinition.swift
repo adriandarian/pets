@@ -16,6 +16,12 @@ public struct PetCategoryDescriptor: Equatable, Hashable, Sendable {
         displayName: "Cloud Pets",
         order: 0
     )
+
+    public static let tesslings = PetCategoryDescriptor(
+        id: "tesslings",
+        displayName: "Tesslings",
+        order: 1
+    )
 }
 
 public struct PetCapabilities: Equatable, Sendable {

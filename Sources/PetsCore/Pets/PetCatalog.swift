@@ -10,6 +10,9 @@ public struct PetID: RawRepresentable, Equatable, Hashable, Codable, Sendable {
     public static let cirrusCloud = PetID(rawValue: "cirrus-cloud")
     public static let lenticularCloud = PetID(rawValue: "lenticular-cloud")
     public static let snowCloud = PetID(rawValue: "snow-cloud")
+    public static let knotling = PetID(rawValue: "knotling")
+    public static let prismite = PetID(rawValue: "prismite")
+    public static let orbitling = PetID(rawValue: "orbitling")
 }
 
 public struct PetCatalogCategory: Equatable, Hashable, Sendable {

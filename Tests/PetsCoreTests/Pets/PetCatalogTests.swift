@@ -4,6 +4,16 @@ import Testing
 @Suite
 struct PetCatalogTests {
     @Test
+    func tesslingIdentifiersAndCategoryMetadataAreStable() {
+        #expect(PetID.knotling.rawValue == "knotling")
+        #expect(PetID.prismite.rawValue == "prismite")
+        #expect(PetID.orbitling.rawValue == "orbitling")
+        #expect(PetCategoryDescriptor.tesslings.id == "tesslings")
+        #expect(PetCategoryDescriptor.tesslings.displayName == "Tesslings")
+        #expect(PetCategoryDescriptor.tesslings.order == 1)
+    }
+
+    @Test
     func cloudFamilyIsTheOnlyRegisteredFamily() throws {
         let cloudPetIDs: [PetID] = [
             .cuteCloud,
