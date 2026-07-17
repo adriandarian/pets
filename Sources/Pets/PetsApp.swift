@@ -29,8 +29,8 @@ struct PetsApp: App {
         MenuBarExtra("Pets", systemImage: "pawprint.circle") {
             PetMenuView(
                 store: appDelegate.store,
-                togglePetVisibility: {
-                    appDelegate.togglePetVisibility()
+                setAllPetsVisible: { isVisible in
+                    appDelegate.setAllPetsVisible(isVisible)
                 },
                 respawnPet: {
                     appDelegate.respawnPet()
@@ -58,15 +58,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         store.$petInstances
             .sink { [weak self] _ in
-                self?.syncPetPanels()
+                Task { @MainActor [weak self] in
+                    await Task.yield()
+                    self?.syncPetPanels()
+                }
             }
             .store(in: &cancellables)
         syncPetPanels()
         store.start()
     }
 
-    func togglePetVisibility() {
-        store.setAllPetsVisible(!store.areAnyPetsVisible)
+    func setAllPetsVisible(_ isVisible: Bool) {
+        store.setAllPetsVisible(isVisible)
     }
 
     func respawnPet() {
@@ -214,7 +217,7 @@ private struct PetMenuView: View {
     @Environment(\.openWindow) private var openWindow
 
     @ObservedObject var store: PetStore
-    let togglePetVisibility: () -> Void
+    let setAllPetsVisible: (Bool) -> Void
     let respawnPet: () -> Void
     let bringConfigurationToFront: () -> Void
 
@@ -224,8 +227,8 @@ private struct PetMenuView: View {
         }
         .disabled(store.petInstances.isEmpty)
 
-        Button(store.areAnyPetsVisible ? "Hide Pet" : "Show Pet") {
-            togglePetVisibility()
+        Button(store.areAnyPetsVisible ? "Hide Pets" : "Show Pets") {
+            setAllPetsVisible(!store.areAnyPetsVisible)
         }
         .disabled(store.petInstances.isEmpty)
 

@@ -89,6 +89,25 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
+    func petInstanceChangesSynchronizePanelsAfterPublishedStateCommits() throws {
+        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+
+        let subscriptionStart = try #require(source.range(of: "store.$petInstances"))
+        let subscriptionEnd = try #require(
+            source.range(
+                of: ".store(in: &cancellables)",
+                range: subscriptionStart.upperBound..<source.endIndex
+            )
+        )
+        let subscription = String(source[subscriptionStart.lowerBound..<subscriptionEnd.upperBound])
+
+        #expect(subscription.contains("Task { @MainActor [weak self] in"))
+        #expect(subscription.contains("await Task.yield()"))
+        #expect(subscription.contains("self?.syncPetPanels()"))
+    }
+
+    @Test
     func menuLinksToPetConfigurationAndFutureCreationSurface() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
         let settingsSourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
@@ -119,7 +138,10 @@ struct PetOverlayTransparencyTests {
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
         #expect(source.contains("Button(\"Respawn Pet\")"))
-        #expect(source.contains("\"Hide Pet\" : \"Show Pet\""))
+        #expect(source.contains("\"Hide Pets\" : \"Show Pets\""))
+        #expect(source.contains("setAllPetsVisible(!store.areAnyPetsVisible)"))
+        #expect(source.contains("func setAllPetsVisible(_ isVisible: Bool)"))
+        #expect(source.contains("store.setAllPetsVisible(isVisible)"))
         #expect(source.contains("Label(\"Configure...\", systemImage: \"slider.horizontal.3\")"))
         #expect(source.contains("Button(\"Quit Pets\")"))
 
