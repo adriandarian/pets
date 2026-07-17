@@ -14,16 +14,18 @@ struct PetAmbientEffectTests {
     }
 
     @Test
-    func stormRainFallsInStaggeredLanesAndLightningPulses() {
+    func stormRainFallsInStaggeredLanesAndLightningRepeatsEveryOnePointEightSeconds() {
         let start = PetAmbientEffectKind.storm.sample(at: 0, phaseOffset: 0, isEnabled: true)
         let falling = PetAmbientEffectKind.storm.sample(at: 0.4, phaseOffset: 0, isEnabled: true)
-        let pulse = PetAmbientEffectKind.storm.sample(at: 2.928, phaseOffset: 0, isEnabled: true)
+        let firstFlash = PetAmbientEffectKind.storm.sample(at: 1.098, phaseOffset: 0, isEnabled: true)
+        let nextFlash = PetAmbientEffectKind.storm.sample(at: 2.898, phaseOffset: 0, isEnabled: true)
 
         #expect(start.particles.count == 7)
         #expect(Set(start.particles.map(\.x)).count == 7)
         #expect(falling.particles[0].y > start.particles[0].y)
         #expect(start.lightningIntensity == 0)
-        #expect(pulse.lightningIntensity > 0.95)
+        #expect(firstFlash.lightningIntensity > 0.95)
+        #expect(nextFlash.lightningIntensity > 0.95)
     }
 
     @Test

@@ -164,8 +164,12 @@ private extension PetAmbientEffectKind {
             return PetAmbientEffectSample(particles: particles, lightningIntensity: 0)
         }
 
-        let lightningTime = max(0, elapsed) + unitPhase(phaseOffset) * 4.8
-        let lightningPhase = unitPhase(lightningTime / 4.8 + 0.55)
+        let lightningCycleDuration = 1.8
+        let lightningTime = max(0, elapsed)
+            + unitPhase(phaseOffset) * lightningCycleDuration
+        let lightningPhase = unitPhase(
+            lightningTime / lightningCycleDuration + 0.55
+        )
         let firstPulse = triangularPulse(at: lightningPhase, center: 0.16, halfWidth: 0.035)
         let secondPulse = triangularPulse(at: lightningPhase, center: 0.24, halfWidth: 0.025) * 0.72
         return PetAmbientEffectSample(

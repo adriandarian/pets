@@ -358,6 +358,120 @@ struct ClaudeSessionScannerTests {
     }
 
     @Test
+    func scannerCachesTranscriptSummaryUntilFileMetadataChanges() throws {
+        let root = try TemporaryDirectory()
+        let claudeHome = root.url.appending(path: ".claude", directoryHint: .isDirectory)
+        let sessionsDirectory = claudeHome.appending(path: "sessions", directoryHint: .isDirectory)
+        let projectDirectory = claudeHome.appending(path: "projects/-Users-dariana-ndp", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: sessionsDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: projectDirectory, withIntermediateDirectories: true)
+
+        try writeSession(
+            named: "914.json",
+            in: sessionsDirectory,
+            pid: 914,
+            sessionId: "cached-session",
+            cwd: "/Users/dariana/ndp",
+            startedAt: 100,
+            kind: "bg",
+            entrypoint: "cli",
+            name: nil,
+            status: "idle",
+            updatedAt: 200
+        )
+
+        let transcriptURL = projectDirectory.appending(path: "cached-session.jsonl")
+        let initialTranscript = #"{"type":"ai-title","aiTitle":"Cached title A","sessionId":"cached-session"}"#
+        let sameSizeReplacement = #"{"type":"ai-title","aiTitle":"Cached title B","sessionId":"cached-session"}"#
+        #expect(initialTranscript.utf8.count == sameSizeReplacement.utf8.count)
+
+        let unchangedModificationDate = Date(timeIntervalSince1970: 1_700_000_000)
+        try Data(initialTranscript.utf8).write(to: transcriptURL)
+        try FileManager.default.setAttributes(
+            [.modificationDate: unchangedModificationDate],
+            ofItemAtPath: transcriptURL.path
+        )
+
+        let scanner = ClaudeSessionScanner(
+            claudeHome: claudeHome,
+            processInspector: StubProcessInspector(livePIDs: [914])
+        )
+
+        let initialSessions = try scanner.scan()
+        #expect(initialSessions.first?.title == "Cached title A")
+
+        try Data(sameSizeReplacement.utf8).write(to: transcriptURL)
+        try FileManager.default.setAttributes(
+            [.modificationDate: unchangedModificationDate],
+            ofItemAtPath: transcriptURL.path
+        )
+
+        let cachedSessions = try scanner.scan()
+        #expect(cachedSessions.first?.title == "Cached title A")
+
+        let changedTranscript = sameSizeReplacement + "\n"
+            + #"{"type":"ai-title","aiTitle":"Metadata changed","sessionId":"cached-session"}"#
+        try Data(changedTranscript.utf8).write(to: transcriptURL)
+        try FileManager.default.setAttributes(
+            [.modificationDate: unchangedModificationDate.addingTimeInterval(1)],
+            ofItemAtPath: transcriptURL.path
+        )
+
+        let refreshedSessions = try scanner.scan()
+        #expect(refreshedSessions.first?.title == "Metadata changed")
+    }
+
+    @Test
+    func scannerUpdatesAnAppendedTranscriptWithoutReplacingItsFirstPreview() throws {
+        let root = try TemporaryDirectory()
+        let claudeHome = root.url.appending(path: ".claude", directoryHint: .isDirectory)
+        let sessionsDirectory = claudeHome.appending(path: "sessions", directoryHint: .isDirectory)
+        let projectDirectory = claudeHome.appending(path: "projects/-Users-dariana-ndp", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: sessionsDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: projectDirectory, withIntermediateDirectories: true)
+
+        try writeSession(
+            named: "915.json",
+            in: sessionsDirectory,
+            pid: 915,
+            sessionId: "growing-session",
+            cwd: "/Users/dariana/ndp",
+            startedAt: 100,
+            kind: "bg",
+            entrypoint: "cli",
+            name: nil,
+            status: "busy",
+            updatedAt: 200
+        )
+
+        let transcriptURL = projectDirectory.appending(path: "growing-session.jsonl")
+        try Data("""
+        {"type":"user","message":{"role":"user","content":"Keep this original preview"}}
+        {"type":"ai-title","aiTitle":"Initial title"}
+        """.utf8).write(to: transcriptURL)
+
+        let scanner = ClaudeSessionScanner(
+            claudeHome: claudeHome,
+            processInspector: StubProcessInspector(livePIDs: [915])
+        )
+        #expect(try scanner.scan().first?.title == "Initial title")
+
+        let handle = try FileHandle(forWritingTo: transcriptURL)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data("""
+
+        {"type":"last-prompt","lastPrompt":"new dismissal prompt"}
+        {"type":"ai-title","aiTitle":"Updated title"}
+        """.utf8))
+        try handle.close()
+
+        let updatedSession = try scanner.scan().first
+        #expect(updatedSession?.title == "Updated title")
+        #expect(updatedSession?.chatPreview == "Keep this original preview")
+        #expect(updatedSession?.dismissalToken == "new dismissal prompt")
+    }
+
+    @Test
     func scannerUsesLastPromptWhenTranscriptTitleIsMissing() throws {
         let root = try TemporaryDirectory()
         let claudeHome = root.url.appending(path: ".claude", directoryHint: .isDirectory)

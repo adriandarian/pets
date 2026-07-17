@@ -46,6 +46,8 @@ private struct AssetPetSprite: View {
     let artPack: PetArtPack
     let visualContext: PetVisualContext
 
+    private static let frameInterval = 1.0 / 30.0
+
     private var requestedState: PetVisualState {
         PetVisualStateResolver.requestedState(for: visualContext)
     }
@@ -66,8 +68,14 @@ private struct AssetPetSprite: View {
 
     var body: some View {
         Group {
-            if usesTimeline {
-                TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { timeline in
+            if visualContext.reaction == nil {
+                LayerBackedAssetPetSprite(
+                    definition: definition,
+                    artPack: artPack,
+                    visualContext: visualContext
+                )
+            } else if usesTimeline {
+                TimelineView(.animation(minimumInterval: Self.frameInterval)) { timeline in
                     renderedFrame(at: timeline.date)
                 }
             } else {
@@ -88,7 +96,7 @@ private struct AssetPetSprite: View {
         let phasedElapsed = rawElapsed
             + animation.totalDuration * visualContext.animationPhaseOffset
         let isAmbientMotionEnabled = visualContext.animationSettings.isIdleMotionEnabled
-            && visualContext.reaction == nil
+            && visualContext.reaction != .error
         let playbackElapsed = isAmbientMotionEnabled ? phasedElapsed : 0
         let playback = animation.playbackSample(at: playbackElapsed)
         let primaryFrame = animation.frames[playback.primaryFrameIndex]
@@ -111,16 +119,6 @@ private struct AssetPetSprite: View {
             let unit = min(proxy.size.width, proxy.size.height) / 128
 
             ZStack {
-                Ellipse()
-                    .fill(Color.black.opacity(definition.presentation.shadowOpacity))
-                    .frame(
-                        width: definition.presentation.shadowWidth * unit,
-                        height: definition.presentation.shadowHeight * unit
-                    )
-                    .scaleEffect(x: motion.shadowScale, y: 1)
-                    .opacity(motion.shadowOpacityMultiplier)
-                    .offset(y: 45 * unit)
-
                 if let primaryImage {
                     ZStack {
                         PetAmbientEffectView(

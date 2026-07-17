@@ -17,29 +17,25 @@ public struct DarwinProcessInspector: ProcessInspecting {
     public func terminalName(pid: Int32) -> String? {
         guard pid > 0 else { return nil }
 
-        let process = Process()
-        process.executableURL = URL(filePath: "/bin/ps")
-        process.arguments = ["-o", "tty=", "-p", "\(pid)"]
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-
-        do {
-            try process.run()
-            process.waitUntilExit()
-        } catch {
+        var processInfo = proc_bsdinfo()
+        let expectedSize = Int32(MemoryLayout<proc_bsdinfo>.size)
+        guard proc_pidinfo(
+            pid,
+            PROC_PIDTBSDINFO,
+            0,
+            &processInfo,
+            expectedSize
+        ) == expectedSize,
+              processInfo.e_tdev != UInt32.max,
+              let terminalName = devname(
+                  dev_t(bitPattern: processInfo.e_tdev),
+                  S_IFCHR
+              )
+        else {
             return nil
         }
 
-        guard process.terminationStatus == 0 else { return nil }
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let tty = String(decoding: data, as: UTF8.self)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !tty.isEmpty, tty != "??" else { return nil }
-        return tty
+        return String(cString: terminalName)
     }
 }
 
@@ -48,6 +44,7 @@ public struct ClaudeSessionScanner: Sendable {
     private let processInspector: any ProcessInspecting
     private let now: @Sendable () -> Date
     private let recentActivityInterval: TimeInterval
+    private let transcriptSummaryCache: TranscriptSummaryCache
 
     public init(
         claudeHome: URL = FileManager.default.homeDirectoryForCurrentUser
@@ -60,6 +57,7 @@ public struct ClaudeSessionScanner: Sendable {
         self.processInspector = processInspector
         self.recentActivityInterval = recentActivityInterval
         self.now = now
+        self.transcriptSummaryCache = TranscriptSummaryCache()
     }
 
     public func scan() throws -> [ClaudeSession] {
@@ -118,27 +116,67 @@ public struct ClaudeSessionScanner: Sendable {
             .appending(path: projectDirectoryName(for: session.cwd), directoryHint: .isDirectory)
             .appending(path: "\(session.sessionId).jsonl")
 
-        guard let data = try? Data(contentsOf: transcriptURL),
-              let contents = String(data: data, encoding: .utf8)
-        else {
+        guard let signature = TranscriptFileSignature(url: transcriptURL) else {
             return TranscriptSummary()
         }
 
-        let decoder = JSONDecoder()
-        let entries = contents
-            .split(separator: "\n", omittingEmptySubsequences: true)
-            .compactMap { line -> RawTranscriptEntry? in
-                guard let lineData = line.data(using: .utf8) else { return nil }
-                return try? decoder.decode(RawTranscriptEntry.self, from: lineData)
+        if let cached = transcriptSummaryCache.entry(for: transcriptURL) {
+            if cached.signature == signature {
+                return cached.accumulator.summary
             }
 
-        return TranscriptSummary(
-            title: entries.reversed().compactMap(\.cleanAITitle).first
-                ?? entries.reversed().compactMap(\.cleanLastPrompt).first,
-            chatPreview: entries.compactMap(\.cleanChatPreview).first
-                ?? entries.compactMap(\.cleanLastPrompt).first,
-            dismissalToken: entries.reversed().compactMap(\.cleanPromptToken).first
+            if signature.fileSize > cached.signature.fileSize,
+               cached.processedByteCount <= signature.fileSize,
+               let appendedData = readTranscriptData(
+                   at: transcriptURL,
+                   startingAt: cached.processedByteCount
+               )
+            {
+                var accumulator = cached.accumulator
+                let consumedByteCount = accumulator.consume(appendedData)
+                transcriptSummaryCache.store(
+                    TranscriptCacheEntry(
+                        signature: signature,
+                        processedByteCount: cached.processedByteCount + consumedByteCount,
+                        accumulator: accumulator
+                    ),
+                    for: transcriptURL
+                )
+                return accumulator.summary
+            }
+        }
+
+        guard let data = readTranscriptData(at: transcriptURL, startingAt: 0) else {
+            return TranscriptSummary()
+        }
+
+        var accumulator = TranscriptAccumulator()
+        let consumedByteCount = accumulator.consume(data)
+        transcriptSummaryCache.store(
+            TranscriptCacheEntry(
+                signature: signature,
+                processedByteCount: consumedByteCount,
+                accumulator: accumulator
+            ),
+            for: transcriptURL
         )
+        return accumulator.summary
+    }
+
+    private func readTranscriptData(at url: URL, startingAt: Int) -> Data? {
+        guard startingAt >= 0,
+              let handle = try? FileHandle(forReadingFrom: url)
+        else {
+            return nil
+        }
+        defer { try? handle.close() }
+
+        do {
+            try handle.seek(toOffset: UInt64(startingAt))
+            return try handle.readToEnd() ?? Data()
+        } catch {
+            return nil
+        }
     }
 
     private func projectDirectoryName(for cwd: String) -> String {
@@ -244,6 +282,116 @@ private struct TranscriptSummary {
     var title: String?
     var chatPreview: String?
     var dismissalToken: String?
+}
+
+private struct TranscriptAccumulator {
+    private var latestAITitle: String?
+    private var latestLastPrompt: String?
+    private var firstChatPreview: String?
+    private var firstLastPrompt: String?
+    private var latestPromptToken: String?
+
+    var summary: TranscriptSummary {
+        TranscriptSummary(
+            title: latestAITitle ?? latestLastPrompt,
+            chatPreview: firstChatPreview ?? firstLastPrompt,
+            dismissalToken: latestPromptToken
+        )
+    }
+
+    mutating func consume(_ data: Data) -> Int {
+        let decoder = JSONDecoder()
+        var lineStart = data.startIndex
+
+        while lineStart < data.endIndex,
+              let newline = data[lineStart...].firstIndex(of: 0x0A)
+        {
+            consume(data[lineStart..<newline], decoder: decoder)
+            lineStart = data.index(after: newline)
+        }
+
+        guard lineStart < data.endIndex else {
+            return data.count
+        }
+
+        let trailingLine = data[lineStart..<data.endIndex]
+        guard consume(trailingLine, decoder: decoder) else {
+            return data.distance(from: data.startIndex, to: lineStart)
+        }
+        return data.count
+    }
+
+    @discardableResult
+    private mutating func consume(
+        _ line: Data.SubSequence,
+        decoder: JSONDecoder
+    ) -> Bool {
+        guard !line.isEmpty,
+              let entry = try? decoder.decode(RawTranscriptEntry.self, from: Data(line))
+        else {
+            return false
+        }
+
+        if let title = entry.cleanAITitle {
+            latestAITitle = title
+        }
+        if let prompt = entry.cleanLastPrompt {
+            latestLastPrompt = prompt
+            if firstLastPrompt == nil {
+                firstLastPrompt = prompt
+            }
+        }
+        if firstChatPreview == nil, let preview = entry.cleanChatPreview {
+            firstChatPreview = preview
+        }
+        if let promptToken = entry.cleanPromptToken {
+            latestPromptToken = promptToken
+        }
+        return true
+    }
+}
+
+private struct TranscriptFileSignature: Equatable, Sendable {
+    let fileSize: Int
+    let modificationDate: Date
+
+    init?(url: URL) {
+        guard let values = try? url.resourceValues(forKeys: [
+            .fileSizeKey,
+            .contentModificationDateKey,
+        ]),
+        let fileSize = values.fileSize,
+        let modificationDate = values.contentModificationDate
+        else {
+            return nil
+        }
+
+        self.fileSize = fileSize
+        self.modificationDate = modificationDate
+    }
+}
+
+private struct TranscriptCacheEntry {
+    let signature: TranscriptFileSignature
+    let processedByteCount: Int
+    let accumulator: TranscriptAccumulator
+}
+
+private final class TranscriptSummaryCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var entries: [URL: TranscriptCacheEntry] = [:]
+
+    func entry(for url: URL) -> TranscriptCacheEntry? {
+        lock.withLock {
+            entries[url]
+        }
+    }
+
+    func store(_ entry: TranscriptCacheEntry, for url: URL) {
+        lock.withLock {
+            entries[url] = entry
+        }
+    }
 }
 
 private struct RawTranscriptEntry: Decodable {

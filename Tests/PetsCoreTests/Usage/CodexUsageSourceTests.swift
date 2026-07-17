@@ -55,6 +55,66 @@ struct CodexUsageSourceTests {
         #expect(period.interval.start == ISO8601DateFormatter().date(from: "2026-07-13T07:00:00Z"))
     }
 
+    @Test
+    func sourceSkipsFilesThatWereLastModifiedBeforeTheCurrentWeek() throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appending(path: "old-session.jsonl")
+        try jsonLines([
+            tokenLine("2026-07-13T08:00:00Z", total: 18_000),
+        ]).write(to: file)
+        try FileManager.default.setAttributes(
+            [.modificationDate: try #require(ISO8601DateFormatter().date(from: "2026-07-12T08:00:00Z"))],
+            ofItemAtPath: file.path
+        )
+
+        let reading = try CodexUsageSource(
+            roots: [root],
+            date: try #require(ISO8601DateFormatter().date(from: "2026-07-16T18:00:00Z")),
+            calendar: utcCalendar()
+        ).read()
+
+        #expect(reading.tokens == 0)
+    }
+
+    @Test
+    func sourceCachesTokensUntilFileMetadataChanges() throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appending(path: "active-session.jsonl")
+        let initial = jsonLines([tokenLine("2026-07-13T08:00:00Z", total: 18_000)])
+        let sameSizeReplacement = jsonLines([tokenLine("2026-07-13T08:00:00Z", total: 27_000)])
+        #expect(initial.count == sameSizeReplacement.count)
+        let modificationDate = try #require(
+            ISO8601DateFormatter().date(from: "2026-07-16T18:00:00Z")
+        )
+        try initial.write(to: file)
+        try FileManager.default.setAttributes(
+            [.modificationDate: modificationDate],
+            ofItemAtPath: file.path
+        )
+
+        let source = CodexUsageSource(
+            roots: [root],
+            date: modificationDate,
+            calendar: utcCalendar()
+        )
+        #expect(try source.read().tokens == 18_000)
+
+        try sameSizeReplacement.write(to: file)
+        try FileManager.default.setAttributes(
+            [.modificationDate: modificationDate],
+            ofItemAtPath: file.path
+        )
+        #expect(try source.read().tokens == 18_000)
+
+        try jsonLines([
+            tokenLine("2026-07-13T08:00:00Z", total: 27_000),
+            tokenLine("2026-07-13T09:00:00Z", total: 35_000),
+        ]).write(to: file)
+        #expect(try source.read().tokens == 35_000)
+    }
+
     private func tokenLine(_ timestamp: String, total: Int64?) -> String {
         let info: String
         if let total {
@@ -67,5 +127,18 @@ struct CodexUsageSourceTests {
 
     private func jsonLines(_ lines: [String]) -> Data {
         Data(lines.joined(separator: "\n").utf8)
+    }
+
+    private func temporaryDirectory() throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
+    private func utcCalendar() -> Calendar {
+        var calendar = Calendar(identifier: .iso8601)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar
     }
 }
