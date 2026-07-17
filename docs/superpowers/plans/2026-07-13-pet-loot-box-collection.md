@@ -82,7 +82,7 @@
 - [ ] Load collection state after pet instances, normalize starter plus configured IDs, and publish collection/status/reveal properties.
 - [ ] Start one reward refresh at app launch and repeat every 15 minutes independently of the five-second harness session scanner.
 - [ ] Run usage readers off the main actor, apply successful readings individually, preserve errors per source, and persist every state mutation.
-- [ ] Add `refreshRewardUsage()`, `upgradeKeys(from:)`, `openChest(_:)`, `dismissUnlockedPet()`, `addPet(petID:)`, and `isPetOwned(_:)`.
+- [ ] Add `refreshRewardUsage()`, atomic bulk `upgradeKeys(from:count:)`, `openChest(_:)`, `dismissUnlockedPet()`, `addPet(petID:)`, and `isPetOwned(_:)`.
 - [ ] Reject locked IDs in `updateSelectedPetID(_:)` and create new instances using the selected definition's defaults.
 - [ ] Rerun focused tests and confirm they pass.
 
@@ -109,7 +109,7 @@
 - Create: `Tests/PetsCoreTests/Pets/PetCollectionViewSourceTests.swift`
 - Preserve: `Tests/PetsCoreTests/Pets/PetOverlayTransparencyTests.swift`
 
-- [ ] Write failing source tests for the Collection toolbar tab, progress header, three key balances, 5:1 upgrade controls, source rows, three chest tiers, collection grid, reveal sheet, refresh control, and locked sprite-picker cards.
+- [ ] Write failing source tests for the Collection toolbar tab, progress header, key balances shown only on their chest cards, contextual 5:1 chest conversion controls, the bulk-conversion slider popover, source rows, three chest tiers, collection grid, reveal sheet, refresh control, and locked sprite-picker cards.
 - [ ] Add `.collection` to `PetSettingsTab` and route it to `PetCollectionView` without altering General or Pets roots.
 - [ ] Build a scrolling hub with semantic colors, system symbols, generated chest images, explicit disabled reasons, and accessible progress/status labels.
 - [ ] Present a native unlock sheet from store reveal state and wire **Add to Desktop**.

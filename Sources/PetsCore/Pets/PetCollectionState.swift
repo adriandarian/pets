@@ -72,6 +72,7 @@ public struct PetKeyInventory: Equatable, Codable, Sendable {
 public enum PetKeyUpgradeError: Error, Equatable, LocalizedError, Sendable {
     case insufficientKeys(rarity: PetRarity, required: Int)
     case highestRarity(PetRarity)
+    case invalidConversionCount
 
     public var errorDescription: String? {
         switch self {
@@ -79,6 +80,8 @@ public enum PetKeyUpgradeError: Error, Equatable, LocalizedError, Sendable {
             "Upgrading needs \(required) \(rarity.displayName) Keys."
         case let .highestRarity(rarity):
             "\(rarity.displayName) Keys are already the highest rarity."
+        case .invalidConversionCount:
+            "Choose at least one key conversion."
         }
     }
 }
@@ -164,19 +167,31 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
     }
 
     @discardableResult
-    public mutating func upgradeKeys(from rarity: PetRarity) throws -> PetRarity {
+    public mutating func upgradeKeys(
+        from rarity: PetRarity,
+        count: Int = 1
+    ) throws -> PetRarity {
+        guard count > 0 else {
+            throw PetKeyUpgradeError.invalidConversionCount
+        }
         guard let nextRarity = rarity.nextRarity else {
             throw PetKeyUpgradeError.highestRarity(rarity)
         }
-        guard keyInventory.count(for: rarity) >= PetRarity.keyUpgradeCost else {
+        let (requiredKeys, overflowed) = PetRarity.keyUpgradeCost.multipliedReportingOverflow(
+            by: count
+        )
+        guard !overflowed else {
+            throw PetKeyUpgradeError.invalidConversionCount
+        }
+        guard keyInventory.count(for: rarity) >= requiredKeys else {
             throw PetKeyUpgradeError.insufficientKeys(
                 rarity: rarity,
-                required: PetRarity.keyUpgradeCost
+                required: requiredKeys
             )
         }
 
-        keyInventory.remove(PetRarity.keyUpgradeCost, from: rarity)
-        keyInventory.add(1, to: nextRarity)
+        keyInventory.remove(requiredKeys, from: rarity)
+        keyInventory.add(count, to: nextRarity)
         return nextRarity
     }
 

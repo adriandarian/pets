@@ -58,8 +58,6 @@ Collection is a third centered segment beside General and Pets in the existing s
 The Collection screen is a vertically scrolling hub with four sections:
 
 1. **Progress header**
-   - Common, Rare, and Legendary key balances are shown together.
-   - Common and Rare balances provide an inline 5:1 upgrade action when enough keys are available.
    - A progress bar shows carried token progress toward the next 500M key.
    - Supporting copy shows exact progress and how many tokens remain.
    - A refresh button reruns usage collection without blocking the rest of Settings.
@@ -70,8 +68,11 @@ The Collection screen is a vertically scrolling hub with four sections:
 
 3. **Chest shelf**
    - Three equal tiles use real generated chest artwork for Common, Rare, and Legendary.
-   - Each tile shows rarity, its one matching-key cost, remaining eligible pets, and an Open button.
+   - Each tile is the single source for its rarity's current key balance, remaining eligible pets, and primary action.
    - Disabled reasons are explicit: missing the matching key, all collected, or refresh in progress.
+   - When a Rare or Legendary chest has no matching key, its primary button becomes a conversion action for the next-lower key tier.
+   - Conversion remains disabled below five source keys. At five or more, selecting it opens a native popover with a stepped slider from one conversion through the maximum affordable amount.
+   - The popover shows the exact source-key spend and target-key result before confirming the atomic bulk conversion. After conversion, the same chest button becomes Open.
 
 4. **Family collection browser**
    - A segmented family picker is sourced directly from `PetCatalog.builtInCategories` and remains visible even while Clouds is the only family.
@@ -142,6 +143,7 @@ This release does not include duplicate conversion, pity systems, limited-time b
 - Reapplying the same usage readings awards nothing twice.
 - 500M carried tokens award exactly one Common Key and retain the correct remainder.
 - Five Common Keys upgrade to one Rare Key, and five Rare Keys upgrade to one Legendary Key, without partial spending on failure.
+- Rare and Legendary chest controls expose conversion only when needed, remain disabled below five source keys, and support selecting multiple affordable conversions in one popover.
 - A chest never returns an owned pet, never returns a pet outside its rarity, and never spends a key when it cannot open.
 - Each chest spends exactly one key matching its rarity; lower-rarity balances cannot open higher-rarity chests directly.
 - Only owned pets can be selected or added to the desktop from the Pets tab.

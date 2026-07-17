@@ -88,6 +88,16 @@ struct PetCollectionStateTests {
     }
 
     @Test
+    func multipleKeySetsUpgradeInOneAtomicConversion() throws {
+        var state = PetCollectionState(
+            keyInventory: PetKeyInventory(common: 12)
+        )
+
+        #expect(try state.upgradeKeys(from: .common, count: 2) == .rare)
+        #expect(state.keyInventory == PetKeyInventory(common: 2, rare: 2))
+    }
+
+    @Test
     func invalidKeyUpgradesNeverSpendKeys() {
         var insufficient = PetCollectionState(
             keyInventory: PetKeyInventory(common: 4)
@@ -104,6 +114,14 @@ struct PetCollectionStateTests {
             try highestTier.upgradeKeys(from: .legendary)
         }
         #expect(highestTier.keyInventory == PetKeyInventory(legendary: 5))
+
+        var invalidCount = PetCollectionState(
+            keyInventory: PetKeyInventory(common: 10)
+        )
+        #expect(throws: PetKeyUpgradeError.invalidConversionCount) {
+            try invalidCount.upgradeKeys(from: .common, count: 0)
+        }
+        #expect(invalidCount.keyInventory == PetKeyInventory(common: 10))
     }
 
     @Test

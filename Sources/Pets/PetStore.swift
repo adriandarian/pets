@@ -310,10 +310,10 @@ final class PetStore: ObservableObject {
         }
     }
 
-    func upgradeKeys(from rarity: PetRarity) {
+    func upgradeKeys(from rarity: PetRarity, count: Int = 1) {
         var updatedState = collectionState
         do {
-            _ = try updatedState.upgradeKeys(from: rarity)
+            _ = try updatedState.upgradeKeys(from: rarity, count: count)
             collectionState = updatedState
             collectionError = nil
             collectionPersistence.persist(updatedState)
