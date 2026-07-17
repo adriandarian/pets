@@ -21,6 +21,21 @@ struct PetArtResourceTests {
     }
 
     @Test
+    func prismiteHasCompleteStatePack() throws {
+        let definition = try #require(PetCatalog.definition(for: .prismite))
+        guard case let .assetPack(pack) = definition.renderSource else {
+            Issue.record("Prismite must use an asset pack")
+            return
+        }
+
+        #expect(pack.idle.frames.count == 8)
+        #expect(pack.busy?.frames.count == 4)
+        #expect(pack.waiting?.frames.count == 4)
+        #expect(pack.excited?.frames.count == 5)
+        #expect(pack.sleeping?.frames.count == 4)
+    }
+
+    @Test
     func cumulusHasCompleteIdleLoop() throws {
         try assertCompleteIdleLoop(petID: .cuteCloud)
     }

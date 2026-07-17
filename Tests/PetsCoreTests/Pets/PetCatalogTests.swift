@@ -32,7 +32,25 @@ struct PetCatalogTests {
     }
 
     @Test
-    func registeredFamiliesIncludeCloudsAndKnotling() throws {
+    func prismiteDefinitionOwnsItsCatalogAndAnimationContract() throws {
+        let definition = try #require(PetCatalog.definition(for: .prismite))
+        #expect(definition is PrismitePetDefinition)
+        #expect(definition.displayName == "Prismite")
+        #expect(definition.rarity == .rare)
+        #expect(definition.capabilities.maximumPixelation == .chunky)
+        guard case let .assetPack(pack) = definition.renderSource else {
+            Issue.record("Prismite must use an asset pack")
+            return
+        }
+        #expect(pack.idle.frames.count == 8)
+        #expect(pack.busy?.frames.count == 4)
+        #expect(pack.waiting?.frames.count == 4)
+        #expect(pack.excited?.frames.count == 5)
+        #expect(pack.sleeping?.frames.count == 4)
+    }
+
+    @Test
+    func registeredFamiliesIncludeCloudsAndReleasedTesslings() throws {
         let cloudPetIDs: [PetID] = [
             .cuteCloud,
             .nimbusCloud,
@@ -40,7 +58,8 @@ struct PetCatalogTests {
             .lenticularCloud,
             .snowCloud,
         ]
-        let allPetIDs = cloudPetIDs + [.knotling]
+        let tesslingPetIDs: [PetID] = [.knotling, .prismite]
+        let allPetIDs = cloudPetIDs + tesslingPetIDs
 
         #expect(PetCatalog.definitions.map(\.id) == allPetIDs)
         #expect(PetCatalog.builtInPetIDs == allPetIDs)
@@ -53,7 +72,7 @@ struct PetCatalogTests {
         let tesslingCategory = PetCatalog.builtInCategories[1]
         #expect(tesslingCategory.id == "tesslings")
         #expect(tesslingCategory.displayName == "Tesslings")
-        #expect(tesslingCategory.petIDs == [.knotling])
+        #expect(tesslingCategory.petIDs == tesslingPetIDs)
     }
 
     @Test
@@ -80,7 +99,7 @@ struct PetCatalogTests {
         #expect(PetCatalog.rarity(for: .snowCloud) == .legendary)
 
         #expect(PetCatalog.petIDs(for: .common) == [.cuteCloud, .nimbusCloud, .knotling])
-        #expect(PetCatalog.petIDs(for: .rare) == [.cirrusCloud, .lenticularCloud])
+        #expect(PetCatalog.petIDs(for: .rare) == [.cirrusCloud, .lenticularCloud, .prismite])
         #expect(PetCatalog.petIDs(for: .legendary) == [.snowCloud])
     }
 
@@ -136,6 +155,7 @@ struct PetCatalogTests {
             #expect(PetCatalog.pixelation(.chunky, allowedFor: petID) == .medium)
         }
         #expect(PetCatalog.pixelation(.chunky, allowedFor: .knotling) == .chunky)
+        #expect(PetCatalog.pixelation(.chunky, allowedFor: .prismite) == .chunky)
         #expect(PetCatalog.pixelation(.chunky, allowedFor: PetID(rawValue: "helper-cloud")) == .medium)
     }
 }

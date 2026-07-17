@@ -23,6 +23,29 @@ public final class KnotlingPetDefinition: PetDefinition, @unchecked Sendable {
     }
 }
 
+public final class PrismitePetDefinition: PetDefinition, @unchecked Sendable {
+    public init() {
+        super.init(
+            id: .prismite,
+            displayName: "Prismite",
+            rarity: .rare,
+            category: .tesslings,
+            capabilities: .tessling,
+            defaults: .standard,
+            presentation: PetPresentationConfiguration(
+                contentScale: 0.93,
+                anchorX: 0,
+                anchorY: 1,
+                shadowWidth: 84,
+                shadowHeight: 12,
+                shadowOpacity: 0.16,
+                transitionDuration: 0.16
+            ),
+            renderSource: .assetPack(tesslingArtPack(slug: "prismite"))
+        )
+    }
+}
+
 private extension PetCapabilities {
     static let tessling = PetCapabilities(
         maximumPixelation: .chunky,
