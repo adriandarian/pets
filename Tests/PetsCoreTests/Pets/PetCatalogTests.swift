@@ -50,6 +50,24 @@ struct PetCatalogTests {
     }
 
     @Test
+    func orbitlingDefinitionOwnsItsCatalogAndAnimationContract() throws {
+        let definition = try #require(PetCatalog.definition(for: .orbitling))
+        #expect(definition is OrbitlingPetDefinition)
+        #expect(definition.displayName == "Orbitling")
+        #expect(definition.rarity == .legendary)
+        #expect(definition.capabilities.maximumPixelation == .chunky)
+        guard case let .assetPack(pack) = definition.renderSource else {
+            Issue.record("Orbitling must use an asset pack")
+            return
+        }
+        #expect(pack.idle.frames.count == 8)
+        #expect(pack.busy?.frames.count == 4)
+        #expect(pack.waiting?.frames.count == 4)
+        #expect(pack.excited?.frames.count == 5)
+        #expect(pack.sleeping?.frames.count == 4)
+    }
+
+    @Test
     func registeredFamiliesIncludeCloudsAndReleasedTesslings() throws {
         let cloudPetIDs: [PetID] = [
             .cuteCloud,
@@ -58,7 +76,7 @@ struct PetCatalogTests {
             .lenticularCloud,
             .snowCloud,
         ]
-        let tesslingPetIDs: [PetID] = [.knotling, .prismite]
+        let tesslingPetIDs: [PetID] = [.knotling, .prismite, .orbitling]
         let allPetIDs = cloudPetIDs + tesslingPetIDs
 
         #expect(PetCatalog.definitions.map(\.id) == allPetIDs)
@@ -100,7 +118,7 @@ struct PetCatalogTests {
 
         #expect(PetCatalog.petIDs(for: .common) == [.cuteCloud, .nimbusCloud, .knotling])
         #expect(PetCatalog.petIDs(for: .rare) == [.cirrusCloud, .lenticularCloud, .prismite])
-        #expect(PetCatalog.petIDs(for: .legendary) == [.snowCloud])
+        #expect(PetCatalog.petIDs(for: .legendary) == [.snowCloud, .orbitling])
     }
 
     @Test
@@ -156,6 +174,7 @@ struct PetCatalogTests {
         }
         #expect(PetCatalog.pixelation(.chunky, allowedFor: .knotling) == .chunky)
         #expect(PetCatalog.pixelation(.chunky, allowedFor: .prismite) == .chunky)
+        #expect(PetCatalog.pixelation(.chunky, allowedFor: .orbitling) == .chunky)
         #expect(PetCatalog.pixelation(.chunky, allowedFor: PetID(rawValue: "helper-cloud")) == .medium)
     }
 }

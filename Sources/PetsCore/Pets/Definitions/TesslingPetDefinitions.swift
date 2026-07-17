@@ -46,6 +46,29 @@ public final class PrismitePetDefinition: PetDefinition, @unchecked Sendable {
     }
 }
 
+public final class OrbitlingPetDefinition: PetDefinition, @unchecked Sendable {
+    public init() {
+        super.init(
+            id: .orbitling,
+            displayName: "Orbitling",
+            rarity: .legendary,
+            category: .tesslings,
+            capabilities: .tessling,
+            defaults: .standard,
+            presentation: PetPresentationConfiguration(
+                contentScale: 0.91,
+                anchorX: 0,
+                anchorY: 0,
+                shadowWidth: 90,
+                shadowHeight: 11,
+                shadowOpacity: 0.14,
+                transitionDuration: 0.16
+            ),
+            renderSource: .assetPack(tesslingArtPack(slug: "orbitling"))
+        )
+    }
+}
+
 private extension PetCapabilities {
     static let tessling = PetCapabilities(
         maximumPixelation: .chunky,
