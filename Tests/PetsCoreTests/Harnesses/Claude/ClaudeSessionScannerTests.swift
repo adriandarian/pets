@@ -78,7 +78,7 @@ struct ClaudeSessionScannerTests {
     }
 
     @Test
-    func cumulusRemainsTheDefaultCloudPet() {
+    func cumulusRemainsTheDefaultPetAlongsideTesslings() {
         #expect(PetCatalog.defaultPetID == .cuteCloud)
         #expect(PetCatalog.builtInPetIDs == [
             .cuteCloud,
@@ -86,18 +86,30 @@ struct ClaudeSessionScannerTests {
             .cirrusCloud,
             .lenticularCloud,
             .snowCloud,
+            .knotling,
+            .prismite,
+            .orbitling,
         ])
         #expect(PetCatalog.displayName(for: .cuteCloud) == "Cumulus")
     }
 
     @Test
-    func catalogContainsOneCloudFamilyCategory() {
+    func catalogContainsCloudAndTesslingFamilyCategories() {
         let categories = PetCatalog.builtInCategories
 
+        #expect(categories.count == 2)
         #expect(categories.first?.id == "cloud-pets")
         #expect(categories.first?.displayName == "Cloud Pets")
-        #expect(categories.first?.petIDs == PetCatalog.builtInPetIDs)
-        #expect(categories.count == 1)
+        #expect(categories.first?.petIDs == [
+            .cuteCloud,
+            .nimbusCloud,
+            .cirrusCloud,
+            .lenticularCloud,
+            .snowCloud,
+        ])
+        #expect(categories.last?.id == "tesslings")
+        #expect(categories.last?.displayName == "Tesslings")
+        #expect(categories.last?.petIDs == [.knotling, .prismite, .orbitling])
     }
 
     @Test
