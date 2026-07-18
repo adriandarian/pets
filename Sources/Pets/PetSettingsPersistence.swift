@@ -4,6 +4,7 @@ import PetsCore
 struct PetSettingsPersistence {
     private enum DefaultsKey {
         static let petInstances = "petInstances"
+        static let petInstancesBackup = "petInstancesBackup"
         static let selectedPetInstanceID = "selectedPetInstanceID"
         static let selectedPetID = "selectedPetID"
         static let spritePixelation = "spritePixelation"
@@ -49,6 +50,10 @@ struct PetSettingsPersistence {
 
     func persistPetInstances(_ petInstances: [PetInstance]) {
         guard let data = try? JSONEncoder().encode(petInstances) else { return }
+        if let currentData = defaults.data(forKey: DefaultsKey.petInstances),
+           currentData != data {
+            defaults.set(currentData, forKey: DefaultsKey.petInstancesBackup)
+        }
         defaults.set(data, forKey: DefaultsKey.petInstances)
     }
 
@@ -66,10 +71,19 @@ struct PetSettingsPersistence {
         migratedContextLineCount: Int
     ) -> (instances: [PetInstance], error: String?) {
         if let data = defaults.data(forKey: DefaultsKey.petInstances) {
+            backupPetInstancesIfNeeded(data)
             do {
                 let decoded = try JSONDecoder().decode([PetInstance].self, from: data)
                 return (decoded.map { $0.normalizedForCurrentCatalog() }, nil)
             } catch {
+                if let backupData = defaults.data(forKey: DefaultsKey.petInstancesBackup),
+                   backupData != data,
+                   let decoded = try? JSONDecoder().decode([PetInstance].self, from: backupData) {
+                    return (
+                        decoded.map { $0.normalizedForCurrentCatalog() },
+                        "Pet settings were restored from the last compatible backup."
+                    )
+                }
                 return (
                     [],
                     "Pet settings could not be loaded. Defaults were restored."
@@ -83,5 +97,10 @@ struct PetSettingsPersistence {
             sessionContextLineCount: migratedContextLineCount
         )
         return ([migrated], nil)
+    }
+
+    private func backupPetInstancesIfNeeded(_ data: Data) {
+        guard defaults.data(forKey: DefaultsKey.petInstancesBackup) == nil else { return }
+        defaults.set(data, forKey: DefaultsKey.petInstancesBackup)
     }
 }

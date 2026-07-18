@@ -16,6 +16,7 @@ struct PetsApp: App {
         Window("Pets", id: PetsWindowID.configuration) {
             PetSettingsView(
                 store: appDelegate.store,
+                updateController: appDelegate.updateController,
                 respawnPet: { petID in
                     appDelegate.respawnPet(petID)
                 }
@@ -23,9 +24,10 @@ struct PetsApp: App {
         }
         .windowResizability(.contentSize)
 
-        MenuBarExtra("Pets", systemImage: "pawprint.circle") {
+        MenuBarExtra {
             PetMenuView(
                 store: appDelegate.store,
+                updateController: appDelegate.updateController,
                 setAllPetsVisible: { isVisible in
                     appDelegate.setAllPetsVisible(isVisible)
                 },
@@ -36,6 +38,8 @@ struct PetsApp: App {
                     appDelegate.bringConfigurationToFront()
                 }
             )
+        } label: {
+            PetMenuBarLabel(updateController: appDelegate.updateController)
         }
         .menuBarExtraStyle(.menu)
     }
@@ -45,6 +49,7 @@ struct PetsApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panels: [PetInstance.ID: PetPanel] = [:]
     let store = PetStore()
+    let updateController = PetUpdateController()
     private var isAdjustingPanelFrame = false
     private var isSyncingPetPanels = false
     private var cancellables: Set<AnyCancellable> = []
@@ -63,6 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .store(in: &cancellables)
         syncPetPanels()
         store.start()
+        updateController.start()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -219,11 +225,22 @@ private struct PetMenuView: View {
     @Environment(\.openWindow) private var openWindow
 
     @ObservedObject var store: PetStore
+    @ObservedObject var updateController: PetUpdateController
     let setAllPetsVisible: (Bool) -> Void
     let respawnPet: () -> Void
     let bringConfigurationToFront: () -> Void
 
     var body: some View {
+        if let release = updateController.availableRelease {
+            Button {
+                updateController.openAvailableRelease()
+            } label: {
+                Label("Update to \(release.displayVersion)…", systemImage: "arrow.down.circle")
+            }
+
+            Divider()
+        }
+
         Button("Respawn Pet") {
             respawnPet()
         }
@@ -243,9 +260,27 @@ private struct PetMenuView: View {
 
         Divider()
 
+        Button("Check for Updates…") {
+            updateController.checkForUpdates(showingResult: true)
+        }
+        .disabled(updateController.isChecking)
+
         Button("Quit Pets") {
             NSApplication.shared.terminate(nil)
         }
+    }
+}
+
+private struct PetMenuBarLabel: View {
+    @ObservedObject var updateController: PetUpdateController
+
+    var body: some View {
+        Label(
+            "Pets",
+            systemImage: updateController.availableRelease == nil
+                ? "pawprint.circle"
+                : "arrow.down.circle"
+        )
     }
 }
 

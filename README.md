@@ -62,10 +62,34 @@ Pets currently knows how to activate sessions hosted by:
 
 When Pets can identify the owning app but cannot identify the exact tab or window, it still brings that app forward. Exact tab or window focusing may require macOS Accessibility or Automation permission. If Accessibility permission is missing, Pets asks macOS to show the permission prompt and shows an error bubble until access is granted.
 
-## Run It
+## Install It
+
+Download the newest `Pets-<version>.zip` from the [latest GitHub release](https://github.com/adriandarian/pets/releases/latest), open it, and move `Pets.app` to Applications.
+
+Pets is distributed directly from this repository without Apple signing or notarization. On first launch, Control-click `Pets.app`, choose **Open**, and confirm that you want to run it.
+
+## Update It
+
+Pets checks this repository for a newer release when it starts and every six hours while it is running. When an update is available, the menu bar icon changes and Pets shows a GitHub download link in its menu and configuration window.
+
+Quit Pets, download the new ZIP, and replace the existing `Pets.app`. Your configured pets, positions, preferences, keys, and collection progress stay in `~/Library/Preferences/local.pets.Pets.plist`; replacing the application does not remove them.
+
+## Run It From Source
 
 ```bash
 ./scripts/run_app.sh
+```
+
+To create the unsigned ZIP used for a GitHub release, update `VERSION` and `BUILD_NUMBER`, then run:
+
+```bash
+./scripts/build_release.sh
+```
+
+After committing the version change, publish that ZIP and its GitHub release with:
+
+```bash
+./scripts/publish_release.sh
 ```
 
 ## Check It

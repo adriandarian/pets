@@ -94,6 +94,49 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
         normalized.updatePetID(petID)
         return normalized
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case petID
+        case pixelation
+        case sessionContextLineCount
+        case animationSettings
+        case isVisible
+        case overlayPosition
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let decodedPetID = try container.decodeIfPresent(PetID.self, forKey: .petID)
+            ?? PetCatalog.defaultPetID
+        let resolvedPetID = PetCatalog.resolvedPetID(decodedPetID)
+        let defaults = PetCatalog.definition(for: resolvedPetID)?.defaults ?? .standard
+
+        self.init(
+            id: try container.decodeIfPresent(ID.self, forKey: .id) ?? UUID(),
+            name: try container.decodeIfPresent(String.self, forKey: .name)
+                ?? PetCatalog.displayName(for: resolvedPetID),
+            petID: resolvedPetID,
+            pixelation: try container.decodeIfPresent(
+                PetSpritePixelation.self,
+                forKey: .pixelation
+            ) ?? defaults.pixelation,
+            sessionContextLineCount: try container.decodeIfPresent(
+                Int.self,
+                forKey: .sessionContextLineCount
+            ) ?? defaults.sessionContextLineCount,
+            animationSettings: try container.decodeIfPresent(
+                PetAnimationSettings.self,
+                forKey: .animationSettings
+            ) ?? defaults.animationSettings,
+            isVisible: try container.decodeIfPresent(Bool.self, forKey: .isVisible) ?? true,
+            overlayPosition: try container.decodeIfPresent(
+                PetOverlayPosition.self,
+                forKey: .overlayPosition
+            ) ?? .default
+        )
+    }
 }
 
 public struct PetAnimationSettings: Equatable, Codable, Sendable {
@@ -116,6 +159,30 @@ public struct PetAnimationSettings: Equatable, Codable, Sendable {
         isIdleMotionEnabled: true,
         areStatusMoodsEnabled: true
     )
+
+    private enum CodingKeys: String, CodingKey {
+        case isHoverBounceEnabled
+        case isIdleMotionEnabled
+        case areStatusMoodsEnabled
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            isHoverBounceEnabled: try container.decodeIfPresent(
+                Bool.self,
+                forKey: .isHoverBounceEnabled
+            ) ?? true,
+            isIdleMotionEnabled: try container.decodeIfPresent(
+                Bool.self,
+                forKey: .isIdleMotionEnabled
+            ) ?? true,
+            areStatusMoodsEnabled: try container.decodeIfPresent(
+                Bool.self,
+                forKey: .areStatusMoodsEnabled
+            ) ?? true
+        )
+    }
 }
 
 public struct PetOverlayPosition: Equatable, Codable, Sendable {
@@ -134,4 +201,20 @@ public struct PetOverlayPosition: Equatable, Codable, Sendable {
         origin: nil,
         horizontalPlacement: .trailing
     )
+
+    private enum CodingKeys: String, CodingKey {
+        case origin
+        case horizontalPlacement
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            origin: try container.decodeIfPresent(CGPoint.self, forKey: .origin),
+            horizontalPlacement: try container.decodeIfPresent(
+                PetOverlayHorizontalPlacement.self,
+                forKey: .horizontalPlacement
+            ) ?? .trailing
+        )
+    }
 }

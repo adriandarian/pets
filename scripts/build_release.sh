@@ -13,22 +13,30 @@ BUNDLE_PATH="dist/${APP_NAME}.app"
 EXECUTABLE_PATH="${BUNDLE_PATH}/Contents/MacOS/${APP_NAME}"
 PLIST_PATH="${BUNDLE_PATH}/Contents/Info.plist"
 RESOURCE_BUNDLE_NAME="${APP_NAME}_PetsCore.bundle"
-RESOURCE_BUNDLE_SOURCE=".build/debug/${RESOURCE_BUNDLE_NAME}"
+RESOURCE_BUNDLE_SOURCE=".build/release/${RESOURCE_BUNDLE_NAME}"
+ARCHIVE_PATH="dist/${APP_NAME}-${VERSION}.zip"
 
-if pgrep -x "${APP_NAME}" >/dev/null 2>&1; then
-  pkill -x "${APP_NAME}"
+if [[ ! "${VERSION}" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+  echo "VERSION must contain only dot-separated numbers." >&2
+  exit 1
 fi
 
-swift build
+if [[ ! "${BUILD_NUMBER}" =~ ^[0-9]+$ ]]; then
+  echo "BUILD_NUMBER must be a positive integer." >&2
+  exit 1
+fi
+
+swift build -c release
 
 rm -rf "${BUNDLE_PATH}"
+rm -f "${ARCHIVE_PATH}"
 mkdir -p "${BUNDLE_PATH}/Contents/MacOS"
-cp ".build/debug/${APP_NAME}" "${EXECUTABLE_PATH}"
+cp ".build/release/${APP_NAME}" "${EXECUTABLE_PATH}"
 cp -R "${RESOURCE_BUNDLE_SOURCE}" "${BUNDLE_PATH}/${RESOURCE_BUNDLE_NAME}"
 
 cat >"${PLIST_PATH}" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
   <key>CFBundleExecutable</key>
@@ -53,19 +61,8 @@ cat >"${PLIST_PATH}" <<PLIST
 </plist>
 PLIST
 
-/usr/bin/open -n "${BUNDLE_PATH}"
+COPYFILE_DISABLE=1 /usr/bin/ditto \
+  -c -k --sequesterRsrc --keepParent \
+  "${BUNDLE_PATH}" "${ARCHIVE_PATH}"
 
-if [[ "${1:-}" == "--verify" ]]; then
-  for _ in {1..20}; do
-    if pgrep -x "${APP_NAME}" >/dev/null 2>&1; then
-      echo "Launched ${BUNDLE_PATH}"
-      exit 0
-    fi
-    sleep 0.25
-  done
-
-  echo "Failed to verify ${APP_NAME} launch" >&2
-  exit 1
-fi
-
-echo "Launched ${BUNDLE_PATH}"
+echo "Built unsigned GitHub release artifact: ${ARCHIVE_PATH}"

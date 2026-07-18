@@ -83,7 +83,9 @@ struct PetOverlayTransparencyTests {
         let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("MenuBarExtra(\"Pets\", systemImage: \"pawprint.circle\")"))
+        #expect(source.contains("MenuBarExtra {"))
+        #expect(source.contains("PetMenuBarLabel(updateController:"))
+        #expect(source.contains("\"pawprint.circle\""))
         #expect(source.contains(".menuBarExtraStyle(.menu)"))
         #expect(source.contains("PetMenuView("))
     }

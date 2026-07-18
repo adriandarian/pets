@@ -96,6 +96,52 @@ struct PetInstanceTests {
     }
 
     @Test
+    func legacyPetInstanceWithoutNewerSettingsUsesSafeDefaults() throws {
+        let id = "00000000-0000-0000-0000-000000000001"
+        let data = Data(#"""
+        {
+          "id": "\#(id)",
+          "name": "My Cloud",
+          "petID": "cute-cloud",
+          "pixelation": "medium",
+          "sessionContextLineCount": 3
+        }
+        """#.utf8)
+
+        let decoded = try JSONDecoder().decode(PetInstance.self, from: data)
+
+        #expect(decoded.id.uuidString == id)
+        #expect(decoded.animationSettings == .default)
+        #expect(decoded.isVisible)
+        #expect(decoded.overlayPosition == .default)
+    }
+
+    @Test
+    func legacyAnimationAndOverlaySettingsDecodeMissingFields() throws {
+        let data = Data(#"""
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "name": "My Cloud",
+          "petID": "cute-cloud",
+          "pixelation": "off",
+          "sessionContextLineCount": 2,
+          "animationSettings": {
+            "isHoverBounceEnabled": false
+          },
+          "isVisible": false,
+          "overlayPosition": {}
+        }
+        """#.utf8)
+
+        let decoded = try JSONDecoder().decode(PetInstance.self, from: data)
+
+        #expect(decoded.animationSettings.isHoverBounceEnabled == false)
+        #expect(decoded.animationSettings.isIdleMotionEnabled)
+        #expect(decoded.animationSettings.areStatusMoodsEnabled)
+        #expect(decoded.overlayPosition == .default)
+    }
+
+    @Test
     func removedPetSelectionMigratesToCuteCloud() {
         let migrated = PetInstance.migratedDefault(
             petID: PetID(rawValue: "helper-cloud"),

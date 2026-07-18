@@ -9,6 +9,7 @@ private enum PetSettingsTab: Hashable {
 
 struct PetSettingsView: View {
     @ObservedObject var store: PetStore
+    @ObservedObject var updateController: PetUpdateController
     let respawnPet: (PetInstance.ID) -> Void
     @State private var selectedTab = PetSettingsTab.pets
 
@@ -25,6 +26,14 @@ struct PetSettingsView: View {
             }
         }
         .frame(width: 900, height: 620)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if let release = updateController.availableRelease {
+                PetUpdateBanner(
+                    release: release,
+                    openRelease: updateController.openAvailableRelease
+                )
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Picker("Settings Section", selection: $selectedTab) {
@@ -36,6 +45,38 @@ struct PetSettingsView: View {
                 .labelsHidden()
                 .pickerStyle(.segmented)
             }
+        }
+    }
+}
+
+private struct PetUpdateBanner: View {
+    let release: PetsRelease
+    let openRelease: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.tint)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Pets \(release.displayVersion) is available")
+                    .font(.headline)
+                Text("Download it from GitHub and replace the app. Your pets and preferences will stay in place.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 16)
+
+            Button("View on GitHub", action: openRelease)
+                .buttonStyle(.borderedProminent)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+        .background(Color.accentColor.opacity(0.10))
+        .overlay(alignment: .bottom) {
+            Divider()
         }
     }
 }
