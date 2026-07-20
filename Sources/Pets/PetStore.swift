@@ -23,6 +23,7 @@ final class PetStore: ObservableObject {
     @Published private(set) var sessions: [HarnessSession] = []
     @Published private(set) var lastError: String?
     @Published private(set) var currentReaction: PetReaction?
+    @Published private(set) var completionReactionProviderIDs: Set<String> = []
     private(set) var lastUpdated: Date?
     @Published private(set) var petInstances: [PetInstance]
     @Published private(set) var selectedPetInstanceID: PetInstance.ID?
@@ -49,7 +50,7 @@ final class PetStore: ObservableObject {
     private static let completionReactionDuration: Duration = .seconds(4)
 
     init(
-        harness: any PetHarness = ClaudeHarness(),
+        harness: any PetHarness = MultiProviderHarness(),
         defaults: UserDefaults = .standard,
         usageSources: [any PetUsageSource] = [
             ClaudeCodeUsageSource(),
@@ -170,6 +171,45 @@ final class PetStore: ObservableObject {
         )
     }
 
+    func sessions(for petID: PetInstance.ID) -> [HarnessSession] {
+        guard let pet = petInstance(for: petID) else { return [] }
+        return PetSessionRouting.sessions(sessions, trackedBy: pet)
+    }
+
+    func visibleSessions(for petID: PetInstance.ID) -> [HarnessSession] {
+        PetDismissedSessionFilter.visibleSessions(
+            sessions(for: petID),
+            dismissedSessions: dismissedSessions
+        )
+    }
+
+    func dominantStatus(for petID: PetInstance.ID) -> HarnessSessionStatus {
+        PetSessionRouting.dominantStatus(in: visibleSessions(for: petID))
+    }
+
+    func collapsedChatCount(for petID: PetInstance.ID) -> Int {
+        HarnessSession.collapsedChatCount(in: visibleSessions(for: petID))
+    }
+
+    func reaction(for petID: PetInstance.ID) -> PetReaction? {
+        guard let pet = petInstance(for: petID) else { return nil }
+        return PetSessionRouting.reaction(
+            currentReaction,
+            completedProviderIDs: completionReactionProviderIDs,
+            for: pet
+        )
+    }
+
+    func trackingSummary(for petID: PetInstance.ID) -> String {
+        guard let pet = petInstance(for: petID), !pet.trackingProviders.isEmpty else {
+            return "No tracking"
+        }
+        let names = PetTrackingProvider.allCases.compactMap { provider in
+            pet.trackingProviders.contains(provider) ? provider.displayName : nil
+        }
+        return names.joined(separator: " + ")
+    }
+
     var selectedPetInstance: PetInstance? {
         guard let selectedPetInstanceID else { return nil }
         return petInstance(for: selectedPetInstanceID)
@@ -215,7 +255,8 @@ final class PetStore: ObservableObject {
             petID: definition.id,
             pixelation: definition.defaults.pixelation,
             sessionContextLineCount: definition.defaults.sessionContextLineCount,
-            animationSettings: definition.defaults.animationSettings
+            animationSettings: definition.defaults.animationSettings,
+            trackingProviders: []
         )
         instance.name = uniquePetName(baseName: instance.name)
         petInstances.append(instance)
@@ -228,6 +269,7 @@ final class PetStore: ObservableObject {
         guard var instance = petInstance(for: id) else { return }
         instance.id = UUID()
         instance.name = uniquePetName(baseName: instance.name)
+        instance.trackingProviders = []
         petInstances.append(instance)
         selectedPetInstanceID = instance.id
         persistPetInstances()
@@ -428,6 +470,26 @@ final class PetStore: ObservableObject {
         }
     }
 
+    func trackingPet(for provider: PetTrackingProvider) -> PetInstance? {
+        petInstances.first { $0.trackingProviders.contains(provider) }
+    }
+
+    func setTrackingProvider(
+        _ provider: PetTrackingProvider,
+        isEnabled: Bool,
+        for id: PetInstance.ID
+    ) {
+        let updated = PetTrackerAssignments.setting(
+            provider,
+            isEnabled: isEnabled,
+            for: id,
+            in: petInstances
+        )
+        guard updated != petInstances else { return }
+        petInstances = updated
+        persistPetInstances()
+    }
+
     func updatePetOverlayPosition(
         _ id: PetInstance.ID,
         origin: CGPoint,
@@ -563,16 +625,16 @@ final class PetStore: ObservableObject {
 
     private func applyRefreshResult(sessions scannedSessions: [HarnessSession]?, error: String?) {
         if let scannedSessions {
-            let didCompleteSession = sessionObservationCoordinator
-                .observeSuccessfulSessions(scannedSessions)
+            let completedHarnessIDs = sessionObservationCoordinator
+                .observeCompletedHarnessIDs(scannedSessions)
             if sessions != scannedSessions {
                 sessions = scannedSessions
                 dismissedSessions.formIntersection(scannedSessions.map(PetDismissedSession.init))
             }
 
             setLastError(error)
-            if error == nil, didCompleteSession {
-                beginCompletionReaction()
+            if error == nil, !completedHarnessIDs.isEmpty {
+                beginCompletionReaction(for: completedHarnessIDs)
             }
         } else {
             setLastError(error)
@@ -599,6 +661,7 @@ final class PetStore: ObservableObject {
             completionReactionTask?.cancel()
             completionReactionTask = nil
             completionReactionExpiry.cancel()
+            completionReactionProviderIDs = []
             currentReaction = .error
         } else if currentReaction == .error {
             currentReaction = nil
@@ -609,9 +672,10 @@ final class PetStore: ObservableObject {
         }
     }
 
-    private func beginCompletionReaction() {
+    private func beginCompletionReaction(for providerIDs: Set<String>) {
         completionReactionTask?.cancel()
         let generation = completionReactionExpiry.restart()
+        completionReactionProviderIDs = providerIDs
         currentReaction = .completion
 
         completionReactionTask = Task { @MainActor [weak self] in
@@ -623,6 +687,7 @@ final class PetStore: ObservableObject {
 
             guard let self, self.currentReaction == .completion else { return }
             guard self.completionReactionExpiry.invalidate(ifCurrent: generation) else { return }
+            self.completionReactionProviderIDs = []
             self.currentReaction = nil
             self.completionReactionTask = nil
         }

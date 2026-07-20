@@ -15,6 +15,7 @@ struct PetInstanceTests {
         #expect(instance.sessionContextLineCount == definition?.defaults.sessionContextLineCount)
         #expect(instance.animationSettings == definition?.defaults.animationSettings)
         #expect(instance.isVisible)
+        #expect(instance.trackingProviders == [.claudeCode])
     }
 
     @Test
@@ -85,7 +86,8 @@ struct PetInstanceTests {
                 overlayPosition: PetOverlayPosition(
                     origin: CGPoint(x: 10, y: 20),
                     horizontalPlacement: .leading
-                )
+                ),
+                trackingProviders: [.codex, .githubCopilot]
             )
         ]
 
@@ -114,6 +116,7 @@ struct PetInstanceTests {
         #expect(decoded.animationSettings == .default)
         #expect(decoded.isVisible)
         #expect(decoded.overlayPosition == .default)
+        #expect(decoded.trackingProviders == [.claudeCode])
     }
 
     @Test

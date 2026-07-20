@@ -78,6 +78,24 @@ struct PetSessionTransitionDetectorTests {
     }
 
     @Test
+    func completedHarnessIDsIdentifyEveryProviderThatCompleted() {
+        var detector = PetSessionTransitionDetector()
+        _ = detector.observeCompletedHarnessIDs([
+            session(harnessID: "claude", id: "one", status: .busy),
+            session(harnessID: "codex", id: "two", status: .waiting),
+            session(harnessID: "copilot", id: "three", status: .busy),
+        ])
+
+        let completed = detector.observeCompletedHarnessIDs([
+            session(harnessID: "claude", id: "one", status: .idle),
+            session(harnessID: "codex", id: "two", status: .idle),
+            session(harnessID: "copilot", id: "three", status: .busy),
+        ])
+
+        #expect(completed == ["claude", "codex"])
+    }
+
+    @Test
     func suppressedCompletionAdvancesSnapshotWithoutReplayingTransition() {
         var detector = PetSessionTransitionDetector()
 

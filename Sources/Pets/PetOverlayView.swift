@@ -58,6 +58,7 @@ struct PetOverlayView: View {
                         if areChatsExpanded {
                             SessionBubble(
                                 store: store,
+                                petInstanceID: petInstance.id,
                                 contextLineCount: petInstance.sessionContextLineCount
                             )
                                 .frame(maxWidth: PetOverlayMetrics.sessionBubbleMaxWidth)
@@ -73,11 +74,11 @@ struct PetOverlayView: View {
                             PetSprite(
                                 petID: petInstance.petID,
                                 visualContext: PetVisualContext(
-                                    status: store.dominantStatus,
-                                    hasActiveSessions: !store.visibleSessions.isEmpty,
+                                    status: store.dominantStatus(for: petInstance.id),
+                                    hasActiveSessions: !store.visibleSessions(for: petInstance.id).isEmpty,
                                     isHovered: isPetHovered,
                                     animationSettings: petInstance.animationSettings,
-                                    reaction: store.currentReaction,
+                                    reaction: store.reaction(for: petInstance.id),
                                     animationPhaseOffset: PetAnimationPhaseOffset.normalized(
                                         for: petInstance.id.uuidString
                                     )
@@ -112,8 +113,8 @@ struct PetOverlayView: View {
 
                             ChatCollapseButton(
                                 isExpanded: areChatsExpanded,
-                                count: store.collapsedChatCount,
-                                status: store.dominantStatus
+                                count: store.collapsedChatCount(for: petInstance.id),
+                                status: store.dominantStatus(for: petInstance.id)
                             ) {
                                 withAnimation(.spring(response: 0.24, dampingFraction: 0.86)) {
                                     areChatsExpanded.toggle()
@@ -182,6 +183,7 @@ struct PetOverlayView: View {
 
 private struct SessionBubble: View {
     @ObservedObject var store: PetStore
+    let petInstanceID: PetInstance.ID
     let contextLineCount: Int
 
     var body: some View {
@@ -191,13 +193,19 @@ private struct SessionBubble: View {
                 title: "Session error",
                 message: lastError
             )
-        } else if store.sessions.isEmpty {
+        } else if store.petInstance(for: petInstanceID)?.trackingProviders.isEmpty != false {
+            SessionMessageBubble(
+                status: .unknown,
+                title: "Trackers",
+                message: "No trackers assigned"
+            )
+        } else if store.sessions(for: petInstanceID).isEmpty {
             SessionMessageBubble(
                 status: .unknown,
                 title: "Sessions",
                 message: "No live Sessions"
             )
-        } else if store.visibleSessions.isEmpty {
+        } else if store.visibleSessions(for: petInstanceID).isEmpty {
             SessionMessageBubble(
                 status: .unknown,
                 title: "Sessions",
@@ -205,7 +213,7 @@ private struct SessionBubble: View {
             )
         } else {
             SessionCardStack(
-                sessions: store.visibleSessions,
+                sessions: store.visibleSessions(for: petInstanceID),
                 visibleRowLimit: PetOverlayMetrics.visibleSessionRowLimit,
                 contextLineCount: contextLineCount,
                 onActivate: { session in
@@ -690,7 +698,7 @@ private struct SessionRow: View {
     }
 
     private var subtitle: String {
-        session.chatPreview ?? "No chat preview yet"
+        "\(session.sourceDisplayName) · \(session.chatPreview ?? "No chat preview yet")"
     }
 
     private var shouldShowReplyButton: Bool {

@@ -330,10 +330,14 @@ private struct PetDetailPane: View {
 
                 PetPreview(
                     pet: pet,
-                    dominantStatus: store.dominantStatus
+                    dominantStatus: store.dominantStatus(for: pet.id)
                 )
 
                 PetDetailsSection(store: store)
+
+                Divider()
+
+                PetTrackingSection(store: store, pet: pet)
 
                 Divider()
 
@@ -369,7 +373,7 @@ private struct PetDetailPane: View {
                 Text(pet.name)
                     .font(.title2.weight(.semibold))
 
-                Text("\(petFamilyName) · \(pet.isVisible ? "Visible" : "Hidden") · Session aware")
+                Text("\(petFamilyName) · \(pet.isVisible ? "Visible" : "Hidden") · \(store.trackingSummary(for: pet.id))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -407,6 +411,69 @@ private struct PetDetailPane: View {
 
     private var petFamilyName: String {
         PetCatalog.category(for: pet.petID)?.displayName ?? "Custom Pet"
+    }
+}
+
+private struct PetTrackingSection: View {
+    @ObservedObject var store: PetStore
+    let pet: PetInstance
+
+    var body: some View {
+        FlatSettingsSection("Tracking") {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(PetTrackingProvider.allCases.enumerated()), id: \.element) { index, provider in
+                    trackerRow(provider)
+
+                    if index < PetTrackingProvider.allCases.count - 1 {
+                        Divider()
+                    }
+                }
+            }
+
+            Text("Each provider can be tracked by one pet. A pet can track any combination—or nothing at all.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func trackerRow(_ provider: PetTrackingProvider) -> some View {
+        let assignedPet = store.trackingPet(for: provider)
+        let isAssignedElsewhere = assignedPet.map { $0.id != pet.id } ?? false
+
+        return HStack(spacing: 12) {
+            Image(systemName: provider.systemImageName)
+                .frame(width: 22)
+                .foregroundStyle(isAssignedElsewhere ? .secondary : .primary)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(provider.displayName)
+
+                Text(isAssignedElsewhere
+                    ? "Tracked by \(assignedPet?.name ?? "another pet")"
+                    : provider.sessionDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Toggle(provider.displayName, isOn: trackingBinding(provider))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .disabled(isAssignedElsewhere)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func trackingBinding(_ provider: PetTrackingProvider) -> Binding<Bool> {
+        Binding(
+            get: {
+                store.petInstance(for: pet.id)?.trackingProviders.contains(provider) == true
+            },
+            set: { isEnabled in
+                store.setTrackingProvider(provider, isEnabled: isEnabled, for: pet.id)
+            }
+        )
     }
 }
 

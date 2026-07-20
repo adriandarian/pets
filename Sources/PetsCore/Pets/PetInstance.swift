@@ -12,6 +12,7 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
     public var animationSettings: PetAnimationSettings
     public var isVisible: Bool
     public var overlayPosition: PetOverlayPosition
+    public var trackingProviders: Set<PetTrackingProvider>
 
     public init(
         id: ID = UUID(),
@@ -21,7 +22,8 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
         sessionContextLineCount: Int,
         animationSettings: PetAnimationSettings = .default,
         isVisible: Bool = true,
-        overlayPosition: PetOverlayPosition = .default
+        overlayPosition: PetOverlayPosition = .default,
+        trackingProviders: Set<PetTrackingProvider> = [.claudeCode]
     ) {
         let resolvedPetID = PetCatalog.resolvedPetID(petID)
         self.id = id
@@ -32,6 +34,7 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
         self.animationSettings = animationSettings
         self.isVisible = isVisible
         self.overlayPosition = overlayPosition
+        self.trackingProviders = trackingProviders
     }
 
     public static func defaultInstance(id: ID = UUID()) -> PetInstance {
@@ -104,6 +107,7 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
         case animationSettings
         case isVisible
         case overlayPosition
+        case trackingProviders
     }
 
     public init(from decoder: any Decoder) throws {
@@ -134,7 +138,11 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
             overlayPosition: try container.decodeIfPresent(
                 PetOverlayPosition.self,
                 forKey: .overlayPosition
-            ) ?? .default
+            ) ?? .default,
+            trackingProviders: try container.decodeIfPresent(
+                Set<PetTrackingProvider>.self,
+                forKey: .trackingProviders
+            ) ?? [.claudeCode]
         )
     }
 }

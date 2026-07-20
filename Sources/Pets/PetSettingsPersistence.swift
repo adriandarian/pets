@@ -74,13 +74,20 @@ struct PetSettingsPersistence {
             backupPetInstancesIfNeeded(data)
             do {
                 let decoded = try JSONDecoder().decode([PetInstance].self, from: data)
-                return (decoded.map { $0.normalizedForCurrentCatalog() }, nil)
+                return (
+                    PetTrackerAssignments.normalized(
+                        decoded.map { $0.normalizedForCurrentCatalog() }
+                    ),
+                    nil
+                )
             } catch {
                 if let backupData = defaults.data(forKey: DefaultsKey.petInstancesBackup),
                    backupData != data,
                    let decoded = try? JSONDecoder().decode([PetInstance].self, from: backupData) {
                     return (
-                        decoded.map { $0.normalizedForCurrentCatalog() },
+                        PetTrackerAssignments.normalized(
+                            decoded.map { $0.normalizedForCurrentCatalog() }
+                        ),
                         "Pet settings were restored from the last compatible backup."
                     )
                 }

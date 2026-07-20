@@ -12,12 +12,18 @@ public struct PetSessionObservationCoordinator: Sendable {
 
     @discardableResult
     public mutating func observeSuccessfulSessions(_ sessions: [HarnessSession]) -> Bool {
+        !observeCompletedHarnessIDs(sessions).isEmpty
+    }
+
+    public mutating func observeCompletedHarnessIDs(
+        _ sessions: [HarnessSession]
+    ) -> Set<String> {
         let suppressCompletion = shouldSuppressCompletionOnNextSuccessfulObservation
-        let didCompleteSession = transitionDetector.observe(
+        let completedHarnessIDs = transitionDetector.observeCompletedHarnessIDs(
             sessions,
             suppressCompletion: suppressCompletion
         )
         shouldSuppressCompletionOnNextSuccessfulObservation = false
-        return didCompleteSession
+        return completedHarnessIDs
     }
 }

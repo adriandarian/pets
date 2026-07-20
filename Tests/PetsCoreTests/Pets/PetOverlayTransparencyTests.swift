@@ -176,8 +176,8 @@ struct PetOverlayTransparencyTests {
 
         #expect(source.contains("PetSprite("))
         #expect(source.contains("PetVisualContext("))
-        #expect(source.contains("status: store.dominantStatus"))
-        #expect(source.contains("hasActiveSessions: !store.visibleSessions.isEmpty"))
+        #expect(source.contains("status: store.dominantStatus(for: petInstance.id)"))
+        #expect(source.contains("hasActiveSessions: !store.visibleSessions(for: petInstance.id).isEmpty"))
         #expect(!source.contains("status: spriteStatus"))
         #expect(source.contains("pixelation: petInstance.pixelation"))
         #expect(source.contains(".id(petInstance.pixelation)"))
@@ -394,7 +394,8 @@ struct PetOverlayTransparencyTests {
 
         #expect(persistenceSource.contains("let migrated = PetInstance.migratedDefault("))
         #expect(persistenceSource.contains("return ([migrated], nil)"))
-        #expect(persistenceSource.contains("return (decoded.map { $0.normalizedForCurrentCatalog() }, nil)"))
+        #expect(persistenceSource.contains("PetTrackerAssignments.normalized("))
+        #expect(persistenceSource.contains("decoded.map { $0.normalizedForCurrentCatalog() }"))
         #expect(!source.contains("cloudFamilyCollection(from:"))
         #expect(!source.contains("starterCloudFamilyInstances"))
         #expect(source.contains("@Published private(set) var selectedPetInstanceID: PetInstance.ID?"))
@@ -407,11 +408,46 @@ struct PetOverlayTransparencyTests {
 
         #expect(source.contains("@Published private(set) var sessions: [HarnessSession]"))
         #expect(source.contains("private let harness: any PetHarness"))
-        #expect(source.contains("harness: any PetHarness = ClaudeHarness()"))
+        #expect(source.contains("harness: any PetHarness = MultiProviderHarness()"))
         #expect(!source.contains("ClaudeSessionScanner"))
         #expect(!source.contains("ClaudeReplySender"))
         #expect(!source.contains("SessionActivating"))
         #expect(!source.contains("[ClaudeSession]"))
+    }
+
+    @Test
+    func providerTrackingIsExclusiveConfigurableAndPetScoped() throws {
+        let instanceSource = try String(
+            contentsOf: sourceFile("Sources/PetsCore/Pets/PetInstance.swift"),
+            encoding: .utf8
+        )
+        let storeSource = try String(
+            contentsOf: sourceFile("Sources/Pets/PetStore.swift"),
+            encoding: .utf8
+        )
+        let settingsSource = try String(
+            contentsOf: sourceFile("Sources/Pets/PetSettingsViews.swift"),
+            encoding: .utf8
+        )
+        let overlaySource = try String(
+            contentsOf: sourceFile("Sources/Pets/PetOverlayView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(instanceSource.contains("public var trackingProviders: Set<PetTrackingProvider>"))
+        #expect(storeSource.contains("trackingProviders: []"))
+        #expect(storeSource.contains("instance.trackingProviders = []"))
+        #expect(storeSource.contains("PetTrackerAssignments.setting("))
+        #expect(storeSource.contains("func sessions(for petID: PetInstance.ID)"))
+        #expect(storeSource.contains("PetSessionRouting.sessions(sessions, trackedBy: pet)"))
+        #expect(settingsSource.contains("FlatSettingsSection(\"Tracking\")"))
+        #expect(settingsSource.contains("ForEach(Array(PetTrackingProvider.allCases.enumerated())"))
+        #expect(settingsSource.contains("Tracked by "))
+        #expect(settingsSource.contains(".disabled(isAssignedElsewhere)"))
+        #expect(overlaySource.contains("store.visibleSessions(for: petInstance.id)"))
+        #expect(overlaySource.contains("message: \"No trackers assigned\""))
+        #expect(overlaySource.contains("session.sourceDisplayName"))
+        #expect(storeSource.contains("completionReactionProviderIDs"))
     }
 
     @Test
@@ -423,14 +459,14 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("private var sessionObservationCoordinator = PetSessionObservationCoordinator()"))
         #expect(source.contains("private static let completionReactionDuration: Duration = .seconds(4)"))
         let sessionObservation = try #require(source.range(
-            of: ".observeSuccessfulSessions(scannedSessions)"
+            of: ".observeCompletedHarnessIDs(scannedSessions)"
         ))
         let errorClear = try #require(source.range(
             of: "setLastError(error)",
             range: sessionObservation.upperBound..<source.endIndex
         ))
         #expect(sessionObservation.lowerBound < errorClear.lowerBound)
-        #expect(source.contains("private func beginCompletionReaction()"))
+        #expect(source.contains("private func beginCompletionReaction(for providerIDs: Set<String>)"))
         #expect(source.contains("private func setLastError(_ error: String?)"))
         #expect(source.contains("sessionObservationCoordinator.recordError(error)"))
         #expect(source.contains("completionReactionTask?.cancel()"))
@@ -448,7 +484,7 @@ struct PetOverlayTransparencyTests {
         let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("reaction: store.currentReaction"))
+        #expect(source.contains("reaction: store.reaction(for: petInstance.id)"))
     }
 
     @Test

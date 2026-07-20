@@ -40,5 +40,39 @@ struct HarnessSessionTests {
         #expect(session.harnessID == "claude")
         #expect(session.supportsReply)
         #expect(session.status == .waiting)
+        #expect(session.sourceDisplayName == "Claude Code")
+    }
+
+    @Test
+    func codexAndCopilotSessionsExposeTheirSpecificEntrypoints() {
+        let codex = HarnessSession(
+            harnessID: PetTrackingProvider.codex.rawValue,
+            harnessDisplayName: "Codex",
+            sessionID: "codex-session",
+            processID: nil,
+            cwd: "/tmp",
+            title: "Task",
+            kind: "task",
+            entrypoint: "Codex CLI",
+            status: .busy,
+            updatedAt: nil,
+            startedAt: nil
+        )
+        let copilot = HarnessSession(
+            harnessID: PetTrackingProvider.githubCopilot.rawValue,
+            harnessDisplayName: "GitHub Copilot",
+            sessionID: "copilot-session",
+            processID: nil,
+            cwd: "/tmp",
+            title: "Chat",
+            kind: "chat",
+            entrypoint: "Copilot chat",
+            status: .idle,
+            updatedAt: nil,
+            startedAt: nil
+        )
+
+        #expect(codex.sourceDisplayName == "Codex CLI")
+        #expect(copilot.sourceDisplayName == "Copilot chat")
     }
 }
