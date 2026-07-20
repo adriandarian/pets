@@ -170,7 +170,7 @@ private struct PetUsageSourceRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: status.id == "claude" ? "sparkles" : "terminal.fill")
+            Image(systemName: sourceIconName)
                 .foregroundStyle(status.errorMessage == nil ? Color.secondary : Color.red)
                 .frame(width: 18)
 
@@ -195,6 +195,14 @@ private struct PetUsageSourceRow: View {
                 .foregroundStyle(status.tokens == nil ? .secondary : .primary)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private var sourceIconName: String {
+        switch status.id {
+        case "claude": "sparkles"
+        case "copilot": "chevron.left.forwardslash.chevron.right"
+        default: "terminal.fill"
+        }
     }
 }
 

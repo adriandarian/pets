@@ -50,7 +50,11 @@ final class PetStore: ObservableObject {
     init(
         harness: any PetHarness = ClaudeHarness(),
         defaults: UserDefaults = .standard,
-        usageSources: [any PetUsageSource] = [BuildCLIUsageSource(), CodexUsageSource()]
+        usageSources: [any PetUsageSource] = [
+            ClaudeCodeUsageSource(),
+            CodexUsageSource(),
+            CopilotUsageSource(),
+        ]
     ) {
         self.harness = harness
         self.settingsPersistence = PetSettingsPersistence(defaults: defaults)

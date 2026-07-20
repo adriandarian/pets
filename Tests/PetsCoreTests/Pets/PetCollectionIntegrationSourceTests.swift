@@ -17,6 +17,8 @@ struct PetCollectionIntegrationSourceTests {
         let source = try source("Sources/Pets/PetStore.swift")
 
         #expect(source.contains("static let rewardRefreshInterval: Duration = .seconds(15 * 60)"))
+        #expect(source.contains("ClaudeCodeUsageSource()"))
+        #expect(source.contains("CopilotUsageSource()"))
         #expect(source.contains("@Published private(set) var collectionState"))
         #expect(source.contains("@Published private(set) var unlockedPetID"))
         #expect(source.contains("func refreshRewardUsage()"))

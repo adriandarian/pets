@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to execute this plan task-by-task with review checkpoints.
 
-**Goal:** Ship the approved native Collection Hub so 500M combined Claude/Codex tokens earn a Common Key, keys upgrade upward at 5:1, and rarity chests unlock non-duplicate pets of their exact tier.
+**Goal:** Ship the approved native Collection Hub so 500M combined supported-provider tokens earn a Common Key, keys upgrade upward at 5:1, and rarity chests unlock non-duplicate pets of their exact tier.
 
 **Architecture:** Put reward economy, catalog rarity, usage readings, and pure parsers in `PetsCore`; keep `UserDefaults`, refresh orchestration, and SwiftUI presentation in the `Pets` executable. Persist a single normalized collection state, apply provider readings idempotently, and expose the result through `PetStore` to a new third settings tab.
 
@@ -18,8 +18,8 @@
 - Every chest costs one key matching its rarity, and its reward is filtered to that exact rarity.
 - A chest can only select an unowned catalog pet of its rarity; an exhausted tier or insufficient balance spends nothing.
 - The first successful reading for a provider period counts that period's current total. Reapplying a reading or observing a lower corrected total adds zero.
-- Claude comes from `build-cli usage --period weekly --format json --no-cache --no-update-check`; Codex comes from local session JSONL cumulative token events.
-- Copilot and Antigravity are not counted until their CLIs expose trustworthy token totals.
+- Claude and Codex come from their local session JSONL telemetry. Claude requests are deduplicated globally across main and subagent transcripts; Codex uses cumulative token events.
+- Copilot CLI and VS Code agent sessions are counted once through their shared local session store; Antigravity is not counted until it exposes trustworthy token totals.
 - Preserve the existing adaptive native settings design and all unrelated user changes in the dirty worktree.
 - Use individual generated transparent chest PNGs. Do not crop the approved contact sheet.
 
@@ -53,19 +53,19 @@
 - [ ] Make key upgrades and chest opening validate before mutation; chest opening accepts a deterministic selection index for tests.
 - [ ] Rerun the focused tests and confirm they pass.
 
-### Task 3: Read Claude and Codex weekly token totals
+### Task 3: Read weekly provider token totals
 
 **Files:**
 - Create: `Sources/PetsCore/Usage/PetUsageSources.swift`
-- Create: `Sources/PetsCore/Usage/BuildCLIUsageSource.swift`
+- Create: `Sources/PetsCore/Usage/ClaudeCodeUsageSource.swift`
 - Create: `Sources/PetsCore/Usage/CodexUsageSource.swift`
-- Create: `Tests/PetsCoreTests/Usage/BuildCLIUsageSourceTests.swift`
+- Create: `Tests/PetsCoreTests/Usage/ClaudeCodeUsageSourceTests.swift`
 - Create: `Tests/PetsCoreTests/Usage/CodexUsageSourceTests.swift`
 
 - [ ] Write parser tests using inline JSON/JSONL fixtures, including null token events, multiple cumulative events in one session, a session crossing the period boundary, malformed output, and weekly period IDs.
-- [ ] Run `swift test --filter 'BuildCLIUsageSourceTests|CodexUsageSourceTests'` and confirm failure.
+- [ ] Run `swift test --filter 'ClaudeCodeUsageSourceTests|CodexUsageSourceTests'` and confirm failure.
 - [ ] Define `PetUsageSource` with stable ID, display name, and synchronous throwing `read()` suitable for a detached utility task.
-- [ ] Implement the build-cli parser and command runner with executable discovery at the current user path and normal PATH locations.
+- [ ] Implement Claude Code transcript scanning with request-level deduplication, subagent coverage, `CLAUDE_CONFIG_DIR`, and file metadata caching.
 - [ ] Implement Codex file scanning for `~/.codex/sessions` and `~/.codex/archived_sessions`; count each session's cumulative delta inside the current Monday-based week.
 - [ ] Rerun focused tests and confirm they pass.
 
