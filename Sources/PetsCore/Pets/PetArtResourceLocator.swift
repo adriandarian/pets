@@ -13,8 +13,20 @@ public enum PetOpenChestArtResource: String, CaseIterable, Sendable {
 }
 
 public enum PetArtResourceLocator {
+    private static let resourceBundle: Bundle = {
+        let packagedBundleURL = Bundle.main.resourceURL?
+            .appendingPathComponent("Pets_PetsCore.bundle", isDirectory: true)
+
+        if let packagedBundleURL,
+           let packagedBundle = Bundle(url: packagedBundleURL) {
+            return packagedBundle
+        }
+
+        return Bundle.module
+    }()
+
     public static func url(for frame: PetAnimationFrame) -> URL? {
-        Bundle.module.url(
+        resourceBundle.url(
             forResource: frame.resourceName,
             withExtension: frame.resourceExtension,
             subdirectory: frame.subdirectory
@@ -22,7 +34,7 @@ public enum PetArtResourceLocator {
     }
 
     public static func url(for chest: PetChestArtResource) -> URL? {
-        Bundle.module.url(
+        resourceBundle.url(
             forResource: chest.rawValue,
             withExtension: "png",
             subdirectory: "PetArt/LootChests"
@@ -30,7 +42,7 @@ public enum PetArtResourceLocator {
     }
 
     public static func url(forOpenChest chest: PetOpenChestArtResource) -> URL? {
-        Bundle.module.url(
+        resourceBundle.url(
             forResource: chest.rawValue,
             withExtension: "png",
             subdirectory: "PetArt/LootChests"

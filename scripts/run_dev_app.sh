@@ -17,6 +17,7 @@ EXECUTABLE_PATH="${BUNDLE_PATH}/Contents/MacOS/${APP_NAME}"
 PLIST_PATH="${BUNDLE_PATH}/Contents/Info.plist"
 RESOURCE_BUNDLE_NAME="${PRODUCT_NAME}_PetsCore.bundle"
 RESOURCE_BUNDLE_SOURCE="${BUILD_PATH}/debug/${RESOURCE_BUNDLE_NAME}"
+RESOURCE_BUNDLE_DESTINATION="${BUNDLE_PATH}/Contents/Resources/${RESOURCE_BUNDLE_NAME}"
 
 if pgrep -x "${APP_NAME}" >/dev/null 2>&1; then
   pkill -x "${APP_NAME}"
@@ -27,9 +28,9 @@ swift build \
   -Xswiftc -DPETS_DEVELOPMENT
 
 rm -rf "${BUNDLE_PATH}"
-mkdir -p "${BUNDLE_PATH}/Contents/MacOS"
+mkdir -p "${BUNDLE_PATH}/Contents/MacOS" "${BUNDLE_PATH}/Contents/Resources"
 cp "${BUILD_PATH}/debug/${PRODUCT_NAME}" "${EXECUTABLE_PATH}"
-cp -R "${RESOURCE_BUNDLE_SOURCE}" "${BUNDLE_PATH}/${RESOURCE_BUNDLE_NAME}"
+cp -R "${RESOURCE_BUNDLE_SOURCE}" "${RESOURCE_BUNDLE_DESTINATION}"
 
 cat >"${PLIST_PATH}" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -61,6 +62,8 @@ cat >"${PLIST_PATH}" <<PLIST
 </dict>
 </plist>
 PLIST
+
+/usr/bin/codesign --force --deep --sign - "${BUNDLE_PATH}"
 
 /usr/bin/open -n "${BUNDLE_PATH}"
 

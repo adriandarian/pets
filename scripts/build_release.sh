@@ -15,6 +15,7 @@ EXECUTABLE_PATH="${BUNDLE_PATH}/Contents/MacOS/${APP_NAME}"
 PLIST_PATH="${BUNDLE_PATH}/Contents/Info.plist"
 RESOURCE_BUNDLE_NAME="${APP_NAME}_PetsCore.bundle"
 RESOURCE_BUNDLE_SOURCE=".build/release/${RESOURCE_BUNDLE_NAME}"
+RESOURCE_BUNDLE_DESTINATION="${BUNDLE_PATH}/Contents/Resources/${RESOURCE_BUNDLE_NAME}"
 ARCHIVE_PATH="dist/${APP_NAME}-${VERSION}.zip"
 
 if [[ ! "${VERSION}" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
@@ -31,9 +32,9 @@ swift build -c release
 
 rm -rf "${BUNDLE_PATH}"
 rm -f "${ARCHIVE_PATH}"
-mkdir -p "${BUNDLE_PATH}/Contents/MacOS"
+mkdir -p "${BUNDLE_PATH}/Contents/MacOS" "${BUNDLE_PATH}/Contents/Resources"
 cp ".build/release/${APP_NAME}" "${EXECUTABLE_PATH}"
-cp -R "${RESOURCE_BUNDLE_SOURCE}" "${BUNDLE_PATH}/${RESOURCE_BUNDLE_NAME}"
+cp -R "${RESOURCE_BUNDLE_SOURCE}" "${RESOURCE_BUNDLE_DESTINATION}"
 
 cat >"${PLIST_PATH}" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -63,6 +64,8 @@ cat >"${PLIST_PATH}" <<PLIST
 </dict>
 </plist>
 PLIST
+
+/usr/bin/codesign --force --deep --sign - "${BUNDLE_PATH}"
 
 COPYFILE_DISABLE=1 /usr/bin/ditto \
   -c -k --sequesterRsrc --keepParent \

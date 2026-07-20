@@ -4,13 +4,34 @@ import Testing
 @Suite
 struct RunAppPackagingSourceTests {
     @Test
-    func packagedAppCarriesTheSwiftPMResourceBundle() throws {
-        let scriptURL = try repositoryRoot().appending(path: "scripts/run_app.sh")
-        let source = try String(contentsOf: scriptURL, encoding: .utf8)
+    func packagedAppsCarryResourcesInTheStandardLocationAndSealTheBundle() throws {
+        let root = try repositoryRoot()
 
-        #expect(source.contains("RESOURCE_BUNDLE_NAME=\"${APP_NAME}_PetsCore.bundle\""))
-        #expect(source.contains("RESOURCE_BUNDLE_SOURCE=\".build/debug/${RESOURCE_BUNDLE_NAME}\""))
-        #expect(source.contains("cp -R \"${RESOURCE_BUNDLE_SOURCE}\" \"${BUNDLE_PATH}/${RESOURCE_BUNDLE_NAME}\""))
+        for scriptPath in [
+            "scripts/run_app.sh",
+            "scripts/run_dev_app.sh",
+            "scripts/build_release.sh",
+        ] {
+            let source = try String(
+                contentsOf: root.appending(path: scriptPath),
+                encoding: .utf8
+            )
+
+            #expect(source.contains("Contents/Resources/${RESOURCE_BUNDLE_NAME}"))
+            #expect(source.contains("cp -R \"${RESOURCE_BUNDLE_SOURCE}\" \"${RESOURCE_BUNDLE_DESTINATION}\""))
+            #expect(source.contains("/usr/bin/codesign --force --deep --sign - \"${BUNDLE_PATH}\""))
+        }
+    }
+
+    @Test
+    func packagedResourceLocatorPrefersTheAppResourcesDirectory() throws {
+        let sourceURL = try repositoryRoot()
+            .appending(path: "Sources/PetsCore/Pets/PetArtResourceLocator.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+
+        #expect(source.contains("Bundle.main.resourceURL?"))
+        #expect(source.contains("Pets_PetsCore.bundle"))
+        #expect(source.contains("return Bundle.module"))
     }
 
     private func repositoryRoot() throws -> URL {
