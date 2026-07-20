@@ -5,6 +5,7 @@ public enum PetAmbientEffectKind: Equatable, Sendable {
     case storm
     case wind
     case snow
+    case lifeSparks
 
     public func sample(
         at elapsed: TimeInterval,
@@ -20,6 +21,8 @@ public enum PetAmbientEffectKind: Equatable, Sendable {
             return windSample(at: elapsed, phaseOffset: phaseOffset, isEnabled: isEnabled)
         case .snow:
             return snowSample(at: elapsed, phaseOffset: phaseOffset, isEnabled: isEnabled)
+        case .lifeSparks:
+            return lifeSparkSample(at: elapsed, phaseOffset: phaseOffset, isEnabled: isEnabled)
         }
     }
 }
@@ -104,6 +107,12 @@ private let windSeeds = [
     AmbientSeed(x: 0, y: -8, phase: 0.31, speed: 0.82, scale: 0.88, stretch: 1.45, drift: 1.4),
     AmbientSeed(x: 0, y: 9, phase: 0.58, speed: 1.16, scale: 0.66, stretch: 0.92, drift: 2.4),
     AmbientSeed(x: 0, y: 23, phase: 0.79, speed: 0.93, scale: 0.78, stretch: 1.28, drift: 1.8),
+]
+
+private let lifeSparkSeeds = [
+    AmbientSeed(x: -24, y: 18, phase: 0.05, speed: 1.00, scale: 0.82, stretch: 1, drift: 3.8),
+    AmbientSeed(x: 2, y: 14, phase: 0.40, speed: 0.88, scale: 1.00, stretch: 1, drift: 2.6),
+    AmbientSeed(x: 25, y: 20, phase: 0.73, speed: 1.12, scale: 0.72, stretch: 1, drift: 4.6),
 ]
 
 private extension PetAmbientEffectKind {
@@ -201,6 +210,34 @@ private extension PetAmbientEffectKind {
                 scale: seed.scale,
                 stretch: seed.stretch,
                 rotationDegrees: 0
+            )
+        }
+        return PetAmbientEffectSample(particles: particles, lightningIntensity: 0)
+    }
+
+    func lifeSparkSample(
+        at elapsed: TimeInterval,
+        phaseOffset: Double,
+        isEnabled: Bool
+    ) -> PetAmbientEffectSample {
+        let cycleDuration = 5.6
+        let time = effectiveElapsed(
+            elapsed,
+            phaseOffset: phaseOffset,
+            cycleDuration: cycleDuration,
+            isEnabled: isEnabled
+        )
+        let particles = lifeSparkSeeds.enumerated().map { index, seed in
+            let progress = unitPhase(time / cycleDuration * seed.speed + seed.phase)
+            let fade = max(0, sin(progress * .pi))
+            return PetAmbientParticleSample(
+                id: index,
+                x: seed.x + sin(progress * 2 * .pi + seed.phase * 5) * seed.drift,
+                y: seed.y - progress * 18,
+                opacity: fade * 0.72,
+                scale: seed.scale,
+                stretch: 1,
+                rotationDegrees: progress * 90 + seed.phase * 45
             )
         }
         return PetAmbientEffectSample(particles: particles, lightningIntensity: 0)

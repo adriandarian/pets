@@ -44,10 +44,11 @@ struct PetSpriteSourceTests {
     }
 
     @Test
-    func completionReactionsKeepIdlePlaybackAndAmbientMotion() throws {
+    func completionAndErrorReactionsFreezeAuthoredPlaybackAndAmbientMotion() throws {
         let source = try source("Sources/Pets/PetSprites.swift")
 
-        #expect(source.contains("visualContext.reaction != .error"))
+        #expect(source.contains("visualContext.reaction == nil"))
+        #expect(!source.contains("visualContext.reaction != .error"))
         #expect(source.contains("let playbackElapsed = isAmbientMotionEnabled ? phasedElapsed : 0"))
         #expect(source.contains("sample(at: phasedElapsed, isEnabled: isAmbientMotionEnabled)"))
     }
@@ -197,16 +198,18 @@ struct PetSpriteSourceTests {
     }
 
     @Test
-    func ambientEffectViewDrawsStormWindAndSnowInOneAsynchronousCanvas() {
+    func ambientEffectViewDrawsAllEffectsInOneAsynchronousCanvas() {
         let source = (try? source("Sources/Pets/PetAmbientEffects.swift")) ?? ""
 
         #expect(source.contains("case (.storm, .foreground)"))
         #expect(source.contains("case (.wind, .background)"))
         #expect(source.contains("case (.snow, .foreground)"))
+        #expect(source.contains("case (.lifeSparks, .foreground)"))
         #expect(source.contains("Canvas(rendersAsynchronously: true)"))
         #expect(source.contains("drawStorm"))
         #expect(source.contains("drawWind"))
         #expect(source.contains("drawSnow"))
+        #expect(source.contains("drawLifeSparks"))
         #expect(!source.contains("ForEach(sample.particles)"))
     }
 

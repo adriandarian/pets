@@ -96,7 +96,7 @@ private struct AssetPetSprite: View {
         let phasedElapsed = rawElapsed
             + animation.totalDuration * visualContext.animationPhaseOffset
         let isAmbientMotionEnabled = visualContext.animationSettings.isIdleMotionEnabled
-            && visualContext.reaction != .error
+            && visualContext.reaction == nil
         let playbackElapsed = isAmbientMotionEnabled ? phasedElapsed : 0
         let playback = animation.playbackSample(at: playbackElapsed)
         let primaryFrame = animation.frames[playback.primaryFrameIndex]

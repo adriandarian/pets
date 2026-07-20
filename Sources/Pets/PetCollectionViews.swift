@@ -586,7 +586,10 @@ private struct UnlockedPetSheet: View {
             VStack(spacing: 4) {
                 Text(PetCatalog.displayName(for: petID))
                     .font(.title3.weight(.semibold))
-                Text("\(PetCatalog.rarity(for: petID).displayName) Cloud Pet")
+                Text(
+                    "\(PetCatalog.rarity(for: petID).displayName) · "
+                        + (PetCatalog.category(for: petID)?.displayName ?? "Pet")
+                )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

@@ -22,6 +22,24 @@ public struct PetCategoryDescriptor: Equatable, Hashable, Sendable {
         displayName: "Tesslings",
         order: 1
     )
+
+    public static let patchlings = PetCategoryDescriptor(
+        id: "patchlings",
+        displayName: "Patchlings",
+        order: 2
+    )
+
+    public static let mossbound = PetCategoryDescriptor(
+        id: "mossbound",
+        displayName: "Mossbound",
+        order: 3
+    )
+
+    public static let glowkin = PetCategoryDescriptor(
+        id: "glowkin",
+        displayName: "Glowkin",
+        order: 4
+    )
 }
 
 public struct PetCapabilities: Equatable, Sendable {

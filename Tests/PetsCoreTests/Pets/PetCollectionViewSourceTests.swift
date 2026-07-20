@@ -119,6 +119,8 @@ struct PetCollectionViewSourceTests {
         #expect(source.contains("ForEach(selectedCategory.petIDs"))
         #expect(source.contains("\"Obtained\""))
         #expect(source.contains("\"Missing · \\(PetCatalog.rarity(for: petID).displayName)\""))
+        #expect(source.contains("PetCatalog.category(for: petID)?.displayName"))
+        #expect(!source.contains("Cloud Pet"))
         #expect(!source.contains("Label(\"Add\", systemImage: \"plus\")"))
     }
 

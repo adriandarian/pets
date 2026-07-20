@@ -78,7 +78,7 @@ struct ClaudeSessionScannerTests {
     }
 
     @Test
-    func cumulusRemainsTheDefaultPetAlongsideTesslings() {
+    func cumulusRemainsTheDefaultPetAlongsideRegisteredFamilies() {
         #expect(PetCatalog.defaultPetID == .cuteCloud)
         #expect(PetCatalog.builtInPetIDs == [
             .cuteCloud,
@@ -89,15 +89,31 @@ struct ClaudeSessionScannerTests {
             .knotling,
             .prismite,
             .orbitling,
+            .stitchback,
+            .loppet,
+            .quiltwing,
+            .tasselpod,
+            .threadwyrm,
+            .huskroot,
+            .fernstone,
+            .knothollow,
+            .bellbloom,
+            .glowcap,
+            .wicklet,
+            .mosshell,
+            .cometfin,
+            .gleamwing,
+            .halora,
+            .asterune,
         ])
         #expect(PetCatalog.displayName(for: .cuteCloud) == "Cumulus")
     }
 
     @Test
-    func catalogContainsCloudAndTesslingFamilyCategories() {
+    func catalogContainsAllBuiltInFamilyCategories() {
         let categories = PetCatalog.builtInCategories
 
-        #expect(categories.count == 2)
+        #expect(categories.count == 5)
         #expect(categories.first?.id == "cloud-pets")
         #expect(categories.first?.displayName == "Cloud Pets")
         #expect(categories.first?.petIDs == [
@@ -107,9 +123,37 @@ struct ClaudeSessionScannerTests {
             .lenticularCloud,
             .snowCloud,
         ])
-        #expect(categories.last?.id == "tesslings")
-        #expect(categories.last?.displayName == "Tesslings")
-        #expect(categories.last?.petIDs == [.knotling, .prismite, .orbitling])
+        #expect(categories[1].id == "tesslings")
+        #expect(categories[1].displayName == "Tesslings")
+        #expect(categories[1].petIDs == [.knotling, .prismite, .orbitling])
+        #expect(categories[2].id == "patchlings")
+        #expect(categories[2].displayName == "Patchlings")
+        #expect(categories[2].petIDs == [
+            .stitchback,
+            .loppet,
+            .quiltwing,
+            .tasselpod,
+            .threadwyrm,
+        ])
+        #expect(categories[3].id == "mossbound")
+        #expect(categories[3].displayName == "Mossbound")
+        #expect(categories[3].petIDs == [
+            .huskroot,
+            .fernstone,
+            .knothollow,
+            .bellbloom,
+            .glowcap,
+        ])
+        #expect(categories[4].id == "glowkin")
+        #expect(categories[4].displayName == "Glowkin")
+        #expect(categories[4].petIDs == [
+            .wicklet,
+            .mosshell,
+            .cometfin,
+            .gleamwing,
+            .halora,
+            .asterune,
+        ])
     }
 
     @Test

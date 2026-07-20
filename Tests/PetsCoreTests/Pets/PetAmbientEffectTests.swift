@@ -39,6 +39,27 @@ struct PetAmbientEffectTests {
     }
 
     @Test
+    func lifeSparksRiseFadeAndStayRestrained() {
+        let start = PetAmbientEffectKind.lifeSparks.sample(
+            at: 0,
+            phaseOffset: 0,
+            isEnabled: true
+        )
+        let rising = PetAmbientEffectKind.lifeSparks.sample(
+            at: 0.8,
+            phaseOffset: 0,
+            isEnabled: true
+        )
+
+        #expect(start.particles.count == 3)
+        #expect(rising.particles[0].y < start.particles[0].y)
+        #expect(start.particles.allSatisfy { abs($0.x) <= 30 })
+        #expect(start.particles.allSatisfy { $0.y >= 0 && $0.y <= 20 })
+        #expect(start.particles.allSatisfy { $0.opacity >= 0 && $0.opacity <= 0.72 })
+        #expect(start.lightningIntensity == 0)
+    }
+
+    @Test
     func samplingIsDeterministicAndDisabledMotionFreezes() {
         let first = PetAmbientEffectKind.snow.sample(at: 1.25, phaseOffset: 0.37, isEnabled: true)
         let repeated = PetAmbientEffectKind.snow.sample(at: 1.25, phaseOffset: 0.37, isEnabled: true)
@@ -48,5 +69,16 @@ struct PetAmbientEffectTests {
         #expect(first == repeated)
         #expect(frozenEarly == frozenLate)
         #expect(PetAmbientEffectKind.none.sample(at: 4, phaseOffset: 0.2, isEnabled: true) == .none)
+        let frozenSparkEarly = PetAmbientEffectKind.lifeSparks.sample(
+            at: 1,
+            phaseOffset: 0.37,
+            isEnabled: false
+        )
+        let frozenSparkLate = PetAmbientEffectKind.lifeSparks.sample(
+            at: 99,
+            phaseOffset: 0.37,
+            isEnabled: false
+        )
+        #expect(frozenSparkEarly == frozenSparkLate)
     }
 }

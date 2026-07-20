@@ -241,8 +241,9 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("Button(\"Duplicate\")"))
         #expect(source.contains("Button(\"Delete\", role: .destructive)"))
         #expect(source.contains("Color(nsColor: .controlAccentColor)"))
-        #expect(source.contains("Button(\"Change Sprite...\")"))
-        #expect(source.contains("SpritePickerSheet"))
+        #expect(source.contains("Button(\"Change Pet...\")"))
+        #expect(!source.contains("Change Sprite"))
+        #expect(source.contains("PetPickerSheet"))
         #expect(source.contains("Button(\"Delete Pet\", role: .destructive)"))
         #expect(source.contains("store.removePet(pet.id)"))
         #expect(source.contains("EmptyPetCollectionView"))
@@ -347,13 +348,29 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
-    func settingsOfferCloudFamilySpriteSelection() throws {
+    func settingsOfferPetSelectionAndBackdropDismissal() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("SpritePickerSheet"))
-        #expect(source.contains("SpritePickerCard"))
-        #expect(source.contains("Change Sprite..."))
+        #expect(source.contains("PetPickerSheet"))
+        #expect(source.contains("PetPickerCard"))
+        #expect(source.contains("PetPickerOverlay"))
+        #expect(source.contains("Change Pet..."))
+        #expect(source.contains("if isPetPickerPresented"))
+        #expect(source.contains(".disabled(isPetPickerPresented)"))
+        #expect(source.contains("Color.black.opacity(0.42)"))
+        #expect(source.contains(".contentShape(Rectangle())"))
+        #expect(source.contains(".onTapGesture {"))
+        #expect(source.contains("isPresented = false"))
+        #expect(source.contains(".onExitCommand {"))
+        #expect(source.contains(".keyboardShortcut(.cancelAction)"))
+        #expect(source.contains("PetPickerWindowClickMonitor"))
+        #expect(source.contains("NSEvent.addLocalMonitorForEvents"))
+        #expect(source.contains("precondition(Thread.isMainThread)"))
+        #expect(source.contains("event.window === view.window"))
+        #expect(source.contains("view.convert(event.locationInWindow, from: nil)"))
+        #expect(source.contains("!view.bounds.contains(pointInPicker)"))
+        #expect(source.contains("NSEvent.removeMonitor(eventMonitor)"))
         #expect(source.contains("ForEach(PetCatalog.builtInCategories"))
     }
 

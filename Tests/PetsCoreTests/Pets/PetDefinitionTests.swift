@@ -25,6 +25,46 @@ struct PetDefinitionTests {
     }
 
     @Test
+    func mossboundDefinitionsShareTheLifeSparkAmbientEffect() throws {
+        for petID in [
+            PetID.huskroot,
+            .fernstone,
+            .knothollow,
+            .bellbloom,
+            .glowcap,
+        ] {
+            #expect(try #require(PetCatalog.definition(for: petID)).ambientEffect == .lifeSparks)
+        }
+    }
+
+    @Test
+    func patchlingsKeepTheirRepairHighlightsInsideTheSpriteArtwork() throws {
+        for petID in [
+            PetID.stitchback,
+            .loppet,
+            .quiltwing,
+            .tasselpod,
+            .threadwyrm,
+        ] {
+            #expect(try #require(PetCatalog.definition(for: petID)).ambientEffect == .none)
+        }
+    }
+
+    @Test
+    func glowkinKeepTheirLightInsideTheSpriteArtwork() throws {
+        for petID in [
+            PetID.wicklet,
+            .mosshell,
+            .cometfin,
+            .gleamwing,
+            .halora,
+            .asterune,
+        ] {
+            #expect(try #require(PetCatalog.definition(for: petID)).ambientEffect == .none)
+        }
+    }
+
+    @Test
     func rarityDefinesTheKeyUpgradePath() {
         #expect(PetRarity.common.nextRarity == .rare)
         #expect(PetRarity.rare.nextRarity == .legendary)

@@ -21,6 +21,8 @@ struct PetAmbientEffectView: View {
                 drawWind(in: &context)
             case (.snow, .foreground):
                 drawSnow(in: &context)
+            case (.lifeSparks, .foreground):
+                drawLifeSparks(in: &context)
             default:
                 break
             }
@@ -164,6 +166,34 @@ struct PetAmbientEffectView: View {
                 particleContext.fill(
                     centeredRectangle(width: 2.1 * unit, height: 2.1 * unit),
                     with: .color(.white)
+                )
+            }
+        }
+    }
+
+    private func drawLifeSparks(in context: inout GraphicsContext) {
+        for particle in sample.particles {
+            context.drawLayer { particleContext in
+                particleContext.opacity = particle.opacity
+                particleContext.translateBy(
+                    x: (64 + particle.x) * unit,
+                    y: (64 + particle.y) * unit
+                )
+                particleContext.rotate(by: .degrees(particle.rotationDegrees))
+                particleContext.scaleBy(x: particle.scale, y: particle.scale)
+                particleContext.addFilter(
+                    .shadow(
+                        color: Color(red: 1.0, green: 0.63, blue: 0.16).opacity(0.34),
+                        radius: 1.1 * unit * particle.scale
+                    )
+                )
+                particleContext.fill(
+                    centeredRectangle(width: 2.8 * unit, height: 2.8 * unit),
+                    with: .color(Color(red: 1.0, green: 0.78, blue: 0.30))
+                )
+                particleContext.fill(
+                    centeredRectangle(width: 1.2 * unit, height: 1.2 * unit),
+                    with: .color(Color(red: 1.0, green: 0.95, blue: 0.67))
                 )
             }
         }

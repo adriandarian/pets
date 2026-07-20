@@ -550,6 +550,22 @@ private final class PetAmbientParticleLayer: CALayer {
                 rect: centeredRect(width: 2.1, height: 2.1),
                 color: .white
             )
+        case .lifeSparks:
+            addShape(
+                rect: centeredRect(width: 2.8, height: 2.8),
+                color: NSColor(calibratedRed: 1.0, green: 0.78, blue: 0.30, alpha: 1),
+                shadowColor: NSColor(
+                    calibratedRed: 1.0,
+                    green: 0.63,
+                    blue: 0.16,
+                    alpha: 0.34
+                ),
+                shadowRadius: 1.1
+            )
+            addShape(
+                rect: centeredRect(width: 1.2, height: 1.2),
+                color: NSColor(calibratedRed: 1.0, green: 0.95, blue: 0.67, alpha: 1)
+            )
         case .none:
             break
         }

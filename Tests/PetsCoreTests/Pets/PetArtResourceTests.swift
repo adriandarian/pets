@@ -6,6 +6,88 @@ import Testing
 @Suite
 struct PetArtResourceTests {
     @Test
+    func patchlingPetsHaveCompleteStatePacksAndCanonicalStateEntries() throws {
+        for petID in [
+            PetID.stitchback,
+            .loppet,
+            .quiltwing,
+            .tasselpod,
+            .threadwyrm,
+        ] {
+            let definition = try #require(PetCatalog.definition(for: petID))
+            guard case let .assetPack(pack) = definition.renderSource else {
+                Issue.record("\(definition.displayName) must use an asset pack")
+                continue
+            }
+
+            let busy = try #require(pack.busy)
+            let waiting = try #require(pack.waiting)
+            let excited = try #require(pack.excited)
+            let sleeping = try #require(pack.sleeping)
+            #expect(pack.idle.frames.count == 8)
+            #expect(busy.frames.count == 4)
+            #expect(waiting.frames.count == 4)
+            #expect(excited.frames.count == 5)
+            #expect(sleeping.frames.count == 4)
+
+            let canonicalURL = try #require(PetArtResourceLocator.url(for: pack.idle.frames[0]))
+            let canonicalData = try Data(contentsOf: canonicalURL)
+            for animation in [pack.idle, busy, waiting, excited, sleeping] {
+                let firstFrame = try #require(animation.frames.first)
+                let firstFrameURL = try #require(PetArtResourceLocator.url(for: firstFrame))
+                #expect(try Data(contentsOf: firstFrameURL) == canonicalData)
+            }
+        }
+    }
+
+    @Test
+    func glowkinPetsHaveCompleteStatePacks() throws {
+        for petID in [
+            PetID.wicklet,
+            .mosshell,
+            .cometfin,
+            .gleamwing,
+            .halora,
+            .asterune,
+        ] {
+            let definition = try #require(PetCatalog.definition(for: petID))
+            guard case let .assetPack(pack) = definition.renderSource else {
+                Issue.record("\(definition.displayName) must use an asset pack")
+                continue
+            }
+
+            #expect(pack.idle.frames.count == 8)
+            #expect(pack.busy?.frames.count == 4)
+            #expect(pack.waiting?.frames.count == 4)
+            #expect(pack.excited?.frames.count == 5)
+            #expect(pack.sleeping?.frames.count == 4)
+        }
+    }
+
+    @Test
+    func mossboundPetsHaveCompleteStatePacks() throws {
+        for petID in [
+            PetID.huskroot,
+            .fernstone,
+            .knothollow,
+            .bellbloom,
+            .glowcap,
+        ] {
+            let definition = try #require(PetCatalog.definition(for: petID))
+            guard case let .assetPack(pack) = definition.renderSource else {
+                Issue.record("\(definition.displayName) must use an asset pack")
+                continue
+            }
+
+            #expect(pack.idle.frames.count == 8)
+            #expect(pack.busy?.frames.count == 4)
+            #expect(pack.waiting?.frames.count == 4)
+            #expect(pack.excited?.frames.count == 5)
+            #expect(pack.sleeping?.frames.count == 4)
+        }
+    }
+
+    @Test
     func knotlingHasCompleteStatePack() throws {
         let definition = try #require(PetCatalog.definition(for: .knotling))
         guard case let .assetPack(pack) = definition.renderSource else {
@@ -211,6 +293,100 @@ struct PetArtResourceTests {
                 #expect(abs(bounds.midY - 256) <= 48)
                 #expect(bounds.width >= 280)
                 #expect(bounds.height >= 220)
+            }
+        }
+    }
+
+    @Test
+    func patchlingFramesStayInsideTheirReadableEnvelope() throws {
+        for definition in PetCatalog.definitions where definition.category == .patchlings {
+            guard case let .assetPack(pack) = definition.renderSource else { continue }
+            let animations = [
+                pack.idle,
+                pack.busy,
+                pack.waiting,
+                pack.excited,
+                pack.sleeping,
+            ].compactMap { $0 }
+
+            for animation in animations {
+                for frame in animation.frames {
+                    let url = try #require(PetArtResourceLocator.url(for: frame))
+                    let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+                    let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+                    let bounds = try #require(alphaBounds(in: image))
+
+                    #expect(bounds.minX >= 8)
+                    #expect(bounds.minY >= 8)
+                    #expect(bounds.maxX <= 504)
+                    #expect(bounds.maxY <= 496)
+                    #expect(abs(bounds.midX - 256) <= 64)
+                    #expect(bounds.width >= 240)
+                    #expect(bounds.height >= 190)
+                }
+            }
+        }
+    }
+
+    @Test
+    func mossboundFramesStayInsideTheirReadableEnvelope() throws {
+        for definition in PetCatalog.definitions where definition.category == .mossbound {
+            guard case let .assetPack(pack) = definition.renderSource else { continue }
+            let animations = [
+                pack.idle,
+                pack.busy,
+                pack.waiting,
+                pack.excited,
+                pack.sleeping,
+            ].compactMap { $0 }
+
+            for animation in animations {
+                for frame in animation.frames {
+                    let url = try #require(PetArtResourceLocator.url(for: frame))
+                    let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+                    let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+                    let bounds = try #require(alphaBounds(in: image))
+
+                    #expect(bounds.minX >= 28)
+                    #expect(bounds.minY >= 28)
+                    #expect(bounds.maxX <= 488)
+                    #expect(bounds.maxY <= 488)
+                    #expect(abs(bounds.midX - 256) <= 48)
+                    #expect(abs(bounds.midY - 256) <= 48)
+                    #expect(bounds.width >= 190)
+                    #expect(bounds.height >= 220)
+                }
+            }
+        }
+    }
+
+    @Test
+    func glowkinFramesStayInsideTheirReadableEnvelope() throws {
+        for definition in PetCatalog.definitions where definition.category == .glowkin {
+            guard case let .assetPack(pack) = definition.renderSource else { continue }
+            let animations = [
+                pack.idle,
+                pack.busy,
+                pack.waiting,
+                pack.excited,
+                pack.sleeping,
+            ].compactMap { $0 }
+
+            for animation in animations {
+                for frame in animation.frames {
+                    let url = try #require(PetArtResourceLocator.url(for: frame))
+                    let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+                    let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+                    let bounds = try #require(alphaBounds(in: image))
+
+                    #expect(bounds.minX >= 28)
+                    #expect(bounds.minY >= 28)
+                    #expect(bounds.maxX <= 488)
+                    #expect(bounds.maxY <= 488)
+                    #expect(abs(bounds.midX - 256) <= 48)
+                    #expect(bounds.width >= 230)
+                    #expect(bounds.height >= 150)
+                }
             }
         }
     }

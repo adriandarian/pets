@@ -13,6 +13,22 @@ public struct PetID: RawRepresentable, Equatable, Hashable, Codable, Sendable {
     public static let knotling = PetID(rawValue: "knotling")
     public static let prismite = PetID(rawValue: "prismite")
     public static let orbitling = PetID(rawValue: "orbitling")
+    public static let stitchback = PetID(rawValue: "stitchback")
+    public static let loppet = PetID(rawValue: "loppet")
+    public static let quiltwing = PetID(rawValue: "quiltwing")
+    public static let tasselpod = PetID(rawValue: "tasselpod")
+    public static let threadwyrm = PetID(rawValue: "threadwyrm")
+    public static let huskroot = PetID(rawValue: "huskroot")
+    public static let fernstone = PetID(rawValue: "fernstone")
+    public static let knothollow = PetID(rawValue: "knothollow")
+    public static let bellbloom = PetID(rawValue: "bellbloom")
+    public static let glowcap = PetID(rawValue: "glowcap")
+    public static let wicklet = PetID(rawValue: "wicklet")
+    public static let mosshell = PetID(rawValue: "mosshell")
+    public static let cometfin = PetID(rawValue: "cometfin")
+    public static let gleamwing = PetID(rawValue: "gleamwing")
+    public static let halora = PetID(rawValue: "halora")
+    public static let asterune = PetID(rawValue: "asterune")
 }
 
 public struct PetCatalogCategory: Equatable, Hashable, Sendable {
@@ -38,6 +54,22 @@ public enum PetCatalog {
         KnotlingPetDefinition(),
         PrismitePetDefinition(),
         OrbitlingPetDefinition(),
+        StitchbackPetDefinition(),
+        LoppetPetDefinition(),
+        QuiltwingPetDefinition(),
+        TasselpodPetDefinition(),
+        ThreadwyrmPetDefinition(),
+        HuskrootPetDefinition(),
+        FernstonePetDefinition(),
+        KnothollowPetDefinition(),
+        BellbloomPetDefinition(),
+        GlowcapPetDefinition(),
+        WickletPetDefinition(),
+        MosshellPetDefinition(),
+        CometfinPetDefinition(),
+        GleamwingPetDefinition(),
+        HaloraPetDefinition(),
+        AsterunePetDefinition(),
     ]
 
     private static let definitionsByID = Dictionary(
@@ -54,6 +86,21 @@ public enum PetCatalog {
             id: PetCategoryDescriptor.tesslings.id,
             displayName: PetCategoryDescriptor.tesslings.displayName,
             petIDs: [.knotling, .prismite, .orbitling]
+        ),
+        PetCatalogCategory(
+            id: PetCategoryDescriptor.patchlings.id,
+            displayName: PetCategoryDescriptor.patchlings.displayName,
+            petIDs: [.stitchback, .loppet, .quiltwing, .tasselpod, .threadwyrm]
+        ),
+        PetCatalogCategory(
+            id: PetCategoryDescriptor.mossbound.id,
+            displayName: PetCategoryDescriptor.mossbound.displayName,
+            petIDs: [.huskroot, .fernstone, .knothollow, .bellbloom, .glowcap]
+        ),
+        PetCatalogCategory(
+            id: PetCategoryDescriptor.glowkin.id,
+            displayName: PetCategoryDescriptor.glowkin.displayName,
+            petIDs: [.wicklet, .mosshell, .cometfin, .gleamwing, .halora, .asterune]
         )
     ]
     public static let builtInPetIDs: [PetID] = builtInCategories.flatMap(\.petIDs)

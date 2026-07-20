@@ -12,6 +12,7 @@ struct PetSettingsView: View {
     @ObservedObject var updateController: PetUpdateController
     let respawnPet: (PetInstance.ID) -> Void
     @State private var selectedTab = PetSettingsTab.pets
+    @State private var isPetPickerPresented = false
 
     var body: some View {
         Group {
@@ -19,7 +20,8 @@ struct PetSettingsView: View {
             case .pets:
                 PetConfigurationPane(
                     store: store,
-                    respawnPet: respawnPet
+                    respawnPet: respawnPet,
+                    isPetPickerPresented: $isPetPickerPresented
                 )
             case .collection:
                 PetCollectionView(store: store)
@@ -44,6 +46,7 @@ struct PetSettingsView: View {
                 }
                 .labelsHidden()
                 .pickerStyle(.segmented)
+                .disabled(isPetPickerPresented)
             }
         }
     }
@@ -84,38 +87,41 @@ private struct PetUpdateBanner: View {
 private struct PetConfigurationPane: View {
     @ObservedObject var store: PetStore
     let respawnPet: (PetInstance.ID) -> Void
-    @State private var isSpritePickerPresented = false
+    @Binding var isPetPickerPresented: Bool
     @State private var petPendingDeletionID: PetInstance.ID?
 
     var body: some View {
-        NavigationSplitView {
-            PetSidebar(
-                store: store,
-                respawnPet: respawnPet
-            )
-                .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 260)
-        } detail: {
-            Group {
-                if let selectedPet {
-                    PetDetailPane(
-                        store: store,
-                        pet: selectedPet,
-                        respawnPet: { respawnPet(selectedPet.id) },
-                        changeSprite: { isSpritePickerPresented = true },
-                        deletePet: { petPendingDeletionID = selectedPet.id }
-                    )
-                } else {
-                    EmptyPetCollectionView {
-                        store.addPet()
+        ZStack {
+            NavigationSplitView {
+                PetSidebar(
+                    store: store,
+                    respawnPet: respawnPet
+                )
+                    .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 260)
+            } detail: {
+                Group {
+                    if let selectedPet {
+                        PetDetailPane(
+                            store: store,
+                            pet: selectedPet,
+                            respawnPet: { respawnPet(selectedPet.id) },
+                            changePet: { isPetPickerPresented = true },
+                            deletePet: { petPendingDeletionID = selectedPet.id }
+                        )
+                    } else {
+                        EmptyPetCollectionView {
+                            store.addPet()
+                        }
                     }
                 }
             }
-        }
-        .sheet(isPresented: $isSpritePickerPresented) {
-            SpritePickerSheet(
-                store: store,
-                isPresented: $isSpritePickerPresented
-            )
+
+            if isPetPickerPresented {
+                PetPickerOverlay(
+                    store: store,
+                    isPresented: $isPetPickerPresented
+                )
+            }
         }
         .confirmationDialog(
             "Delete \(petPendingDeletion?.name ?? "Pet")?",
@@ -314,7 +320,7 @@ private struct PetDetailPane: View {
     @ObservedObject var store: PetStore
     let pet: PetInstance
     let respawnPet: () -> Void
-    let changeSprite: () -> Void
+    let changePet: () -> Void
     let deletePet: () -> Void
 
     var body: some View {
@@ -333,7 +339,7 @@ private struct PetDetailPane: View {
 
                 PetAppearanceSection(
                     pet: pet,
-                    changeSprite: changeSprite
+                    changePet: changePet
                 )
 
                 Divider()
@@ -606,7 +612,7 @@ private struct PetDetailsSection: View {
 
 private struct PetAppearanceSection: View {
     let pet: PetInstance
-    let changeSprite: () -> Void
+    let changePet: () -> Void
 
     var body: some View {
         FlatSettingsSection("Appearance") {
@@ -622,8 +628,8 @@ private struct PetAppearanceSection: View {
 
                 Spacer()
 
-                Button("Change Sprite...") {
-                    changeSprite()
+                Button("Change Pet...") {
+                    changePet()
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -698,7 +704,7 @@ private struct SettingSwitchRow: View {
     }
 }
 
-private struct SpritePickerSheet: View {
+private struct PetPickerSheet: View {
     @ObservedObject var store: PetStore
     @Binding var isPresented: Bool
     @State private var selectedCategoryID = PetCatalog.builtInCategories.first?.id
@@ -706,10 +712,10 @@ private struct SpritePickerSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("Choose a Cloud")
+                Text("Choose a Pet")
                     .font(.title2.bold())
 
-                Text("Each cloud has its own silhouette, anatomy, and motion style.")
+                Text("Choose a pet from any family you have unlocked.")
                     .foregroundStyle(.secondary)
             }
 
@@ -721,30 +727,32 @@ private struct SpritePickerSheet: View {
             }
             .pickerStyle(.segmented)
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-                ForEach(selectedCategory.petIDs, id: \.self) { petID in
-                    SpritePickerCard(
-                        petID: petID,
-                        isSelected: petID == store.selectedPetInstance?.petID,
-                        isOwned: store.isPetOwned(petID)
-                    ) {
-                        store.updateSelectedPetID(petID)
-                        isPresented = false
+            ScrollView(.vertical, showsIndicators: true) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                    ForEach(selectedCategory.petIDs, id: \.self) { petID in
+                        PetPickerCard(
+                            petID: petID,
+                            isSelected: petID == store.selectedPetInstance?.petID,
+                            isOwned: store.isPetOwned(petID)
+                        ) {
+                            store.updateSelectedPetID(petID)
+                            isPresented = false
+                        }
                     }
                 }
+                .padding(.vertical, 1)
             }
-
-            Spacer()
 
             HStack {
                 Spacer()
-                Button("Cancel") {
+                Button("Cancel", role: .cancel) {
                     isPresented = false
                 }
+                .keyboardShortcut(.cancelAction)
             }
         }
         .padding(22)
-        .frame(width: 820, height: 460)
+        .frame(width: 820, height: 560)
         .onAppear {
             selectedCategoryID = store.selectedPetInstance
                 .flatMap { PetCatalog.category(for: $0.petID)?.id }
@@ -758,7 +766,131 @@ private struct SpritePickerSheet: View {
     }
 }
 
-private struct SpritePickerCard: View {
+private struct PetPickerOverlay: View {
+    @ObservedObject var store: PetStore
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.42)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isPresented = false
+                }
+                .accessibilityHidden(true)
+
+            PetPickerSheet(
+                store: store,
+                isPresented: $isPresented
+            )
+            .background {
+                Color(nsColor: .windowBackgroundColor)
+
+                PetPickerWindowClickMonitor {
+                    isPresented = false
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.35), radius: 24, y: 10)
+        }
+        .onExitCommand {
+            isPresented = false
+        }
+    }
+}
+
+private struct PetPickerWindowClickMonitor: NSViewRepresentable {
+    let dismiss: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(dismiss: dismiss)
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = HitPassthroughView()
+        context.coordinator.startMonitoring(view: view)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        context.coordinator.dismiss = dismiss
+        context.coordinator.startMonitoring(view: nsView)
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        coordinator.stopMonitoring()
+    }
+
+    @MainActor
+    final class Coordinator {
+        var dismiss: () -> Void
+        private weak var view: NSView?
+        private var eventMonitor: Any?
+
+        init(dismiss: @escaping () -> Void) {
+            self.dismiss = dismiss
+        }
+
+        func startMonitoring(view: NSView) {
+            self.view = view
+            guard eventMonitor == nil else { return }
+
+            eventMonitor = NSEvent.addLocalMonitorForEvents(
+                matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+            ) { [weak self] event in
+                precondition(Thread.isMainThread)
+                let eventBox = MainThreadEvent(event)
+                let shouldSwallow = MainActor.assumeIsolated {
+                    self?.handle(eventBox.value) ?? false
+                }
+                return shouldSwallow ? nil : event
+            }
+        }
+
+        private func handle(_ event: NSEvent) -> Bool {
+            guard let view,
+                  event.window === view.window
+            else {
+                return false
+            }
+
+            let pointInPicker = view.convert(event.locationInWindow, from: nil)
+            guard !view.bounds.contains(pointInPicker) else {
+                return false
+            }
+
+            dismiss()
+            return true
+        }
+
+        func stopMonitoring() {
+            guard let eventMonitor else { return }
+            NSEvent.removeMonitor(eventMonitor)
+            self.eventMonitor = nil
+        }
+    }
+
+    private struct MainThreadEvent: @unchecked Sendable {
+        let value: NSEvent
+
+        init(_ value: NSEvent) {
+            self.value = value
+        }
+    }
+
+    private final class HitPassthroughView: NSView {
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            nil
+        }
+    }
+}
+
+private struct PetPickerCard: View {
     let petID: PetID
     let isSelected: Bool
     let isOwned: Bool
