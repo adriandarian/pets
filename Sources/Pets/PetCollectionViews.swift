@@ -9,6 +9,9 @@ struct PetCollectionView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 22) {
+#if PETS_DEVELOPMENT
+                PetDevelopmentControls(store: store)
+#endif
                 rewardProgress
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -165,6 +168,49 @@ struct PetCollectionView: View {
     }
 }
 
+#if PETS_DEVELOPMENT
+private struct PetDevelopmentControls: View {
+    @ObservedObject var store: PetStore
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "hammer.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.orange)
+                .frame(width: 34, height: 34)
+                .background(.orange.opacity(0.14), in: Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Development Collection")
+                    .font(.headline)
+                Text("Keys are unlimited. Collection changes are stored only in Pets Dev.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button("Unlock All Pets") {
+                store.unlockAllPetsForDevelopment()
+            }
+
+            Button("Reset Collected Pets", role: .destructive) {
+                store.resetCollectedPetsForDevelopment()
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.orange.opacity(0.08))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(.orange.opacity(0.35), lineWidth: 1)
+        }
+    }
+}
+#endif
+
 private struct PetUsageSourceRow: View {
     let status: PetUsageSourceStatus
 
@@ -223,9 +269,7 @@ private struct PetChestCard: View {
                     .padding(.vertical, 4)
                     .background(rarityColor.opacity(0.13), in: Capsule())
                     .foregroundStyle(rarityColor)
-                    .accessibilityLabel(
-                        "\(matchingKeyCount) \(rarity.displayName.lowercased()) \(matchingKeyCount == 1 ? "key" : "keys") available"
-                    )
+                    .accessibilityLabel(keyBalanceAccessibilityLabel)
             }
 
             PetChestArtwork(rarity: rarity)
@@ -279,11 +323,27 @@ private struct PetChestCard: View {
     }
 
     private var keyBalanceLabel: String {
+#if PETS_DEVELOPMENT
+        "Unlimited \(rarity.displayName) Keys"
+#else
         "\(matchingKeyCount) \(rarity.displayName) \(matchingKeyCount == 1 ? "Key" : "Keys")"
+#endif
+    }
+
+    private var keyBalanceAccessibilityLabel: String {
+#if PETS_DEVELOPMENT
+        "Unlimited \(rarity.displayName.lowercased()) keys available"
+#else
+        "\(matchingKeyCount) \(rarity.displayName.lowercased()) \(matchingKeyCount == 1 ? "key" : "keys") available"
+#endif
     }
 
     private var hasMatchingKey: Bool {
+#if PETS_DEVELOPMENT
+        true
+#else
         matchingKeyCount > 0
+#endif
     }
 
     private var conversionSource: PetRarity? {

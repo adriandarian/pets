@@ -116,7 +116,8 @@ struct PetOverlayTransparencyTests {
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
         let settingsSource = try String(contentsOf: settingsSourceURL, encoding: .utf8)
 
-        #expect(source.contains("Window(\"Pets\", id: PetsWindowID.configuration)"))
+        #expect(source.contains("Window(PetsWindowID.configurationTitle, id: PetsWindowID.configuration)"))
+        #expect(source.contains("static let configurationTitle = \"Pets\""))
         #expect(source.contains("@Environment(\\.openWindow)"))
         #expect(source.contains("openWindow(id: PetsWindowID.configuration)"))
         #expect(!source.contains("Settings {"))

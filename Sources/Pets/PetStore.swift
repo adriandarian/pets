@@ -322,6 +322,15 @@ final class PetStore: ObservableObject {
 
     func openChest(_ rarity: PetRarity) {
         var updatedState = collectionState
+#if PETS_DEVELOPMENT
+        let persistedKeyInventory = updatedState.keyInventory
+        updatedState = PetCollectionState(
+            ownedPetIDs: updatedState.ownedPetIDs,
+            keyInventory: PetKeyInventory(rarity: rarity, count: 1),
+            tokenRemainder: updatedState.tokenRemainder,
+            providerCheckpoints: updatedState.providerCheckpoints
+        )
+#endif
         let candidates = updatedState.unownedPetIDs(
             for: rarity,
             eligiblePetIDs: PetCatalog.petIDs(for: rarity)
@@ -334,6 +343,14 @@ final class PetStore: ObservableObject {
                 eligiblePetIDs: PetCatalog.petIDs(for: rarity),
                 selectionIndex: selectionIndex
             )
+#if PETS_DEVELOPMENT
+            updatedState = PetCollectionState(
+                ownedPetIDs: updatedState.ownedPetIDs,
+                keyInventory: persistedKeyInventory,
+                tokenRemainder: updatedState.tokenRemainder,
+                providerCheckpoints: updatedState.providerCheckpoints
+            )
+#endif
             collectionState = updatedState
             unlockedPetID = petID
             collectionError = nil
@@ -346,6 +363,29 @@ final class PetStore: ObservableObject {
     func dismissUnlockedPet() {
         unlockedPetID = nil
     }
+
+#if PETS_DEVELOPMENT
+    func resetCollectedPetsForDevelopment() {
+        replaceCollectionOwnershipForDevelopment(with: [.cuteCloud])
+    }
+
+    func unlockAllPetsForDevelopment() {
+        replaceCollectionOwnershipForDevelopment(with: Set(PetCatalog.builtInPetIDs))
+    }
+
+    private func replaceCollectionOwnershipForDevelopment(with ownedPetIDs: Set<PetID>) {
+        let updatedState = PetCollectionState(
+            ownedPetIDs: ownedPetIDs,
+            keyInventory: collectionState.keyInventory,
+            tokenRemainder: collectionState.tokenRemainder,
+            providerCheckpoints: collectionState.providerCheckpoints
+        )
+        collectionState = updatedState
+        unlockedPetID = nil
+        collectionError = nil
+        collectionPersistence.persist(updatedState)
+    }
+#endif
 
     func updateSelectedPetPixelation(_ pixelation: PetSpritePixelation) {
         updateSelectedPet { pet in

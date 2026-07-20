@@ -6,6 +6,11 @@ import SwiftUI
 
 private enum PetsWindowID {
     static let configuration = "configuration"
+#if PETS_DEVELOPMENT
+    static let configurationTitle = "Pets Dev"
+#else
+    static let configurationTitle = "Pets"
+#endif
 }
 
 @main
@@ -13,7 +18,7 @@ struct PetsApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        Window("Pets", id: PetsWindowID.configuration) {
+        Window(PetsWindowID.configurationTitle, id: PetsWindowID.configuration) {
             PetSettingsView(
                 store: appDelegate.store,
                 updateController: appDelegate.updateController,
@@ -275,12 +280,16 @@ private struct PetMenuBarLabel: View {
     @ObservedObject var updateController: PetUpdateController
 
     var body: some View {
+#if PETS_DEVELOPMENT
+        Label("Pets Dev", systemImage: "hammer.circle")
+#else
         Label(
             "Pets",
             systemImage: updateController.availableRelease == nil
                 ? "pawprint.circle"
                 : "arrow.down.circle"
         )
+#endif
     }
 }
 
