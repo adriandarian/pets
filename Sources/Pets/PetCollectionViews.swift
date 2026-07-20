@@ -527,7 +527,7 @@ private struct PetKeyConversionPopover: View {
     }
 }
 
-private struct PetChestArtwork: View {
+struct PetChestArtwork: View {
     let rarity: PetRarity
 
     var body: some View {
@@ -623,53 +623,6 @@ private struct PetCollectionCard: View {
 
     private var isOwned: Bool {
         store.isPetOwned(petID)
-    }
-}
-
-private struct UnlockedPetSheet: View {
-    @ObservedObject var store: PetStore
-    let petID: PetID
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "sparkles")
-                .font(.title2)
-                .foregroundStyle(Color.accentColor)
-
-            Text("New Pet Unlocked")
-                .font(.title2.bold())
-
-            PetSprite(
-                petID: petID,
-                visualContext: PetVisualContext(
-                    status: .idle,
-                    hasActiveSessions: true,
-                    isHovered: false,
-                    animationSettings: .default
-                ),
-                pixelation: .off
-            )
-            .frame(width: 150, height: 150)
-
-            VStack(spacing: 4) {
-                Text(PetCatalog.displayName(for: petID))
-                    .font(.title3.weight(.semibold))
-                Text(
-                    "\(PetCatalog.rarity(for: petID).displayName) · "
-                        + (PetCatalog.category(for: petID)?.displayName ?? "Pet")
-                )
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Button("Done") {
-                store.dismissUnlockedPet()
-            }
-            .buttonStyle(.borderedProminent)
-            .keyboardShortcut(.defaultAction)
-        }
-        .padding(30)
-        .frame(width: 420, height: 430)
     }
 }
 

@@ -212,6 +212,31 @@ struct PetArtResourceTests {
     }
 
     @Test
+    func openLootChestArtworkIsBundledOnAScreenBlendBackground() throws {
+        for chest in PetOpenChestArtResource.allCases {
+            let url = try #require(PetArtResourceLocator.url(forOpenChest: chest))
+            let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+            let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+            let bitmap = NSBitmapImageRep(cgImage: image)
+
+            #expect(image.width == image.height)
+            #expect(image.width >= 1_000)
+            let corners = [
+                bitmap.colorAt(x: 0, y: 0),
+                bitmap.colorAt(x: image.width - 1, y: 0),
+                bitmap.colorAt(x: 0, y: image.height - 1),
+                bitmap.colorAt(x: image.width - 1, y: image.height - 1),
+            ]
+            #expect(corners.allSatisfy { color in
+                guard let rgb = color?.usingColorSpace(.sRGB) else { return false }
+                return rgb.redComponent < 0.02
+                    && rgb.greenComponent < 0.02
+                    && rgb.blueComponent < 0.02
+            })
+        }
+    }
+
+    @Test
     func registeredAssetPacksUseValidProductionFrames() throws {
         for definition in PetCatalog.definitions {
             guard case let .assetPack(pack) = definition.renderSource else { continue }

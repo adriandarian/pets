@@ -76,7 +76,7 @@ struct PetCollectionViewSourceTests {
         let chestCard = try sourceSlice(
             source,
             from: "private struct PetChestCard",
-            to: "private struct PetChestArtwork"
+            to: "struct PetChestArtwork"
         )
 
         #expect(chestCard.contains("store.openChest(rarity)"))
@@ -92,7 +92,7 @@ struct PetCollectionViewSourceTests {
         let popover = try sourceSlice(
             source,
             from: "private struct PetKeyConversionPopover",
-            to: "private struct PetChestArtwork"
+            to: "struct PetChestArtwork"
         )
 
         #expect(popover.contains("Slider("))
@@ -111,26 +111,58 @@ struct PetCollectionViewSourceTests {
 
     @Test
     func collectionBrowsesOneCatalogFamilyAtATime() throws {
-        let source = try source("Sources/Pets/PetCollectionViews.swift")
+        let collectionSource = try source("Sources/Pets/PetCollectionViews.swift")
+        let revealSource = try source("Sources/Pets/PetChestRevealView.swift")
 
-        #expect(source.contains("@State private var selectedCategoryID"))
-        #expect(source.contains("Picker(\"Pet family\", selection: $selectedCategoryID)"))
-        #expect(source.contains("ForEach(PetCatalog.builtInCategories"))
-        #expect(source.contains("ForEach(selectedCategory.petIDs"))
-        #expect(source.contains("\"Obtained\""))
-        #expect(source.contains("\"Missing · \\(PetCatalog.rarity(for: petID).displayName)\""))
-        #expect(source.contains("PetCatalog.category(for: petID)?.displayName"))
-        #expect(!source.contains("Cloud Pet"))
-        #expect(!source.contains("Label(\"Add\", systemImage: \"plus\")"))
+        #expect(collectionSource.contains("@State private var selectedCategoryID"))
+        #expect(collectionSource.contains("Picker(\"Pet family\", selection: $selectedCategoryID)"))
+        #expect(collectionSource.contains("ForEach(PetCatalog.builtInCategories"))
+        #expect(collectionSource.contains("ForEach(selectedCategory.petIDs"))
+        #expect(collectionSource.contains("\"Obtained\""))
+        #expect(collectionSource.contains("\"Missing · \\(PetCatalog.rarity(for: petID).displayName)\""))
+        #expect(revealSource.contains("PetCatalog.category(for: petID)?.displayName"))
+        #expect(!collectionSource.contains("Cloud Pet"))
+        #expect(!collectionSource.contains("Label(\"Add\", systemImage: \"plus\")"))
     }
 
     @Test
     func unlockRevealIsBrowseOnly() throws {
-        let source = try source("Sources/Pets/PetCollectionViews.swift")
+        let source = try source("Sources/Pets/PetChestRevealView.swift")
 
         #expect(source.contains("Button(\"Done\")"))
         #expect(!source.contains("Add to Desktop"))
         #expect(!source.contains("store.addPet(petID: petID)"))
+    }
+
+    @Test
+    func unlockRevealStagesTheChestBeforeShowingThePet() throws {
+        let source = try source("Sources/Pets/PetChestRevealView.swift")
+        let reveal = try sourceSlice(
+            source,
+            from: "struct UnlockedPetSheet",
+            to: "private enum ChestRevealPhase"
+        )
+
+        #expect(reveal.contains("@State private var revealPhase = ChestRevealPhase.closed"))
+        #expect(reveal.contains("Self.shakeSequence"))
+        #expect(reveal.contains("ChestOpeningArtwork(rarity: rarity, lidOpenAmount: lidOpenAmount)"))
+        #expect(reveal.contains("revealPhase = .opening"))
+        #expect(reveal.contains("revealPhase = .revealed"))
+        #expect(reveal.contains("@Environment(\\.accessibilityReduceMotion)"))
+        #expect(reveal.contains(".interactiveDismissDisabled(revealPhase != .revealed)"))
+        #expect(reveal.contains(".allowsHitTesting(revealPhase == .revealed)"))
+    }
+
+    @Test
+    func unlockRevealUsesDedicatedOpenChestArtAndSparkles() throws {
+        let source = try source("Sources/Pets/PetChestRevealView.swift")
+
+        #expect(!source.contains(".rotation3DEffect("))
+        #expect(source.contains("PetOpenChestArtwork(rarity: rarity)"))
+        #expect(source.contains("PetArtResourceLocator.url(forOpenChest: resource)"))
+        #expect(source.contains(".blendMode(.screen)"))
+        #expect(source.contains("ChestSparkleField(color: rarityColor)"))
+        #expect(source.contains(".opacity(revealPhase == .revealed ? 0 : 1)"))
     }
 
     @Test
