@@ -74,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         syncPetPanels()
         store.start()
         updateController.start()
+        presentReleaseGiftIfNeeded()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -89,6 +90,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             store.recordError(error.localizedDescription)
         }
+    }
+
+    private func presentReleaseGiftIfNeeded() {
+        guard let gift = store.pendingReleaseGift else { return }
+
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self, self.store.pendingReleaseGift == gift else { return }
+
+            NSApp.activate(ignoringOtherApps: true)
+            let alert = NSAlert()
+            alert.messageText = "A gift arrived with Pets \(gift.version)"
+            alert.informativeText = "\(Self.releaseGiftDescription(gift)) has been added to your Collection."
+            alert.alertStyle = .informational
+            alert.icon = NSImage(systemSymbolName: "gift.fill", accessibilityDescription: "Update gift")
+            alert.addButton(withTitle: "Nice!")
+            alert.runModal()
+            self.store.dismissReleaseGift()
+        }
+    }
+
+    private static func releaseGiftDescription(_ gift: PetReleaseGift) -> String {
+        let keys = gift.keyInventory
+        if keys.count(for: .rare) == 1 {
+            return "1 Rare Key"
+        }
+
+        let commonKeys = keys.count(for: .common)
+        return "\(commonKeys) Common \(commonKeys == 1 ? "Key" : "Keys")"
     }
 
     func setAllPetsVisible(_ isVisible: Bool) {

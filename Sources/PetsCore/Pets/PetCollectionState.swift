@@ -107,17 +107,20 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
     public private(set) var keyInventory: PetKeyInventory
     public private(set) var tokenRemainder: Int64
     public private(set) var providerCheckpoints: [String: PetUsageCheckpoint]
+    public private(set) var claimedReleaseGiftVersions: Set<String>
 
     public init(
         ownedPetIDs: Set<PetID> = [.cuteCloud],
         keyInventory: PetKeyInventory = PetKeyInventory(),
         tokenRemainder: Int64 = 0,
-        providerCheckpoints: [String: PetUsageCheckpoint] = [:]
+        providerCheckpoints: [String: PetUsageCheckpoint] = [:],
+        claimedReleaseGiftVersions: Set<String> = []
     ) {
         self.ownedPetIDs = ownedPetIDs.union([.cuteCloud])
         self.keyInventory = keyInventory.normalized()
         self.tokenRemainder = max(0, tokenRemainder) % Self.rewardTokenThreshold
         self.providerCheckpoints = providerCheckpoints
+        self.claimedReleaseGiftVersions = claimedReleaseGiftVersions
     }
 
     public var progressFraction: Double {
@@ -135,6 +138,17 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
         normalized.keyInventory = normalized.keyInventory.normalized()
         normalized.tokenRemainder = max(0, normalized.tokenRemainder) % Self.rewardTokenThreshold
         return normalized
+    }
+
+    @discardableResult
+    public mutating func claimReleaseGift(_ gift: PetReleaseGift) -> Bool {
+        guard !claimedReleaseGiftVersions.contains(gift.version) else { return false }
+
+        let giftKeys = gift.keyInventory
+        keyInventory.add(giftKeys.count(for: .common), to: .common)
+        keyInventory.add(giftKeys.count(for: .rare), to: .rare)
+        claimedReleaseGiftVersions.insert(gift.version)
+        return true
     }
 
     @discardableResult
@@ -234,6 +248,7 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
         case keyCount
         case tokenRemainder
         case providerCheckpoints
+        case claimedReleaseGiftVersions
     }
 
     public init(from decoder: any Decoder) throws {
@@ -255,12 +270,17 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
             [String: PetUsageCheckpoint].self,
             forKey: .providerCheckpoints
         ) ?? [:]
+        let claimedReleaseGiftVersions = try container.decodeIfPresent(
+            Set<String>.self,
+            forKey: .claimedReleaseGiftVersions
+        ) ?? []
 
         self.init(
             ownedPetIDs: ownedPetIDs,
             keyInventory: keyInventory,
             tokenRemainder: tokenRemainder,
-            providerCheckpoints: providerCheckpoints
+            providerCheckpoints: providerCheckpoints,
+            claimedReleaseGiftVersions: claimedReleaseGiftVersions
         )
     }
 
@@ -270,5 +290,6 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
         try container.encode(keyInventory, forKey: .keyInventory)
         try container.encode(tokenRemainder, forKey: .tokenRemainder)
         try container.encode(providerCheckpoints, forKey: .providerCheckpoints)
+        try container.encode(claimedReleaseGiftVersions, forKey: .claimedReleaseGiftVersions)
     }
 }

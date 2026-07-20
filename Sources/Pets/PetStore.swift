@@ -30,6 +30,7 @@ final class PetStore: ObservableObject {
     @Published private(set) var usageSourceStatuses: [PetUsageSourceStatus]
     @Published private(set) var isRefreshingRewardUsage = false
     @Published private(set) var unlockedPetID: PetID?
+    @Published private(set) var pendingReleaseGift: PetReleaseGift?
     @Published private(set) var collectionError: String?
     @Published private var dismissedSessions: Set<PetDismissedSession> = []
 
@@ -54,7 +55,15 @@ final class PetStore: ObservableObject {
             ClaudeCodeUsageSource(),
             CodexUsageSource(),
             CopilotUsageSource(),
-        ]
+        ],
+        releaseGift: PetReleaseGift? = PetReleaseGiftPolicy.gift(
+            installedVersion: Bundle.main.object(
+                forInfoDictionaryKey: "CFBundleShortVersionString"
+            ) as? String,
+            configuredTier: Bundle.main.object(
+                forInfoDictionaryKey: "PetsReleaseGiftTier"
+            ) as? String
+        )
     ) {
         self.harness = harness
         self.settingsPersistence = PetSettingsPersistence(defaults: defaults)
@@ -65,12 +74,19 @@ final class PetStore: ObservableObject {
         let loadedCollection = collectionPersistence.load(
             grandfathering: loadedInstances.map(\.petID)
         )
+        var collectionState = loadedCollection.state
+        var pendingReleaseGift: PetReleaseGift?
+        if let releaseGift, collectionState.claimReleaseGift(releaseGift) {
+            collectionPersistence.persist(collectionState)
+            pendingReleaseGift = releaseGift
+        }
         self.petInstances = loadedInstances
         self.selectedPetInstanceID = loadedPetConfiguration.selectedID
-        self.collectionState = loadedCollection.state
+        self.collectionState = collectionState
         self.collectionError = loadedCollection.error
+        self.pendingReleaseGift = pendingReleaseGift
         self.usageSourceStatuses = usageSources.map { source in
-            let checkpoint = loadedCollection.state.providerCheckpoints[source.id]
+            let checkpoint = collectionState.providerCheckpoints[source.id]
             return PetUsageSourceStatus(
                 id: source.id,
                 displayName: source.displayName,
@@ -328,7 +344,8 @@ final class PetStore: ObservableObject {
             ownedPetIDs: updatedState.ownedPetIDs,
             keyInventory: PetKeyInventory(rarity: rarity, count: 1),
             tokenRemainder: updatedState.tokenRemainder,
-            providerCheckpoints: updatedState.providerCheckpoints
+            providerCheckpoints: updatedState.providerCheckpoints,
+            claimedReleaseGiftVersions: updatedState.claimedReleaseGiftVersions
         )
 #endif
         let candidates = updatedState.unownedPetIDs(
@@ -348,7 +365,8 @@ final class PetStore: ObservableObject {
                 ownedPetIDs: updatedState.ownedPetIDs,
                 keyInventory: persistedKeyInventory,
                 tokenRemainder: updatedState.tokenRemainder,
-                providerCheckpoints: updatedState.providerCheckpoints
+                providerCheckpoints: updatedState.providerCheckpoints,
+                claimedReleaseGiftVersions: updatedState.claimedReleaseGiftVersions
             )
 #endif
             collectionState = updatedState
@@ -362,6 +380,10 @@ final class PetStore: ObservableObject {
 
     func dismissUnlockedPet() {
         unlockedPetID = nil
+    }
+
+    func dismissReleaseGift() {
+        pendingReleaseGift = nil
     }
 
 #if PETS_DEVELOPMENT
@@ -378,7 +400,8 @@ final class PetStore: ObservableObject {
             ownedPetIDs: ownedPetIDs,
             keyInventory: collectionState.keyInventory,
             tokenRemainder: collectionState.tokenRemainder,
-            providerCheckpoints: collectionState.providerCheckpoints
+            providerCheckpoints: collectionState.providerCheckpoints,
+            claimedReleaseGiftVersions: collectionState.claimedReleaseGiftVersions
         )
         collectionState = updatedState
         unlockedPetID = nil

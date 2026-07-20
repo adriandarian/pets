@@ -72,6 +72,8 @@ Pets is distributed directly from this repository without Apple signing or notar
 
 Pets checks this repository for a newer release when it starts and every six hours while it is running. When an update is available, the menu bar icon changes and Pets shows a GitHub download link in its menu and configuration window.
 
+The first launch of every release also adds an update gift to the Collection. Routine releases grant 1 Common Key by default. Add the exact version to `RELEASE_GIFT_OVERRIDES` with `major` for 2 Common Keys or `anniversary` for 1 Rare Key. Release gifts never contain Legendary Keys, and each version can be claimed only once.
+
 Quit Pets, download the new ZIP, and replace the existing `Pets.app`. Your configured pets, positions, preferences, keys, and collection progress stay in `~/Library/Preferences/local.pets.Pets.plist`; replacing the application does not remove them.
 
 ## Run It From Source
@@ -80,7 +82,7 @@ Quit Pets, download the new ZIP, and replace the existing `Pets.app`. Your confi
 ./scripts/run_app.sh
 ```
 
-To create the unsigned ZIP used for a GitHub release, update `VERSION` and `BUILD_NUMBER`, then run:
+To create the unsigned ZIP used for a GitHub release, update `VERSION` and `BUILD_NUMBER`, add a version-specific gift override only when needed, then run:
 
 ```bash
 ./scripts/build_release.sh

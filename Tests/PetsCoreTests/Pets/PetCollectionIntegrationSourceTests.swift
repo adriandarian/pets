@@ -21,10 +21,13 @@ struct PetCollectionIntegrationSourceTests {
         #expect(source.contains("CopilotUsageSource()"))
         #expect(source.contains("@Published private(set) var collectionState"))
         #expect(source.contains("@Published private(set) var unlockedPetID"))
+        #expect(source.contains("@Published private(set) var pendingReleaseGift"))
+        #expect(source.contains("collectionState.claimReleaseGift(releaseGift)"))
         #expect(source.contains("func refreshRewardUsage()"))
         #expect(source.contains("func upgradeKeys(from rarity: PetRarity, count: Int = 1)"))
         #expect(source.contains("func openChest(_ rarity: PetRarity)"))
         #expect(source.contains("func addPet(petID: PetID)"))
+        #expect(source.contains("func dismissReleaseGift()"))
     }
 
     @Test

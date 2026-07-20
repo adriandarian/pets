@@ -14,6 +14,85 @@ struct PetCollectionStateTests {
     }
 
     @Test
+    func releaseGiftPolicyMatchesTheUpdateEconomy() throws {
+        let routine = try #require(PetReleaseGiftPolicy.gift(
+            installedVersion: "0.2.1",
+            configuredTier: nil
+        ))
+        let major = try #require(PetReleaseGiftPolicy.gift(
+            installedVersion: "0.3.0",
+            configuredTier: "major"
+        ))
+        let anniversary = try #require(PetReleaseGiftPolicy.gift(
+            installedVersion: "1.0.0",
+            configuredTier: "anniversary"
+        ))
+
+        #expect(routine.keyInventory == PetKeyInventory(common: 1))
+        #expect(major.keyInventory == PetKeyInventory(common: 2))
+        #expect(anniversary.keyInventory == PetKeyInventory(rare: 1))
+        #expect(PetReleaseGiftTier.allCases.allSatisfy {
+            $0.keyInventory.count(for: .legendary) == 0
+        })
+    }
+
+    @Test
+    func releaseGiftPolicyDefaultsUnknownMetadataToRoutineAndRejectsInvalidVersions() throws {
+        let fallback = try #require(PetReleaseGiftPolicy.gift(
+            installedVersion: "v0.4.0",
+            configuredTier: "surprise"
+        ))
+
+        #expect(fallback.version == "0.4.0")
+        #expect(fallback.tier == .routine)
+        #expect(PetReleaseGiftPolicy.gift(
+            installedVersion: "development",
+            configuredTier: "major"
+        ) == nil)
+    }
+
+    @Test
+    func eachReleaseGiftCanOnlyBeClaimedOnce() throws {
+        var state = PetCollectionState()
+        let routine = try #require(PetReleaseGiftPolicy.gift(
+            installedVersion: "0.2.0",
+            configuredTier: "routine"
+        ))
+        let major = try #require(PetReleaseGiftPolicy.gift(
+            installedVersion: "0.3.0",
+            configuredTier: "major"
+        ))
+
+        let didClaimRoutine = state.claimReleaseGift(routine)
+        let didReclaimRoutine = state.claimReleaseGift(routine)
+        let didClaimMajor = state.claimReleaseGift(major)
+
+        #expect(didClaimRoutine)
+        #expect(!didReclaimRoutine)
+        #expect(didClaimMajor)
+        #expect(state.keyInventory == PetKeyInventory(common: 3))
+        #expect(state.claimedReleaseGiftVersions == ["0.2.0", "0.3.0"])
+    }
+
+    @Test
+    func claimedReleaseGiftsSurvivePersistenceRoundTrips() throws {
+        var state = PetCollectionState()
+        let gift = try #require(PetReleaseGiftPolicy.gift(
+            installedVersion: "1.0.0",
+            configuredTier: "anniversary"
+        ))
+        _ = state.claimReleaseGift(gift)
+
+        let data = try JSONEncoder().encode(state)
+        var restored = try JSONDecoder().decode(PetCollectionState.self, from: data)
+        let didReclaimGift = restored.claimReleaseGift(gift)
+
+        #expect(restored.keyInventory == PetKeyInventory(rare: 1))
+        #expect(!didReclaimGift)
+        #expect(restored.claimedReleaseGiftVersions == ["1.0.0"])
+    }
+
+    @Test
     func combinedProviderTokensEarnKeysAndCarryTheRemainder() {
         var state = PetCollectionState()
 
@@ -245,5 +324,6 @@ struct PetCollectionStateTests {
         #expect(state.ownedPetIDs.contains(.cirrusCloud))
         #expect(state.keyInventory == PetKeyInventory(common: 7))
         #expect(state.tokenRemainder == 25)
+        #expect(state.claimedReleaseGiftVersions.isEmpty)
     }
 }

@@ -1,0 +1,4 @@
+# Every release grants 1 Common Key by default.
+# Add an exact version override only when a release should grant a different gift:
+# 0.2.0 major        # 2 Common Keys for a major pet/content update
+# 1.0.0 anniversary  # 1 Rare Key for an occasional anniversary release

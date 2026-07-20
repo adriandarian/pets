@@ -14,6 +14,7 @@ VERSION_FILE="VERSION"
 BUILD_NUMBER_FILE="BUILD_NUMBER"
 VERSION="$(tr -d '[:space:]' <"${VERSION_FILE}")"
 BUILD_NUMBER="$(tr -d '[:space:]' <"${BUILD_NUMBER_FILE}")"
+RELEASE_GIFT_TIER="$(./scripts/release_gift_tier.sh "${VERSION}")"
 BUNDLE_PATH="dist/${APP_NAME}.app"
 EXECUTABLE_PATH="${BUNDLE_PATH}/Contents/MacOS/${APP_NAME}"
 PLIST_PATH="${BUNDLE_PATH}/Contents/Info.plist"
@@ -48,6 +49,8 @@ cat >"${PLIST_PATH}" <<PLIST
   <string>${VERSION}</string>
   <key>CFBundleVersion</key>
   <string>${BUILD_NUMBER}</string>
+  <key>PetsReleaseGiftTier</key>
+  <string>${RELEASE_GIFT_TIER}</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
   <key>LSUIElement</key>
