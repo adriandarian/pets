@@ -65,6 +65,29 @@ struct PetDefinitionTests {
     }
 
     @Test
+    func whiskerkinKeepTheirCoatDetailsInsideTheSpriteArtwork() throws {
+        for petID in [
+            PetID.loaflet,
+            .inkpaw,
+            .marmalade,
+            .mittens,
+            .pebble,
+            .calypso,
+            .soot,
+            .bramblekit,
+            .tuftmere,
+            .mallow,
+            .velvet,
+            .bluebell,
+            .nova,
+            .aurum,
+            .mirage,
+        ] {
+            #expect(try #require(PetCatalog.definition(for: petID)).ambientEffect == .none)
+        }
+    }
+
+    @Test
     func rarityDefinesTheKeyUpgradePath() {
         #expect(PetRarity.common.nextRarity == .rare)
         #expect(PetRarity.rare.nextRarity == .legendary)

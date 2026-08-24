@@ -40,6 +40,12 @@ public struct PetCategoryDescriptor: Equatable, Hashable, Sendable {
         displayName: "Glowkin",
         order: 4
     )
+
+    public static let whiskerkin = PetCategoryDescriptor(
+        id: "whiskerkin",
+        displayName: "Whiskerkin",
+        order: 5
+    )
 }
 
 public struct PetCapabilities: Equatable, Sendable {

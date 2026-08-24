@@ -105,6 +105,21 @@ struct ClaudeSessionScannerTests {
             .gleamwing,
             .halora,
             .asterune,
+            .loaflet,
+            .inkpaw,
+            .marmalade,
+            .mittens,
+            .pebble,
+            .calypso,
+            .soot,
+            .bramblekit,
+            .tuftmere,
+            .mallow,
+            .velvet,
+            .bluebell,
+            .nova,
+            .aurum,
+            .mirage,
         ])
         #expect(PetCatalog.displayName(for: .cuteCloud) == "Cumulus")
     }
@@ -113,7 +128,7 @@ struct ClaudeSessionScannerTests {
     func catalogContainsAllBuiltInFamilyCategories() {
         let categories = PetCatalog.builtInCategories
 
-        #expect(categories.count == 5)
+        #expect(categories.count == 6)
         #expect(categories.first?.id == "cloud-pets")
         #expect(categories.first?.displayName == "Cloud Pets")
         #expect(categories.first?.petIDs == [
@@ -153,6 +168,25 @@ struct ClaudeSessionScannerTests {
             .gleamwing,
             .halora,
             .asterune,
+        ])
+        #expect(categories[5].id == "whiskerkin")
+        #expect(categories[5].displayName == "Whiskerkin")
+        #expect(categories[5].petIDs == [
+            .loaflet,
+            .inkpaw,
+            .marmalade,
+            .mittens,
+            .pebble,
+            .calypso,
+            .soot,
+            .bramblekit,
+            .tuftmere,
+            .mallow,
+            .velvet,
+            .bluebell,
+            .nova,
+            .aurum,
+            .mirage,
         ])
     }
 

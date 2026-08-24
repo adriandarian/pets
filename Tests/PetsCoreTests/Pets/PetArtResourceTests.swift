@@ -65,6 +65,39 @@ struct PetArtResourceTests {
     }
 
     @Test
+    func whiskerkinPetsHaveCompleteStatePacks() throws {
+        for petID in [
+            PetID.loaflet,
+            .inkpaw,
+            .marmalade,
+            .mittens,
+            .pebble,
+            .calypso,
+            .soot,
+            .bramblekit,
+            .tuftmere,
+            .mallow,
+            .velvet,
+            .bluebell,
+            .nova,
+            .aurum,
+            .mirage,
+        ] {
+            let definition = try #require(PetCatalog.definition(for: petID))
+            guard case let .assetPack(pack) = definition.renderSource else {
+                Issue.record("\(definition.displayName) must use an asset pack")
+                continue
+            }
+
+            #expect(pack.idle.frames.count == 8)
+            #expect(pack.busy?.frames.count == 4)
+            #expect(pack.waiting?.frames.count == 4)
+            #expect(pack.excited?.frames.count == 5)
+            #expect(pack.sleeping?.frames.count == 4)
+        }
+    }
+
+    @Test
     func mossboundPetsHaveCompleteStatePacks() throws {
         for petID in [
             PetID.huskroot,
@@ -411,6 +444,37 @@ struct PetArtResourceTests {
                     #expect(abs(bounds.midX - 256) <= 48)
                     #expect(bounds.width >= 230)
                     #expect(bounds.height >= 150)
+                }
+            }
+        }
+    }
+
+    @Test
+    func whiskerkinFramesStayInsideTheirReadableEnvelope() throws {
+        for definition in PetCatalog.definitions where definition.category == .whiskerkin {
+            guard case let .assetPack(pack) = definition.renderSource else { continue }
+            let animations = [
+                pack.idle,
+                pack.busy,
+                pack.waiting,
+                pack.excited,
+                pack.sleeping,
+            ].compactMap { $0 }
+
+            for animation in animations {
+                for frame in animation.frames {
+                    let url = try #require(PetArtResourceLocator.url(for: frame))
+                    let source = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+                    let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+                    let bounds = try #require(alphaBounds(in: image))
+
+                    #expect(bounds.minX >= 28)
+                    #expect(bounds.minY >= 28)
+                    #expect(bounds.maxX <= 484)
+                    #expect(bounds.maxY <= 484)
+                    #expect(abs(bounds.midX - 256) <= 48)
+                    #expect(bounds.width >= 230)
+                    #expect(bounds.height >= 220)
                 }
             }
         }

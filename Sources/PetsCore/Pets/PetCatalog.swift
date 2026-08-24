@@ -29,6 +29,21 @@ public struct PetID: RawRepresentable, Equatable, Hashable, Codable, Sendable {
     public static let gleamwing = PetID(rawValue: "gleamwing")
     public static let halora = PetID(rawValue: "halora")
     public static let asterune = PetID(rawValue: "asterune")
+    public static let loaflet = PetID(rawValue: "loaflet")
+    public static let inkpaw = PetID(rawValue: "inkpaw")
+    public static let marmalade = PetID(rawValue: "marmalade")
+    public static let mittens = PetID(rawValue: "mittens")
+    public static let pebble = PetID(rawValue: "pebble")
+    public static let calypso = PetID(rawValue: "calypso")
+    public static let soot = PetID(rawValue: "soot")
+    public static let bramblekit = PetID(rawValue: "bramblekit")
+    public static let tuftmere = PetID(rawValue: "tuftmere")
+    public static let mallow = PetID(rawValue: "mallow")
+    public static let velvet = PetID(rawValue: "velvet")
+    public static let bluebell = PetID(rawValue: "bluebell")
+    public static let nova = PetID(rawValue: "nova")
+    public static let aurum = PetID(rawValue: "aurum")
+    public static let mirage = PetID(rawValue: "mirage")
 }
 
 public struct PetCatalogCategory: Equatable, Hashable, Sendable {
@@ -70,6 +85,21 @@ public enum PetCatalog {
         GleamwingPetDefinition(),
         HaloraPetDefinition(),
         AsterunePetDefinition(),
+        LoafletPetDefinition(),
+        InkpawPetDefinition(),
+        MarmaladePetDefinition(),
+        MittensPetDefinition(),
+        PebblePetDefinition(),
+        CalypsoPetDefinition(),
+        SootPetDefinition(),
+        BramblekitPetDefinition(),
+        TuftmerePetDefinition(),
+        MallowPetDefinition(),
+        VelvetPetDefinition(),
+        BluebellPetDefinition(),
+        NovaPetDefinition(),
+        AurumPetDefinition(),
+        MiragePetDefinition(),
     ]
 
     private static let definitionsByID = Dictionary(
@@ -101,6 +131,27 @@ public enum PetCatalog {
             id: PetCategoryDescriptor.glowkin.id,
             displayName: PetCategoryDescriptor.glowkin.displayName,
             petIDs: [.wicklet, .mosshell, .cometfin, .gleamwing, .halora, .asterune]
+        ),
+        PetCatalogCategory(
+            id: PetCategoryDescriptor.whiskerkin.id,
+            displayName: PetCategoryDescriptor.whiskerkin.displayName,
+            petIDs: [
+                .loaflet,
+                .inkpaw,
+                .marmalade,
+                .mittens,
+                .pebble,
+                .calypso,
+                .soot,
+                .bramblekit,
+                .tuftmere,
+                .mallow,
+                .velvet,
+                .bluebell,
+                .nova,
+                .aurum,
+                .mirage,
+            ]
         )
     ]
     public static let builtInPetIDs: [PetID] = builtInCategories.flatMap(\.petIDs)

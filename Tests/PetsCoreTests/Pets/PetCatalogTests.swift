@@ -204,6 +204,77 @@ struct PetCatalogTests {
     }
 
     @Test
+    func whiskerkinIdentifiersAndCategoryMetadataAreStable() {
+        #expect(PetID.loaflet.rawValue == "loaflet")
+        #expect(PetID.inkpaw.rawValue == "inkpaw")
+        #expect(PetID.marmalade.rawValue == "marmalade")
+        #expect(PetID.mittens.rawValue == "mittens")
+        #expect(PetID.pebble.rawValue == "pebble")
+        #expect(PetID.calypso.rawValue == "calypso")
+        #expect(PetID.soot.rawValue == "soot")
+        #expect(PetID.bramblekit.rawValue == "bramblekit")
+        #expect(PetID.tuftmere.rawValue == "tuftmere")
+        #expect(PetID.mallow.rawValue == "mallow")
+        #expect(PetID.velvet.rawValue == "velvet")
+        #expect(PetID.bluebell.rawValue == "bluebell")
+        #expect(PetID.nova.rawValue == "nova")
+        #expect(PetID.aurum.rawValue == "aurum")
+        #expect(PetID.mirage.rawValue == "mirage")
+        #expect(PetCategoryDescriptor.whiskerkin.id == "whiskerkin")
+        #expect(PetCategoryDescriptor.whiskerkin.displayName == "Whiskerkin")
+        #expect(PetCategoryDescriptor.whiskerkin.order == 5)
+    }
+
+    @Test
+    func whiskerkinDefinitionsOwnTheirCatalogAndAnimationContracts() throws {
+        let expected: [(PetID, String, PetRarity, PetDefinition.Type)] = [
+            (.loaflet, "Loaflet", .common, LoafletPetDefinition.self),
+            (.inkpaw, "Inkpaw", .common, InkpawPetDefinition.self),
+            (.marmalade, "Marmalade", .common, MarmaladePetDefinition.self),
+            (.mittens, "Mittens", .common, MittensPetDefinition.self),
+            (.pebble, "Pebble", .common, PebblePetDefinition.self),
+            (.calypso, "Calypso", .common, CalypsoPetDefinition.self),
+            (.soot, "Soot", .common, SootPetDefinition.self),
+            (.bramblekit, "Bramblekit", .rare, BramblekitPetDefinition.self),
+            (.tuftmere, "Tuftmere", .rare, TuftmerePetDefinition.self),
+            (.mallow, "Mallow", .rare, MallowPetDefinition.self),
+            (.velvet, "Velvet", .rare, VelvetPetDefinition.self),
+            (.bluebell, "Bluebell", .rare, BluebellPetDefinition.self),
+            (.nova, "Nova", .legendary, NovaPetDefinition.self),
+            (.aurum, "Aurum", .legendary, AurumPetDefinition.self),
+            (.mirage, "Mirage", .legendary, MiragePetDefinition.self),
+        ]
+
+        for (petID, displayName, rarity, definitionType) in expected {
+            let definition = try #require(PetCatalog.definition(for: petID))
+            #expect(type(of: definition) == definitionType)
+            #expect(definition.displayName == displayName)
+            #expect(definition.rarity == rarity)
+            #expect(definition.category == .whiskerkin)
+            #expect(definition.capabilities.maximumPixelation == .medium)
+            #expect(definition.capabilities.supportsStatusMoods)
+            #expect(definition.capabilities.supportsHoverExcitement)
+            #expect(definition.ambientEffect == .none)
+            #expect(definition.defaults == .standard)
+            guard case let .assetPack(pack) = definition.renderSource else {
+                Issue.record("\(displayName) must use an asset pack")
+                continue
+            }
+            #expect(pack.idle.frames.count == 8)
+            #expect(pack.busy?.frames.count == 4)
+            #expect(pack.waiting?.frames.count == 4)
+            #expect(pack.excited?.frames.count == 5)
+            #expect(pack.sleeping?.frames.count == 4)
+            #expect(pack.completion == nil)
+            #expect(pack.error == nil)
+            #expect(pack.idle.frames.map(\.duration) == [
+                1.65, 0.52, 0.48, 0.52, 1.25, 0.13, 0.13, 0.13,
+            ])
+            #expect(pack.excited?.frames.map(\.duration) == [0.18, 0.16, 0.16, 0.18, 0.28])
+        }
+    }
+
+    @Test
     func knotlingDefinitionOwnsItsCatalogAndAnimationContract() throws {
         let definition = try #require(PetCatalog.definition(for: .knotling))
         #expect(definition is KnotlingPetDefinition)
@@ -258,7 +329,7 @@ struct PetCatalogTests {
     }
 
     @Test
-    func registeredFamiliesIncludeCloudsTesslingsPatchlingsMossboundAndGlowkin() throws {
+    func registeredFamiliesIncludeWhiskerkin() throws {
         let cloudPetIDs: [PetID] = [
             .cuteCloud,
             .nimbusCloud,
@@ -289,16 +360,34 @@ struct PetCatalogTests {
             .halora,
             .asterune,
         ]
+        let whiskerkinPetIDs: [PetID] = [
+            .loaflet,
+            .inkpaw,
+            .marmalade,
+            .mittens,
+            .pebble,
+            .calypso,
+            .soot,
+            .bramblekit,
+            .tuftmere,
+            .mallow,
+            .velvet,
+            .bluebell,
+            .nova,
+            .aurum,
+            .mirage,
+        ]
         let allPetIDs = cloudPetIDs
             + tesslingPetIDs
             + patchlingPetIDs
             + mossboundPetIDs
             + glowkinPetIDs
+            + whiskerkinPetIDs
 
         #expect(PetCatalog.definitions.map(\.id) == allPetIDs)
         #expect(PetCatalog.builtInPetIDs == allPetIDs)
 
-        #expect(PetCatalog.builtInCategories.count == 5)
+        #expect(PetCatalog.builtInCategories.count == 6)
         let cloudCategory = try #require(PetCatalog.builtInCategories.first)
         #expect(cloudCategory.id == "cloud-pets")
         #expect(cloudCategory.displayName == "Cloud Pets")
@@ -319,6 +408,10 @@ struct PetCatalogTests {
         #expect(glowkinCategory.id == "glowkin")
         #expect(glowkinCategory.displayName == "Glowkin")
         #expect(glowkinCategory.petIDs == glowkinPetIDs)
+        let whiskerkinCategory = PetCatalog.builtInCategories[5]
+        #expect(whiskerkinCategory.id == "whiskerkin")
+        #expect(whiskerkinCategory.displayName == "Whiskerkin")
+        #expect(whiskerkinCategory.petIDs == whiskerkinPetIDs)
     }
 
     @Test
@@ -354,6 +447,13 @@ struct PetCatalogTests {
             .fernstone,
             .wicklet,
             .mosshell,
+            .loaflet,
+            .inkpaw,
+            .marmalade,
+            .mittens,
+            .pebble,
+            .calypso,
+            .soot,
         ])
         #expect(PetCatalog.petIDs(for: .rare) == [
             .cirrusCloud,
@@ -365,6 +465,11 @@ struct PetCatalogTests {
             .bellbloom,
             .cometfin,
             .gleamwing,
+            .bramblekit,
+            .tuftmere,
+            .mallow,
+            .velvet,
+            .bluebell,
         ])
         #expect(PetCatalog.petIDs(for: .legendary) == [
             .snowCloud,
@@ -373,6 +478,9 @@ struct PetCatalogTests {
             .glowcap,
             .halora,
             .asterune,
+            .nova,
+            .aurum,
+            .mirage,
         ])
     }
 
@@ -455,6 +563,15 @@ struct PetCatalogTests {
             .gleamwing,
             .halora,
             .asterune,
+        ] {
+            #expect(PetCatalog.pixelation(.chunky, allowedFor: petID) == .medium)
+        }
+        for petID in [
+            PetID.loaflet,
+            .inkpaw,
+            .bramblekit,
+            .tuftmere,
+            .nova,
         ] {
             #expect(PetCatalog.pixelation(.chunky, allowedFor: petID) == .medium)
         }
