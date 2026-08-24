@@ -66,7 +66,7 @@ When Pets can identify the owning app but cannot identify the exact tab or windo
 
 Download the newest `Pets-<version>.zip` from the [latest GitHub release](https://github.com/adriandarian/pets/releases/latest), open it, and move `Pets.app` to Applications.
 
-Pets is distributed directly from this repository without Apple signing or notarization. On first launch, Control-click `Pets.app`, choose **Open**, and confirm that you want to run it.
+Pets is signed with the maintainer's Apple Development certificate, but it is not Developer ID signed or notarized. On first launch, Control-click `Pets.app`, choose **Open**, and confirm that you want to run it.
 
 ## Update It
 
@@ -82,7 +82,7 @@ Quit Pets, download the new ZIP, and replace the existing `Pets.app`. Your confi
 ./scripts/run_app.sh
 ```
 
-To create the unsigned ZIP used for a GitHub release, update `VERSION` and `BUILD_NUMBER`, add a version-specific gift override only when needed, then run:
+To create the signed ZIP used for a GitHub release, update `VERSION` and `BUILD_NUMBER`, add a version-specific gift override only when needed, then run:
 
 ```bash
 ./scripts/build_release.sh

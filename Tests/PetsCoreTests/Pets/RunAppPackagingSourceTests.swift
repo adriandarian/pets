@@ -10,7 +10,6 @@ struct RunAppPackagingSourceTests {
         for scriptPath in [
             "scripts/run_app.sh",
             "scripts/run_dev_app.sh",
-            "scripts/build_release.sh",
         ] {
             let source = try String(
                 contentsOf: root.appending(path: scriptPath),
@@ -21,6 +20,14 @@ struct RunAppPackagingSourceTests {
             #expect(source.contains("cp -R \"${RESOURCE_BUNDLE_SOURCE}\" \"${RESOURCE_BUNDLE_DESTINATION}\""))
             #expect(source.contains("/usr/bin/codesign --force --deep --sign - \"${BUNDLE_PATH}\""))
         }
+
+        let releaseSource = try String(
+            contentsOf: root.appending(path: "scripts/build_release.sh"),
+            encoding: .utf8
+        )
+        #expect(releaseSource.contains("RELEASE_SIGNING_IDENTITY=\"C27D9B4458FF4C055F91B09861E39A3FB90771AB\""))
+        #expect(releaseSource.contains("--options runtime"))
+        #expect(releaseSource.contains("--sign \"${RELEASE_SIGNING_IDENTITY}\" \"${BUNDLE_PATH}\""))
     }
 
     @Test

@@ -17,6 +17,9 @@ RESOURCE_BUNDLE_NAME="${APP_NAME}_PetsCore.bundle"
 RESOURCE_BUNDLE_SOURCE=".build/release/${RESOURCE_BUNDLE_NAME}"
 RESOURCE_BUNDLE_DESTINATION="${BUNDLE_PATH}/Contents/Resources/${RESOURCE_BUNDLE_NAME}"
 ARCHIVE_PATH="dist/${APP_NAME}-${VERSION}.zip"
+# Use the unambiguous SHA-1 identity because two login-keychain certificates
+# currently have the same display name.
+RELEASE_SIGNING_IDENTITY="C27D9B4458FF4C055F91B09861E39A3FB90771AB"
 
 if [[ ! "${VERSION}" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
   echo "VERSION must contain only dot-separated numbers." >&2
@@ -65,10 +68,12 @@ cat >"${PLIST_PATH}" <<PLIST
 </plist>
 PLIST
 
-/usr/bin/codesign --force --deep --sign - "${BUNDLE_PATH}"
+/usr/bin/codesign --force --deep --options runtime \
+  --sign "${RELEASE_SIGNING_IDENTITY}" "${BUNDLE_PATH}"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "${BUNDLE_PATH}"
 
 COPYFILE_DISABLE=1 /usr/bin/ditto \
   -c -k --sequesterRsrc --keepParent \
   "${BUNDLE_PATH}" "${ARCHIVE_PATH}"
 
-echo "Built unsigned GitHub release artifact: ${ARCHIVE_PATH}"
+echo "Built signed GitHub release artifact: ${ARCHIVE_PATH}"
