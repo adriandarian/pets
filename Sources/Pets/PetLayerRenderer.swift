@@ -4,6 +4,12 @@ import PetsCore
 import QuartzCore
 import SwiftUI
 
+private extension Collection {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
+
 struct LayerBackedAssetPetSprite: NSViewRepresentable {
     let definition: PetDefinition
     let artPack: PetArtPack
@@ -185,8 +191,12 @@ final class PetLayerRenderView: NSView {
             ? rawElapsed + animation.totalDuration * visualContext.animationPhaseOffset
             : 0
         let playback = animation.playbackSample(at: playbackElapsed)
-        let primaryFrame = animation.frames[playback.primaryFrameIndex]
-        let secondaryFrame = playback.secondaryFrameIndex.map { animation.frames[$0] }
+        guard let primaryFrame = animation.frames[safe: playback.primaryFrameIndex] else {
+            return
+        }
+        let secondaryFrame = playback.secondaryFrameIndex.flatMap {
+            animation.frames[safe: $0]
+        }
         guard let primaryImage = PetLayerImageCache.shared.image(for: primaryFrame) else {
             return
         }

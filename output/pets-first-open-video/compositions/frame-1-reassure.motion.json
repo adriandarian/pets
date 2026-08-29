@@ -1,0 +1,9 @@
+{
+  "duration": 3.4,
+  "assertions": [
+    { "kind": "appearsBy", "selector": "#frame1-dialog", "bySec": 1.1 },
+    { "kind": "appearsBy", "selector": "#frame1-subtitle", "bySec": 1.2 },
+    { "kind": "staysInFrame", "selector": "#frame1-dialog" },
+    { "kind": "staysInFrame", "selector": "#frame1-trust" }
+  ]
+}

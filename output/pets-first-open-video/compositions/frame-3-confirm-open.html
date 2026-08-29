@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template id="frame-3-confirm-open-template">
+      <style>
+        * {
+          box-sizing: border-box;
+        }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          color: #1d2523;
+          font-family: "IBM Plex Mono", monospace;
+        }
+
+        .scene-fill {
+          position: absolute;
+          inset: 0;
+          background-color: #f5f1e8;
+          background-image: radial-gradient(circle at 74% 52%, rgba(230, 106, 78, 0.17), rgba(230, 106, 78, 0) 38%);
+        }
+
+        .scene-content {
+          position: relative;
+          z-index: 3;
+          display: grid;
+          grid-template-columns: 570px minmax(0, 1fr);
+          gap: 72px;
+          width: 100%;
+          height: 100%;
+          padding: 88px 94px 76px;
+        }
+
+        .copy {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 25px;
+          min-width: 0;
+        }
+
+        .instruction-step {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+          width: 100%;
+          padding: 20px 22px;
+          border: 3px solid #d8d0c2;
+          border-radius: 24px;
+          background: #fffdf8;
+          box-shadow: 0 12px 0 rgba(29, 37, 35, 0.06);
+          will-change: transform, opacity;
+        }
+
+        .instruction-step.primary {
+          border-color: #1d2523;
+        }
+
+        .instruction-step.confirm {
+          border-color: #2f8a64;
+          background: #eef7f1;
+        }
+
+        .step-number {
+          display: grid;
+          flex: 0 0 58px;
+          width: 58px;
+          height: 58px;
+          place-items: center;
+          border: 3px solid #1d2523;
+          border-radius: 17px;
+          background: #e66a4e;
+          font-size: 27px;
+          font-weight: 700;
+        }
+
+        .instruction-step.confirm .step-number {
+          border-color: #1d5f47;
+          background: #bfe4d0;
+          color: #174b39;
+        }
+
+        .step-copy {
+          min-width: 0;
+        }
+
+        .step-kicker {
+          display: block;
+          margin-bottom: 7px;
+          color: #5d6763;
+          font-size: 19px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .step-title {
+          display: block;
+          font-family: "Archivo Black", sans-serif;
+          font-size: 38px;
+          font-weight: 400;
+          line-height: 1.05;
+          letter-spacing: -0.025em;
+        }
+
+        .helper {
+          max-width: 520px;
+          margin: 5px 0 0;
+          color: #5d6763;
+          font-size: 24px;
+          line-height: 1.45;
+        }
+
+        .progress {
+          display: flex;
+          gap: 10px;
+          margin-top: 18px;
+        }
+
+        .progress-segment {
+          width: 82px;
+          height: 10px;
+          border-radius: 999px;
+          background: #d8d0c2;
+        }
+
+        .progress-segment.active {
+          background: #e66a4e;
+        }
+
+        .progress-segment.done {
+          background: #2f8a64;
+        }
+
+        .visual {
+          position: relative;
+          min-width: 0;
+          height: 100%;
+        }
+
+        .stage-glow {
+          position: absolute;
+          left: 30px;
+          top: 60px;
+          width: 1010px;
+          height: 790px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(230, 106, 78, 0.24), rgba(230, 106, 78, 0) 70%);
+          opacity: 0.27;
+          will-change: transform, opacity;
+        }
+
+        .finder-backplate {
+          position: absolute;
+          left: 24px;
+          top: 76px;
+          width: 1070px;
+          height: 770px;
+          overflow: hidden;
+          border: 3px solid rgba(29, 37, 35, 0.18);
+          border-radius: 34px;
+          background: #fffdf8;
+          box-shadow: 0 42px 92px rgba(91, 70, 55, 0.2), 0 8px 24px rgba(91, 70, 55, 0.12);
+          will-change: transform, opacity;
+        }
+
+        .finder-toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          height: 82px;
+          padding: 0 28px;
+          border-bottom: 3px solid #e3ddd2;
+          background: #fbf8f1;
+        }
+
+        .traffic-lights {
+          display: flex;
+          gap: 12px;
+        }
+
+        .traffic-light {
+          width: 21px;
+          height: 21px;
+          border: 2px solid rgba(29, 37, 35, 0.18);
+          border-radius: 50%;
+        }
+
+        .traffic-light.red {
+          background: #e66a4e;
+        }
+
+        .traffic-light.yellow {
+          background: #d7a644;
+        }
+
+        .traffic-light.green {
+          background: #57a77f;
+        }
+
+        .finder-title {
+          font-family: "Archivo Black", sans-serif;
+          font-size: 26px;
+          font-weight: 400;
+        }
+
+        .toolbar-space {
+          width: 88px;
+        }
+
+        .finder-canvas {
+          position: relative;
+          height: calc(100% - 82px);
+          background: #faf7f0;
+        }
+
+        .app-ghost {
+          position: absolute;
+          right: 76px;
+          top: 80px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          color: #6e7270;
+          font-size: 18px;
+        }
+
+        .app-ghost-icon {
+          width: 100px;
+          height: 100px;
+          border: 4px solid #a9aaa6;
+          border-radius: 26px;
+          background: #eee8de;
+        }
+
+        .context-menu {
+          position: absolute;
+          left: 92px;
+          top: 95px;
+          z-index: 3;
+          width: 390px;
+          padding: 13px;
+          border: 3px solid rgba(29, 37, 35, 0.16);
+          border-radius: 24px;
+          background: rgba(255, 253, 248, 0.98);
+          box-shadow: 0 28px 65px rgba(52, 46, 41, 0.24);
+          will-change: transform, opacity;
+        }
+
+        .menu-row {
+          padding: 17px 20px;
+          border-radius: 13px;
+          color: #45504c;
+          font-size: 22px;
+          line-height: 1.05;
+        }
+
+        .menu-row.open {
+          background: #e66a4e;
+          color: #1d2523;
+          font-weight: 700;
+          will-change: transform;
+        }
+
+        .menu-rule {
+          height: 3px;
+          margin: 10px 8px;
+          background: #e3ddd2;
+        }
+
+        .confirm-dialog {
+          position: absolute;
+          left: 225px;
+          top: 265px;
+          z-index: 7;
+          width: 760px;
+          padding: 38px 42px 34px;
+          border: 3px solid rgba(29, 37, 35, 0.18);
+          border-radius: 32px;
+          background: rgba(255, 253, 248, 0.99);
+          box-shadow: 0 36px 82px rgba(52, 46, 41, 0.26);
+          will-change: transform, opacity;
+        }
+
+        .dialog-top {
+          display: grid;
+          grid-template-columns: 92px minmax(0, 1fr);
+          gap: 26px;
+          align-items: center;
+        }
+
+        .dialog-icon {
+          position: relative;
+          width: 88px;
+          height: 88px;
+          border: 4px solid #1d2523;
+          border-radius: 24px;
+          background: #e66a4e;
+          will-change: transform, opacity;
+        }
+
+        .dialog-icon::before,
+        .dialog-icon::after {
+          position: absolute;
+          top: 18px;
+          width: 25px;
+          height: 28px;
+          background: #fff2df;
+          clip-path: polygon(50% 0, 100% 100%, 0 100%);
+          content: "";
+        }
+
+        .dialog-icon::before {
+          left: 15px;
+          transform: rotate(-8deg);
+        }
+
+        .dialog-icon::after {
+          right: 15px;
+          transform: rotate(8deg);
+        }
+
+        .dialog-title {
+          margin: 0 0 10px;
+          font-family: "Archivo Black", sans-serif;
+          font-size: 31px;
+          font-weight: 400;
+          line-height: 1.13;
+          letter-spacing: -0.02em;
+        }
+
+        .dialog-body {
+          margin: 0;
+          color: #5d6763;
+          font-size: 20px;
+          line-height: 1.42;
+        }
+
+        .dialog-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 14px;
+          margin-top: 30px;
+        }
+
+        .dialog-button {
+          position: relative;
+          min-width: 150px;
+          padding: 14px 24px;
+          overflow: hidden;
+          border: 3px solid #1d2523;
+          border-radius: 16px;
+          background: #fffdf8;
+          color: #1d2523;
+          font-family: "IBM Plex Mono", monospace;
+          font-size: 20px;
+          font-weight: 700;
+          text-align: center;
+          will-change: transform;
+        }
+
+        .dialog-button.open {
+          background: #1d2523;
+          color: #fffdf8;
+        }
+
+        .button-check {
+          position: absolute;
+          right: 8px;
+          top: 8px;
+          display: grid;
+          width: 27px;
+          height: 27px;
+          place-items: center;
+          border-radius: 50%;
+          background: #bfe4d0;
+          color: #174b39;
+          font-size: 17px;
+          font-weight: 700;
+          will-change: transform, opacity;
+        }
+
+        .cursor {
+          position: absolute;
+          left: 0;
+          top: 0;
+          z-index: 12;
+          width: 104px;
+          height: 104px;
+          pointer-events: none;
+          transform-origin: 15px 10px;
+          filter: drop-shadow(0 6px 8px rgba(29, 37, 35, 0.34));
+          will-change: transform, opacity;
+        }
+
+        .cursor svg {
+          display: block;
+          width: 100%;
+          height: 100%;
+          fill: #fffdf8;
+          stroke: #1d2523;
+          stroke-width: 1.4;
+          stroke-linejoin: round;
+        }
+
+        .ripple {
+          position: absolute;
+          left: -36px;
+          top: -36px;
+          width: 72px;
+          height: 72px;
+          border: 5px solid #e66a4e;
+          border-radius: 50%;
+          opacity: 0;
+          transform-origin: center;
+          will-change: transform, opacity;
+        }
+      </style>
+
+      <div data-hf-id="hf-me5z" id="root" data-composition-id="frame-3-confirm-open" data-width="1920" data-height="1080" data-duration="3.6">
+        <div data-hf-id="hf-apxe" class="scene-fill"></div>
+        <div data-hf-id="hf-cn5c" class="scene-content">
+          <section data-hf-id="hf-jw5n" class="copy">
+            <div data-hf-id="hf-48ke" class="instruction-step primary" id="frame3-step2">
+              <span data-hf-id="hf-9jlf" class="step-number">2</span>
+              <span data-hf-id="hf-ntqv" class="step-copy">
+                <span data-hf-id="hf-ism9" class="step-kicker">Context menu</span>
+                <span data-hf-id="hf-mjpx" class="step-title">Choose Open</span>
+              </span>
+            </div>
+            <div data-hf-id="hf-dsb5" class="instruction-step confirm" id="frame3-step3">
+              <span data-hf-id="hf-9xwg" class="step-number">3</span>
+              <span data-hf-id="hf-lbo7" class="step-copy">
+                <span data-hf-id="hf-1jqm" class="step-kicker">macOS prompt</span>
+                <span data-hf-id="hf-htzy" class="step-title">Confirm Open</span>
+              </span>
+            </div>
+            <p data-hf-id="hf-wbfx" class="helper" id="frame3-helper">You only need this workaround the first time.</p>
+            <div data-hf-id="hf-krrg" class="progress" id="frame3-progress" aria-hidden="true">
+              <span data-hf-id="hf-0mcg" class="progress-segment done"></span>
+              <span data-hf-id="hf-wkuu" class="progress-segment active"></span>
+              <span data-hf-id="hf-x27u" class="progress-segment active"></span>
+            </div>
+          </section>
+
+          <section data-hf-id="hf-zyaw" class="visual" aria-label="Choosing Open in the context menu and confirming in macOS">
+            <div data-hf-id="hf-jlxx" class="stage-glow" id="frame3-glow" data-layout-ignore=""></div>
+            <div data-hf-id="hf-guvx" class="finder-backplate" id="frame3-finder">
+              <div data-hf-id="hf-9pvm" class="finder-toolbar">
+                <div data-hf-id="hf-d6yi" class="traffic-lights" aria-hidden="true">
+                  <span data-hf-id="hf-5702" class="traffic-light red"></span>
+                  <span data-hf-id="hf-eks9" class="traffic-light yellow"></span>
+                  <span data-hf-id="hf-vk4i" class="traffic-light green"></span>
+                </div>
+                <div data-hf-id="hf-kuse" class="finder-title">Downloads</div>
+                <div data-hf-id="hf-htis" class="toolbar-space"></div>
+              </div>
+              <div data-hf-id="hf-np0x" class="finder-canvas">
+                <div data-hf-id="hf-1637" class="app-ghost">
+                  <span data-hf-id="hf-kjki" class="app-ghost-icon"></span>
+                  <span data-hf-id="hf-pmyq">Pets.app</span>
+                </div>
+                <div data-hf-id="hf-2j4p" class="context-menu" id="frame3-menu">
+                  <div data-hf-id="hf-tzmw" class="menu-row open" id="frame3-open-row">Open</div>
+                  <div data-hf-id="hf-kc8j" class="menu-row">Show Package Contents</div>
+                  <div data-hf-id="hf-err4" class="menu-rule"></div>
+                  <div data-hf-id="hf-30gl" class="menu-row" data-layout-allow-occlusion="">Move to Bin</div>
+                </div>
+
+                <div data-hf-id="hf-x7t2" class="confirm-dialog" id="frame3-dialog">
+                  <div data-hf-id="hf-l7he" class="dialog-top">
+                    <div data-hf-id="hf-lxew" class="dialog-icon" id="frame3-dialog-icon" aria-hidden="true"></div>
+                    <div data-hf-id="hf-yeow">
+                      <h2 data-hf-id="hf-z33l" class="dialog-title">Open Pets?</h2>
+                      <p data-hf-id="hf-gt2c" class="dialog-body">macOS will remember your choice and allow the app to launch normally next time.</p>
+                    </div>
+                  </div>
+                  <div data-hf-id="hf-iy7y" class="dialog-actions">
+                    <div data-hf-id="hf-e5mj" class="dialog-button">Cancel</div>
+                    <div data-hf-id="hf-agqp" class="dialog-button open" id="frame3-confirm-button">
+                      Open
+                      <span data-hf-id="hf-adil" class="button-check" id="frame3-button-check">✓</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div data-hf-id="hf-bv2m" class="cursor" id="frame3-cursor" aria-hidden="true">
+              <div data-hf-id="hf-40rq" class="ripple" id="frame3-ripple" data-layout-allow-overflow=""></div>
+              <svg data-hf-id="hf-y9f5" viewBox="0 0 24 24">
+                <path data-hf-id="hf-fueh" d="M5 3 L5 19 L9 15 L12 22 L15 20.5 L11.5 14 L18 14 Z" />
+              </svg>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo(
+          "#frame3-step2",
+          { x: -52, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.46, ease: "expo.out" },
+          0.15,
+        );
+        tl.fromTo(
+          "#frame3-helper",
+          { y: 28, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.42, ease: "power2.out" },
+          0.42,
+        );
+        tl.fromTo(
+          "#frame3-progress",
+          { x: -36, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.36, ease: "sine.out" },
+          0.66,
+        );
+
+        tl.fromTo(
+          "#frame3-glow",
+          { opacity: 0, scale: 0.84 },
+          { opacity: 0.29, scale: 1, duration: 0.92, ease: "power2.out" },
+          0.16,
+        );
+        tl.fromTo(
+          "#frame3-finder",
+          { x: 58, scale: 0.965, opacity: 0 },
+          { x: 0, scale: 1, opacity: 1, duration: 0.58, ease: "power3.out" },
+          0.23,
+        );
+        tl.fromTo(
+          "#frame3-menu",
+          { scale: 0.9, y: -16, opacity: 0 },
+          { scale: 1, y: 0, opacity: 1, duration: 0.42, ease: "back.out(1.35)" },
+          0.46,
+        );
+
+        tl.fromTo(
+          "#frame3-cursor",
+          { x: 1090, y: 850, opacity: 0 },
+          { x: 310, y: 260, opacity: 1, duration: 0.78, ease: "power3.out" },
+          0.34,
+        );
+        tl.to(
+          ["#frame3-cursor", "#frame3-open-row"],
+          { scale: 0.93, duration: 0.09, ease: "power2.in", yoyo: true, repeat: 1 },
+          1.08,
+        );
+        tl.fromTo(
+          "#frame3-ripple",
+          { scale: 0.2, opacity: 0.82 },
+          { scale: 3, opacity: 0, duration: 0.55, ease: "power3.out", immediateRender: false },
+          1.17,
+        );
+
+        tl.fromTo(
+          "#frame3-dialog",
+          { scale: 0.86, y: 28, opacity: 0 },
+          { scale: 1, y: 0, opacity: 1, duration: 0.52, ease: "power3.out" },
+          1.3,
+        );
+        tl.fromTo(
+          "#frame3-dialog-icon",
+          { scale: 0, rotation: -8, opacity: 0 },
+          { scale: 1, rotation: 0, opacity: 1, duration: 0.42, ease: "expo.out" },
+          1.47,
+        );
+        tl.fromTo(
+          "#frame3-step3",
+          { x: -48, scale: 0.95, opacity: 0 },
+          { x: 0, scale: 1, opacity: 1, duration: 0.44, ease: "back.out(1.3)" },
+          1.42,
+        );
+        tl.fromTo(
+          "#frame3-button-check",
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.36, ease: "power3.out" },
+          2.68,
+        );
+
+        tl.to(
+          "#frame3-cursor",
+          { x: 820, y: 660, duration: 0.62, ease: "power2.inOut" },
+          1.72,
+        );
+        tl.to(
+          ["#frame3-cursor", "#frame3-confirm-button"],
+          { scale: 0.93, duration: 0.09, ease: "power1.in", yoyo: true, repeat: 1 },
+          2.42,
+        );
+        tl.fromTo(
+          "#frame3-ripple",
+          { scale: 0.2, opacity: 0.82 },
+          { scale: 3.2, opacity: 0, duration: 0.56, ease: "expo.out", immediateRender: false },
+          2.51,
+        );
+
+        window.__timelines["frame-3-confirm-open"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

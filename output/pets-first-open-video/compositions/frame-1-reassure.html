@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template id="frame-1-reassure-template">
+      <style>
+        * {
+          box-sizing: border-box;
+        }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          color: #1d2523;
+          font-family: "IBM Plex Mono", monospace;
+        }
+
+        .scene-fill {
+          position: absolute;
+          inset: 0;
+          background-color: #f5f1e8;
+          background-image: radial-gradient(circle at 76% 46%, rgba(230, 106, 78, 0.15), rgba(230, 106, 78, 0) 34%);
+        }
+
+        .scene-content {
+          position: relative;
+          z-index: 3;
+          display: grid;
+          grid-template-columns: 690px minmax(0, 1fr);
+          gap: 82px;
+          width: 100%;
+          height: 100%;
+          padding: 94px 104px 82px;
+        }
+
+        .copy {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 28px;
+          min-width: 0;
+        }
+
+        .eyebrow {
+          display: inline-flex;
+          align-items: center;
+          align-self: flex-start;
+          gap: 14px;
+          padding: 12px 18px;
+          border: 3px solid #1d2523;
+          border-radius: 999px;
+          background: #fffdf8;
+          font-size: 22px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .eyebrow-dot {
+          display: block;
+          width: 13px;
+          height: 13px;
+          border-radius: 50%;
+          background: #e66a4e;
+        }
+
+        .headline {
+          max-width: 680px;
+          margin: 0;
+          font-family: "Archivo Black", sans-serif;
+          font-size: 106px;
+          font-weight: 400;
+          line-height: 0.93;
+          letter-spacing: -0.05em;
+        }
+
+        .headline-word {
+          display: inline-block;
+          margin-right: 0.14em;
+          opacity: 0;
+          will-change: transform;
+        }
+
+        .subtitle {
+          max-width: 620px;
+          margin: 0;
+          color: #45504c;
+          font-size: 30px;
+          line-height: 1.42;
+        }
+
+        .trust-note {
+          display: flex;
+          align-items: flex-start;
+          gap: 14px;
+          max-width: 610px;
+          padding-top: 22px;
+          border-top: 3px solid #d9d1c3;
+          color: #5d6763;
+          font-size: 20px;
+          line-height: 1.45;
+        }
+
+        .trust-check {
+          display: grid;
+          flex: 0 0 34px;
+          width: 34px;
+          height: 34px;
+          place-items: center;
+          border-radius: 50%;
+          background: #d9eee3;
+          color: #1d5f47;
+          font-weight: 700;
+        }
+
+        .visual {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 0;
+          height: 100%;
+        }
+
+        .dialog-glow {
+          position: absolute;
+          width: 840px;
+          height: 690px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(230, 106, 78, 0.25), rgba(230, 106, 78, 0) 68%);
+          opacity: 0.28;
+          will-change: transform, opacity;
+        }
+
+        .dialog {
+          position: relative;
+          z-index: 2;
+          width: 790px;
+          padding: 48px 52px 42px;
+          border: 3px solid rgba(29, 37, 35, 0.16);
+          border-radius: 38px;
+          background: rgba(255, 253, 248, 0.96);
+          box-shadow: 0 42px 90px rgba(91, 70, 55, 0.2), 0 8px 24px rgba(91, 70, 55, 0.12);
+          text-align: center;
+          will-change: transform, opacity;
+        }
+
+        .cat-icon {
+          position: relative;
+          width: 138px;
+          height: 138px;
+          margin: 0 auto 28px;
+          border: 4px solid #1d2523;
+          border-radius: 34px;
+          background: #e66a4e;
+          box-shadow: 0 16px 0 rgba(29, 37, 35, 0.08);
+          will-change: transform, opacity;
+        }
+
+        .cat-ear {
+          position: absolute;
+          top: 25px;
+          width: 38px;
+          height: 42px;
+          background: #fff2df;
+          clip-path: polygon(50% 0, 100% 100%, 0 100%);
+        }
+
+        .cat-ear.left {
+          left: 24px;
+          transform: rotate(-9deg);
+        }
+
+        .cat-ear.right {
+          right: 24px;
+          transform: rotate(9deg);
+        }
+
+        .cat-face {
+          position: absolute;
+          left: 27px;
+          top: 45px;
+          width: 76px;
+          height: 67px;
+          border: 4px solid #1d2523;
+          border-radius: 48% 48% 44% 44%;
+          background: #fff2df;
+        }
+
+        .cat-eye {
+          position: absolute;
+          top: 23px;
+          width: 9px;
+          height: 13px;
+          border-radius: 50%;
+          background: #1d2523;
+        }
+
+        .cat-eye.left {
+          left: 19px;
+        }
+
+        .cat-eye.right {
+          right: 19px;
+        }
+
+        .cat-nose {
+          position: absolute;
+          left: 31px;
+          top: 38px;
+          width: 11px;
+          height: 8px;
+          border-radius: 50% 50% 60% 60%;
+          background: #e66a4e;
+        }
+
+        .dialog-copy {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .dialog-title {
+          max-width: 650px;
+          margin: 0;
+          font-family: "Archivo Black", sans-serif;
+          font-size: 39px;
+          font-weight: 400;
+          line-height: 1.12;
+          letter-spacing: -0.025em;
+        }
+
+        .dialog-body {
+          max-width: 630px;
+          margin: 0;
+          color: #5d6763;
+          font-size: 23px;
+          line-height: 1.45;
+        }
+
+        .dialog-actions {
+          display: flex;
+          justify-content: center;
+          gap: 16px;
+          margin-top: 34px;
+        }
+
+        .dialog-button {
+          min-width: 170px;
+          padding: 16px 28px;
+          border: 3px solid #1d2523;
+          border-radius: 18px;
+          background: #fffdf8;
+          color: #1d2523;
+          font-family: "IBM Plex Mono", monospace;
+          font-size: 22px;
+          font-weight: 700;
+        }
+
+        .dialog-button.primary {
+          background: #1d2523;
+          color: #fffdf8;
+        }
+
+        .progress {
+          position: absolute;
+          left: 104px;
+          bottom: 48px;
+          z-index: 4;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          color: #5d6763;
+          font-size: 20px;
+          font-weight: 700;
+        }
+
+        .progress-dots {
+          display: flex;
+          gap: 9px;
+        }
+
+        .progress-dot {
+          display: block;
+          width: 42px;
+          height: 8px;
+          border-radius: 999px;
+          background: #d8d0c2;
+        }
+
+        .progress-dot.active {
+          background: #e66a4e;
+        }
+
+        .decor-outline {
+          position: absolute;
+          z-index: 1;
+          border: 4px solid rgba(230, 106, 78, 0.25);
+          border-radius: 44px;
+          will-change: transform, opacity;
+        }
+
+        .decor-a {
+          right: -75px;
+          top: 82px;
+          width: 340px;
+          height: 220px;
+        }
+
+        .decor-b {
+          right: 240px;
+          bottom: -110px;
+          width: 410px;
+          height: 250px;
+        }
+      </style>
+
+      <div data-hf-id="hf-njq8" id="root" data-composition-id="frame-1-reassure" data-width="1920" data-height="1080" data-duration="3.4">
+        <div data-hf-id="hf-apxe" class="scene-fill"></div>
+        <div data-hf-id="hf-z08m" class="decor-outline decor-a" data-layout-ignore=""></div>
+        <div data-hf-id="hf-wj99" class="decor-outline decor-b" data-layout-ignore=""></div>
+
+        <div data-hf-id="hf-cn5c" class="scene-content">
+          <section data-hf-id="hf-jw5n" class="copy">
+            <div data-hf-id="hf-03b8" class="eyebrow" id="frame1-eyebrow">
+              <span data-hf-id="hf-pbp4" class="eyebrow-dot"></span>
+              First launch
+            </div>
+            <h1 data-hf-id="hf-6c7o" class="headline" aria-label="macOS won't open Pets?">
+              <span data-hf-id="hf-7hv5" class="headline-word frame1-title-word">macOS</span>
+              <span data-hf-id="hf-ivzb" class="headline-word frame1-title-word">won’t open</span>
+              <span data-hf-id="hf-fggf" class="headline-word frame1-title-word">Pets?</span>
+            </h1>
+            <p data-hf-id="hf-pi59" class="subtitle" id="frame1-subtitle">Use the trusted first-open shortcut. It takes three quick clicks.</p>
+            <div data-hf-id="hf-9pd4" class="trust-note" id="frame1-trust">
+              <span data-hf-id="hf-0mh3" class="trust-check">✓</span>
+              <span data-hf-id="hf-h7sg">Continue only if Pets came from the release page your friend shared.</span>
+            </div>
+          </section>
+
+          <section data-hf-id="hf-lkri" class="visual" aria-label="Example macOS verification message">
+            <div data-hf-id="hf-s05d" class="dialog-glow" id="frame1-glow" data-layout-ignore=""></div>
+            <div data-hf-id="hf-xzof" class="dialog" id="frame1-dialog">
+              <div data-hf-id="hf-r8so" class="cat-icon" id="frame1-cat-icon" aria-hidden="true">
+                <span data-hf-id="hf-8m33" class="cat-ear left"></span>
+                <span data-hf-id="hf-yebm" class="cat-ear right"></span>
+                <span data-hf-id="hf-anhz" class="cat-face">
+                  <span data-hf-id="hf-wroe" class="cat-eye left"></span>
+                  <span data-hf-id="hf-u1cl" class="cat-eye right"></span>
+                  <span data-hf-id="hf-fxl9" class="cat-nose"></span>
+                </span>
+              </div>
+              <div data-hf-id="hf-gmc2" class="dialog-copy">
+                <h2 data-hf-id="hf-u2qz" class="dialog-title">macOS can’t verify Pets yet.</h2>
+                <p data-hf-id="hf-m6q2" class="dialog-body">That can happen the first time you open this build. Close this message, then follow the next steps.</p>
+              </div>
+              <div data-hf-id="hf-iy7y" class="dialog-actions">
+                <div data-hf-id="hf-e5mj" class="dialog-button">Cancel</div>
+                <div data-hf-id="hf-dfco" class="dialog-button primary">Got it</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div data-hf-id="hf-8tl9" class="progress" id="frame1-progress">
+          <span data-hf-id="hf-0n2h">3 steps</span>
+          <span data-hf-id="hf-ibtk" class="progress-dots" aria-hidden="true">
+            <span data-hf-id="hf-yeko" class="progress-dot active"></span>
+            <span data-hf-id="hf-jkda" class="progress-dot"></span>
+            <span data-hf-id="hf-gp1e" class="progress-dot"></span>
+          </span>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo(
+          "#frame1-eyebrow",
+          { x: -54, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.44, ease: "expo.out" },
+          0.16,
+        );
+
+        const titleWords = gsap.utils.toArray(".frame1-title-word");
+        const titleStarts = [0.28, 0.45, 0.58];
+        const titleOffsets = [78, 52, 42];
+        const titleDurations = [0.2, 0.16, 0.13];
+        titleWords.forEach((word, index) => {
+          tl.set(word, { opacity: 1, y: titleOffsets[index] }, titleStarts[index]);
+          tl.to(
+            word,
+            { y: 0, duration: titleDurations[index], ease: "power4.out" },
+            titleStarts[index],
+          );
+        });
+
+        tl.fromTo(
+          "#frame1-subtitle",
+          { y: 34, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.56, ease: "power3.out" },
+          0.72,
+        );
+        tl.fromTo(
+          "#frame1-trust",
+          { x: -34, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.48, ease: "sine.out" },
+          0.92,
+        );
+
+        tl.fromTo(
+          "#frame1-glow",
+          { opacity: 0, scale: 0.82 },
+          { opacity: 0.3, scale: 1, duration: 0.92, ease: "power2.out" },
+          0.3,
+        );
+        tl.fromTo(
+          "#frame1-dialog",
+          { scale: 0.9, y: 38, opacity: 0 },
+          { scale: 1, y: 0, opacity: 1, duration: 0.66, ease: "power3.out" },
+          0.42,
+        );
+        tl.fromTo(
+          "#frame1-cat-icon",
+          { scale: 0, rotation: -7, opacity: 0 },
+          { scale: 1, rotation: 0, opacity: 1, duration: 0.5, ease: "power3.out" },
+          0.62,
+        );
+        tl.fromTo(
+          ".dialog-copy > *",
+          { y: 22, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.38, stagger: 0.08, ease: "expo.out" },
+          0.78,
+        );
+        tl.fromTo(
+          ".dialog-actions > *",
+          { scale: 0.86, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.36, stagger: 0.07, ease: "back.out(1.35)" },
+          1.02,
+        );
+        tl.fromTo(
+          "#frame1-progress",
+          { x: -46, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.46, ease: "power2.out" },
+          1.14,
+        );
+        tl.fromTo(
+          ".decor-a",
+          { x: 90, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.8, ease: "sine.out" },
+          0.22,
+        );
+        tl.fromTo(
+          ".decor-b",
+          { y: 80, opacity: 0 },
+          { y: 0, opacity: 1, duration: 1.08, ease: "power1.out" },
+          0.34,
+        );
+
+        window.__timelines["frame-1-reassure"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

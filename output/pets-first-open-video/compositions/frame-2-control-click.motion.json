@@ -1,0 +1,10 @@
+{
+  "duration": 3.6,
+  "assertions": [
+    { "kind": "appearsBy", "selector": "#frame2-app", "bySec": 1.1 },
+    { "kind": "appearsBy", "selector": "#frame2-menu", "bySec": 1.9 },
+    { "kind": "before", "a": "#frame2-app", "b": "#frame2-menu" },
+    { "kind": "staysInFrame", "selector": "#frame2-cursor" },
+    { "kind": "staysInFrame", "selector": "#frame2-menu" }
+  ]
+}

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template id="frame-2-control-click-template">
+      <style>
+        * {
+          box-sizing: border-box;
+        }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          color: #1d2523;
+          font-family: "IBM Plex Mono", monospace;
+        }
+
+        .scene-fill {
+          position: absolute;
+          inset: 0;
+          background-color: #f5f1e8;
+          background-image: radial-gradient(circle at 72% 50%, rgba(230, 106, 78, 0.17), rgba(230, 106, 78, 0) 36%);
+        }
+
+        .scene-content {
+          position: relative;
+          z-index: 3;
+          display: grid;
+          grid-template-columns: 610px minmax(0, 1fr);
+          gap: 72px;
+          width: 100%;
+          height: 100%;
+          padding: 92px 96px 78px;
+        }
+
+        .copy {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 28px;
+          min-width: 0;
+        }
+
+        .step-label {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          align-self: flex-start;
+          color: #5d6763;
+          font-size: 23px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+
+        .step-number {
+          display: grid;
+          width: 58px;
+          height: 58px;
+          place-items: center;
+          border: 3px solid #1d2523;
+          border-radius: 18px;
+          background: #e66a4e;
+          color: #1d2523;
+          font-size: 28px;
+        }
+
+        .headline {
+          max-width: 600px;
+          margin: 0;
+          font-family: "Archivo Black", sans-serif;
+          font-size: 96px;
+          font-weight: 400;
+          line-height: 0.95;
+          letter-spacing: -0.05em;
+        }
+
+        .instruction {
+          max-width: 570px;
+          margin: 0;
+          color: #45504c;
+          font-size: 29px;
+          line-height: 1.45;
+        }
+
+        .key-combo {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          align-self: flex-start;
+          margin-top: 10px;
+        }
+
+        .key-cap {
+          min-width: 150px;
+          padding: 18px 24px;
+          border: 3px solid #1d2523;
+          border-bottom-width: 8px;
+          border-radius: 18px;
+          background: #fffdf8;
+          text-align: center;
+          font-size: 25px;
+          font-weight: 700;
+          line-height: 1;
+        }
+
+        .key-cap.active {
+          background: #e66a4e;
+        }
+
+        .plus {
+          font-family: "Archivo Black", sans-serif;
+          font-size: 34px;
+        }
+
+        .progress {
+          display: flex;
+          gap: 10px;
+          margin-top: 24px;
+        }
+
+        .progress-segment {
+          width: 88px;
+          height: 10px;
+          border-radius: 999px;
+          background: #d8d0c2;
+        }
+
+        .progress-segment.active {
+          background: #e66a4e;
+        }
+
+        .visual {
+          position: relative;
+          min-width: 0;
+          height: 100%;
+        }
+
+        .finder-glow {
+          position: absolute;
+          left: 70px;
+          top: 80px;
+          width: 900px;
+          height: 760px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(230, 106, 78, 0.26), rgba(230, 106, 78, 0) 69%);
+          opacity: 0.27;
+          will-change: transform, opacity;
+        }
+
+        .finder {
+          position: absolute;
+          left: 36px;
+          top: 88px;
+          width: 1030px;
+          height: 760px;
+          overflow: hidden;
+          border: 3px solid rgba(29, 37, 35, 0.18);
+          border-radius: 34px;
+          background: #fffdf8;
+          box-shadow: 0 42px 92px rgba(91, 70, 55, 0.2), 0 8px 24px rgba(91, 70, 55, 0.12);
+          will-change: transform, opacity;
+        }
+
+        .finder-toolbar {
+          display: grid;
+          grid-template-columns: 170px 1fr 170px;
+          align-items: center;
+          height: 88px;
+          padding: 0 26px;
+          border-bottom: 3px solid #e3ddd2;
+          background: #fbf8f1;
+        }
+
+        .traffic-lights {
+          display: flex;
+          gap: 13px;
+        }
+
+        .traffic-light {
+          width: 22px;
+          height: 22px;
+          border: 2px solid rgba(29, 37, 35, 0.18);
+          border-radius: 50%;
+        }
+
+        .traffic-light.red {
+          background: #e66a4e;
+        }
+
+        .traffic-light.yellow {
+          background: #d7a644;
+        }
+
+        .traffic-light.green {
+          background: #57a77f;
+        }
+
+        .finder-title {
+          text-align: center;
+          font-family: "Archivo Black", sans-serif;
+          font-size: 28px;
+          font-weight: 400;
+        }
+
+        .finder-search {
+          justify-self: end;
+          width: 130px;
+          height: 42px;
+          border: 3px solid #d8d0c2;
+          border-radius: 14px;
+          background: #fffdf8;
+        }
+
+        .finder-body {
+          display: grid;
+          grid-template-columns: 230px minmax(0, 1fr);
+          height: calc(100% - 88px);
+        }
+
+        .finder-sidebar {
+          padding: 34px 24px;
+          border-right: 3px solid #e3ddd2;
+          background: #f7f3eb;
+        }
+
+        .sidebar-heading {
+          margin-bottom: 18px;
+          color: #6a6f6d;
+          font-size: 18px;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .sidebar-row {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 10px;
+          padding: 14px 16px;
+          border-radius: 14px;
+          color: #5d6763;
+          font-size: 20px;
+        }
+
+        .sidebar-row.active {
+          background: #e7e1d6;
+          color: #1d2523;
+          font-weight: 700;
+        }
+
+        .sidebar-icon {
+          width: 22px;
+          height: 22px;
+          border: 3px solid currentColor;
+          border-radius: 6px;
+        }
+
+        .finder-main {
+          position: relative;
+          overflow: hidden;
+          background: #fffdf8;
+        }
+
+        .app-tile {
+          position: absolute;
+          left: 300px;
+          top: 185px;
+          display: flex;
+          width: 215px;
+          flex-direction: column;
+          align-items: center;
+          gap: 18px;
+          padding: 26px 20px 20px;
+          border: 4px solid #e66a4e;
+          border-radius: 26px;
+          background: #fff8f0;
+          box-shadow: 0 18px 0 rgba(230, 106, 78, 0.12);
+          will-change: transform, opacity;
+        }
+
+        .app-icon {
+          position: relative;
+          width: 122px;
+          height: 122px;
+          border: 4px solid #1d2523;
+          border-radius: 30px;
+          background: #e66a4e;
+        }
+
+        .app-ear {
+          position: absolute;
+          top: 20px;
+          width: 34px;
+          height: 38px;
+          background: #fff2df;
+          clip-path: polygon(50% 0, 100% 100%, 0 100%);
+        }
+
+        .app-ear.left {
+          left: 21px;
+          transform: rotate(-9deg);
+        }
+
+        .app-ear.right {
+          right: 21px;
+          transform: rotate(9deg);
+        }
+
+        .app-face {
+          position: absolute;
+          left: 23px;
+          top: 40px;
+          width: 68px;
+          height: 59px;
+          border: 4px solid #1d2523;
+          border-radius: 48% 48% 44% 44%;
+          background: #fff2df;
+        }
+
+        .app-eye {
+          position: absolute;
+          top: 20px;
+          width: 8px;
+          height: 12px;
+          border-radius: 50%;
+          background: #1d2523;
+        }
+
+        .app-eye.left {
+          left: 17px;
+        }
+
+        .app-eye.right {
+          right: 17px;
+        }
+
+        .app-nose {
+          position: absolute;
+          left: 27px;
+          top: 35px;
+          width: 10px;
+          height: 7px;
+          border-radius: 50%;
+          background: #e66a4e;
+        }
+
+        .app-name {
+          font-size: 22px;
+          font-weight: 700;
+        }
+
+        .context-menu {
+          position: absolute;
+          left: 450px;
+          top: 265px;
+          z-index: 7;
+          width: 330px;
+          padding: 12px;
+          border: 3px solid rgba(29, 37, 35, 0.16);
+          border-radius: 22px;
+          background: rgba(255, 253, 248, 0.98);
+          box-shadow: 0 28px 65px rgba(52, 46, 41, 0.24);
+          transform-origin: 12% 12%;
+          will-change: transform, opacity;
+        }
+
+        .menu-row {
+          padding: 13px 18px;
+          border-radius: 12px;
+          color: #45504c;
+          font-size: 19px;
+          line-height: 1.1;
+        }
+
+        .menu-row.open {
+          background: #e66a4e;
+          color: #1d2523;
+          font-weight: 700;
+        }
+
+        .menu-rule {
+          height: 3px;
+          margin: 9px 8px;
+          background: #e3ddd2;
+        }
+
+        .cursor {
+          position: absolute;
+          left: 0;
+          top: 0;
+          z-index: 12;
+          width: 104px;
+          height: 104px;
+          pointer-events: none;
+          transform-origin: 15px 10px;
+          filter: drop-shadow(0 6px 8px rgba(29, 37, 35, 0.34));
+          will-change: transform, opacity;
+        }
+
+        .cursor svg {
+          display: block;
+          width: 100%;
+          height: 100%;
+          fill: #fffdf8;
+          stroke: #1d2523;
+          stroke-width: 1.4;
+          stroke-linejoin: round;
+        }
+
+        .ripple {
+          position: absolute;
+          left: -36px;
+          top: -36px;
+          width: 72px;
+          height: 72px;
+          border: 5px solid #e66a4e;
+          border-radius: 50%;
+          opacity: 0;
+          transform-origin: center;
+          will-change: transform, opacity;
+        }
+
+        .helper-note {
+          position: absolute;
+          right: 42px;
+          bottom: 28px;
+          z-index: 4;
+          padding: 12px 16px;
+          border-radius: 12px;
+          background: #f1ece2;
+          color: #5d6763;
+          font-size: 18px;
+        }
+      </style>
+
+      <div data-hf-id="hf-8e1t" id="root" data-composition-id="frame-2-control-click" data-width="1920" data-height="1080" data-duration="3.6">
+        <div data-hf-id="hf-apxe" class="scene-fill"></div>
+        <div data-hf-id="hf-cn5c" class="scene-content">
+          <section data-hf-id="hf-jw5n" class="copy">
+            <div data-hf-id="hf-4ouv" class="step-label" id="frame2-step">
+              <span data-hf-id="hf-95ae" class="step-number">1</span>
+              Control-click
+            </div>
+            <h1 data-hf-id="hf-dje3" class="headline" id="frame2-headline">Control-click Pets.app</h1>
+            <p data-hf-id="hf-jhbj" class="instruction" id="frame2-instruction">In Finder, hold the Control key while clicking the app.</p>
+            <div data-hf-id="hf-tvmq" class="key-combo" id="frame2-keys" aria-label="Control plus click">
+              <span data-hf-id="hf-81da" class="key-cap active">control</span>
+              <span data-hf-id="hf-955y" class="plus">+</span>
+              <span data-hf-id="hf-iz7r" class="key-cap">click</span>
+            </div>
+            <div data-hf-id="hf-ma2z" class="progress" id="frame2-progress" aria-hidden="true">
+              <span data-hf-id="hf-wkuu" class="progress-segment active"></span>
+              <span data-hf-id="hf-1ac8" class="progress-segment"></span>
+              <span data-hf-id="hf-qsj4" class="progress-segment"></span>
+            </div>
+          </section>
+
+          <section data-hf-id="hf-9i56" class="visual" aria-label="Finder showing Pets.app and its context menu">
+            <div data-hf-id="hf-nx9g" class="finder-glow" id="frame2-glow" data-layout-ignore=""></div>
+            <div data-hf-id="hf-3vvm" class="finder" id="frame2-finder">
+              <div data-hf-id="hf-9pvm" class="finder-toolbar">
+                <div data-hf-id="hf-d6yi" class="traffic-lights" aria-hidden="true">
+                  <span data-hf-id="hf-5702" class="traffic-light red"></span>
+                  <span data-hf-id="hf-eks9" class="traffic-light yellow"></span>
+                  <span data-hf-id="hf-vk4i" class="traffic-light green"></span>
+                </div>
+                <div data-hf-id="hf-kuse" class="finder-title">Downloads</div>
+                <div data-hf-id="hf-ueq5" class="finder-search"></div>
+              </div>
+              <div data-hf-id="hf-4qrx" class="finder-body">
+                <aside data-hf-id="hf-278s" class="finder-sidebar">
+                  <div data-hf-id="hf-czze" class="sidebar-heading">Favorites</div>
+                  <div data-hf-id="hf-b95w" class="sidebar-row"><span data-hf-id="hf-xbkf" class="sidebar-icon"></span>AirDrop</div>
+                  <div data-hf-id="hf-ew8x" class="sidebar-row"><span data-hf-id="hf-gs1b" class="sidebar-icon"></span>Desktop</div>
+                  <div data-hf-id="hf-oujs" class="sidebar-row active"><span data-hf-id="hf-gdqa" class="sidebar-icon"></span>Downloads</div>
+                </aside>
+                <div data-hf-id="hf-6bde" class="finder-main">
+                  <div data-hf-id="hf-ayxl" class="app-tile" id="frame2-app">
+                    <div data-hf-id="hf-d41o" class="app-icon" aria-hidden="true">
+                      <span data-hf-id="hf-jdfo" class="app-ear left"></span>
+                      <span data-hf-id="hf-7vaz" class="app-ear right"></span>
+                      <span data-hf-id="hf-c4gk" class="app-face">
+                        <span data-hf-id="hf-4tl5" class="app-eye left"></span>
+                        <span data-hf-id="hf-wh2s" class="app-eye right"></span>
+                        <span data-hf-id="hf-oavi" class="app-nose"></span>
+                      </span>
+                    </div>
+                    <span data-hf-id="hf-j175" class="app-name" data-layout-allow-occlusion="">Pets.app</span>
+                  </div>
+
+                  <div data-hf-id="hf-f7kq" class="context-menu" id="frame2-menu">
+                    <div data-hf-id="hf-hs4q" class="menu-row open">Open</div>
+                    <div data-hf-id="hf-kc8j" class="menu-row">Show Package Contents</div>
+                    <div data-hf-id="hf-err4" class="menu-rule"></div>
+                    <div data-hf-id="hf-4mrd" class="menu-row">Move to Bin</div>
+                  </div>
+                  <div data-hf-id="hf-n2ar" class="helper-note" id="frame2-helper">The menu should appear.</div>
+                </div>
+              </div>
+            </div>
+
+            <div data-hf-id="hf-z9m5" class="cursor" id="frame2-cursor" aria-hidden="true">
+              <div data-hf-id="hf-tis5" class="ripple" id="frame2-ripple" data-layout-allow-overflow=""></div>
+              <svg data-hf-id="hf-y9f5" viewBox="0 0 24 24">
+                <path data-hf-id="hf-fueh" d="M5 3 L5 19 L9 15 L12 22 L15 20.5 L11.5 14 L18 14 Z" />
+              </svg>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo(
+          "#frame2-step",
+          { x: -48, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.42, ease: "expo.out" },
+          0.14,
+        );
+        tl.fromTo(
+          "#frame2-headline",
+          { y: 58, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.52, ease: "power4.out" },
+          0.26,
+        );
+        tl.fromTo(
+          "#frame2-instruction",
+          { x: -34, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.46, ease: "sine.out" },
+          0.5,
+        );
+        tl.fromTo(
+          "#frame2-keys",
+          { scale: 0.82, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.44, ease: "back.out(1.35)" },
+          0.72,
+        );
+        tl.fromTo(
+          "#frame2-progress",
+          { x: -40, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.38, ease: "power2.out" },
+          0.94,
+        );
+
+        tl.fromTo(
+          "#frame2-glow",
+          { opacity: 0, scale: 0.84 },
+          { opacity: 0.29, scale: 1, duration: 0.9, ease: "power2.out" },
+          0.18,
+        );
+        tl.fromTo(
+          "#frame2-finder",
+          { y: 56, scale: 0.965, opacity: 0 },
+          { y: 0, scale: 1, opacity: 1, duration: 0.62, ease: "power3.out" },
+          0.24,
+        );
+        tl.fromTo(
+          "#frame2-app",
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.48, ease: "power3.out" },
+          0.5,
+        );
+        tl.fromTo(
+          "#frame2-helper",
+          { y: 20, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.36, ease: "power1.out" },
+          1.62,
+        );
+
+        tl.fromTo(
+          "#frame2-cursor",
+          { x: 1080, y: 860, opacity: 0 },
+          { x: 575, y: 445, opacity: 1, duration: 0.72, ease: "power3.out" },
+          0.52,
+        );
+        tl.to(
+          ["#frame2-cursor", "#frame2-app"],
+          { scale: 0.93, duration: 0.09, ease: "power2.in", yoyo: true, repeat: 1 },
+          1.25,
+        );
+        tl.fromTo(
+          "#frame2-ripple",
+          { scale: 0.2, opacity: 0.82 },
+          { scale: 3.1, opacity: 0, duration: 0.58, ease: "power3.out", immediateRender: false },
+          1.34,
+        );
+        tl.fromTo(
+          "#frame2-menu",
+          { scale: 0.9, y: -18, opacity: 0 },
+          { scale: 1, y: 0, opacity: 1, duration: 0.42, ease: "expo.out" },
+          1.38,
+        );
+        tl.to(
+          "#frame2-cursor",
+          { x: 715, y: 475, duration: 0.42, ease: "power2.inOut" },
+          1.86,
+        );
+
+        window.__timelines["frame-2-control-click"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

@@ -2,6 +2,12 @@ import AppKit
 import PetsCore
 import SwiftUI
 
+private extension Collection {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
+
 struct PetSprite: View {
     let petID: PetID
     let visualContext: PetVisualContext
@@ -99,8 +105,10 @@ private struct AssetPetSprite: View {
             && visualContext.reaction == nil
         let playbackElapsed = isAmbientMotionEnabled ? phasedElapsed : 0
         let playback = animation.playbackSample(at: playbackElapsed)
-        let primaryFrame = animation.frames[playback.primaryFrameIndex]
-        let secondaryFrame = playback.secondaryFrameIndex.map { animation.frames[$0] }
+        let primaryFrame = animation.frames[safe: playback.primaryFrameIndex] ?? animation.frames[0]
+        let secondaryFrame = playback.secondaryFrameIndex.flatMap {
+            animation.frames[safe: $0]
+        }
         let primaryImage = PetArtImageCache.shared.image(for: primaryFrame)
         let secondaryImage = secondaryFrame.flatMap(PetArtImageCache.shared.image(for:))
         let motionElapsed = rawElapsed

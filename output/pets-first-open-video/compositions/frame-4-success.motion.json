@@ -1,0 +1,9 @@
+{
+  "duration": 3.1,
+  "assertions": [
+    { "kind": "appearsBy", "selector": "#frame4-card", "bySec": 1.1 },
+    { "kind": "appearsBy", "selector": "#frame4-subtitle", "bySec": 1.2 },
+    { "kind": "staysInFrame", "selector": "#frame4-card" },
+    { "kind": "staysInFrame", "selector": "#frame4-share" }
+  ]
+}

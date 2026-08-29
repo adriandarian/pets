@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template id="frame-4-success-template">
+      <style>
+        * {
+          box-sizing: border-box;
+        }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          color: #1d2523;
+          font-family: "IBM Plex Mono", monospace;
+        }
+
+        .scene-fill {
+          position: absolute;
+          inset: 0;
+          background-color: #f5f1e8;
+          background-image: radial-gradient(circle at 75% 48%, rgba(47, 138, 100, 0.2), rgba(47, 138, 100, 0) 39%);
+        }
+
+        .scene-content {
+          position: relative;
+          z-index: 3;
+          display: grid;
+          grid-template-columns: 760px minmax(0, 1fr);
+          gap: 110px;
+          width: 100%;
+          height: 100%;
+          padding: 96px 108px 84px;
+        }
+
+        .copy {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 28px;
+          min-width: 0;
+        }
+
+        .success-label {
+          display: inline-flex;
+          align-items: center;
+          align-self: flex-start;
+          gap: 13px;
+          padding: 12px 18px;
+          border: 3px solid #1d5f47;
+          border-radius: 999px;
+          background: #d9eee3;
+          color: #174b39;
+          font-size: 21px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+
+        .success-check-small {
+          display: grid;
+          width: 28px;
+          height: 28px;
+          place-items: center;
+          border-radius: 50%;
+          background: #246f52;
+          color: #fffdf8;
+          font-size: 17px;
+        }
+
+        .headline {
+          max-width: 740px;
+          margin: 0;
+          font-family: "Archivo Black", sans-serif;
+          font-size: 116px;
+          font-weight: 400;
+          line-height: 0.91;
+          letter-spacing: -0.055em;
+        }
+
+        .headline-word {
+          display: inline-block;
+          margin-right: 0.12em;
+          opacity: 0;
+          will-change: transform;
+        }
+
+        .subtitle {
+          max-width: 690px;
+          margin: 0;
+          color: #45504c;
+          font-size: 31px;
+          line-height: 1.42;
+        }
+
+        .share-note {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          align-self: flex-start;
+          margin-top: 10px;
+          padding: 15px 18px;
+          border: 3px solid #d8d0c2;
+          border-radius: 16px;
+          background: #fffdf8;
+          color: #5d6763;
+          font-size: 20px;
+          font-weight: 700;
+        }
+
+        .share-arrow {
+          color: #e66a4e;
+          font-family: "Archivo Black", sans-serif;
+          font-size: 28px;
+        }
+
+        .visual {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 0;
+          height: 100%;
+        }
+
+        .success-glow {
+          position: absolute;
+          width: 900px;
+          height: 780px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(47, 138, 100, 0.3), rgba(47, 138, 100, 0) 68%);
+          opacity: 0.3;
+          will-change: transform, opacity;
+        }
+
+        .success-card {
+          position: relative;
+          z-index: 2;
+          display: grid;
+          width: 780px;
+          grid-template-columns: 330px minmax(0, 1fr);
+          gap: 38px;
+          align-items: center;
+          padding: 42px;
+          border: 3px solid rgba(29, 37, 35, 0.17);
+          border-radius: 42px;
+          background: rgba(255, 253, 248, 0.97);
+          box-shadow: 0 42px 90px rgba(75, 88, 75, 0.2), 0 8px 24px rgba(75, 88, 75, 0.1);
+          will-change: transform, opacity;
+        }
+
+        .cat-badge {
+          position: relative;
+          width: 320px;
+          height: 320px;
+          border: 5px solid #1d2523;
+          border-radius: 50%;
+          background: #bfe4d0;
+          box-shadow: 0 22px 0 rgba(47, 138, 100, 0.16);
+          will-change: transform, opacity;
+        }
+
+        .cat-ear {
+          position: absolute;
+          top: 54px;
+          width: 78px;
+          height: 88px;
+          background: #fff2df;
+          clip-path: polygon(50% 0, 100% 100%, 0 100%);
+        }
+
+        .cat-ear.left {
+          left: 56px;
+          transform: rotate(-10deg);
+        }
+
+        .cat-ear.right {
+          right: 56px;
+          transform: rotate(10deg);
+        }
+
+        .cat-face {
+          position: absolute;
+          left: 64px;
+          top: 100px;
+          width: 182px;
+          height: 158px;
+          border: 5px solid #1d2523;
+          border-radius: 49% 49% 44% 44%;
+          background: #fff2df;
+        }
+
+        .cat-eye {
+          position: absolute;
+          top: 48px;
+          width: 20px;
+          height: 28px;
+          border-radius: 50%;
+          background: #1d2523;
+        }
+
+        .cat-eye.left {
+          left: 43px;
+        }
+
+        .cat-eye.right {
+          right: 43px;
+        }
+
+        .cat-nose {
+          position: absolute;
+          left: 78px;
+          top: 88px;
+          width: 19px;
+          height: 14px;
+          border-radius: 50%;
+          background: #e66a4e;
+        }
+
+        .badge-check {
+          position: absolute;
+          right: -18px;
+          bottom: 2px;
+          display: grid;
+          width: 94px;
+          height: 94px;
+          place-items: center;
+          border: 5px solid #fffdf8;
+          border-radius: 50%;
+          background: #246f52;
+          color: #fffdf8;
+          font-family: "Archivo Black", sans-serif;
+          font-size: 50px;
+          will-change: transform, opacity;
+        }
+
+        .check-list {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+          min-width: 0;
+        }
+
+        .check-row {
+          display: grid;
+          grid-template-columns: 48px minmax(0, 1fr);
+          gap: 14px;
+          align-items: center;
+          padding: 16px 17px;
+          border: 3px solid #d8d0c2;
+          border-radius: 18px;
+          background: #fffdf8;
+          color: #45504c;
+          font-size: 21px;
+          font-weight: 700;
+          will-change: transform, opacity;
+        }
+
+        .row-check {
+          display: grid;
+          width: 42px;
+          height: 42px;
+          place-items: center;
+          border-radius: 50%;
+          background: #d9eee3;
+          color: #174b39;
+          font-size: 22px;
+          font-weight: 700;
+        }
+
+        .corner-line {
+          position: absolute;
+          z-index: 1;
+          right: 44px;
+          top: 54px;
+          width: 340px;
+          height: 220px;
+          border: 4px solid rgba(47, 138, 100, 0.25);
+          border-radius: 46px;
+          will-change: transform, opacity;
+        }
+      </style>
+
+      <div data-hf-id="hf-0x0d" id="root" data-composition-id="frame-4-success" data-width="1920" data-height="1080" data-duration="3.1">
+        <div data-hf-id="hf-apxe" class="scene-fill"></div>
+        <div data-hf-id="hf-9zf6" class="corner-line" id="frame4-corner" data-layout-ignore=""></div>
+        <div data-hf-id="hf-cn5c" class="scene-content">
+          <section data-hf-id="hf-jw5n" class="copy">
+            <div data-hf-id="hf-l5a8" class="success-label" id="frame4-label">
+              <span data-hf-id="hf-m684" class="success-check-small">✓</span>
+              Ready to go
+            </div>
+            <h1 data-hf-id="hf-8plr" class="headline" aria-label="That's it.">
+              <span data-hf-id="hf-tjqa" class="headline-word frame4-title-word">That’s</span>
+              <span data-hf-id="hf-jc5w" class="headline-word frame4-title-word">it.</span>
+            </h1>
+            <p data-hf-id="hf-t30i" class="subtitle" id="frame4-subtitle">Pets opens normally from now on. No special click needed next time.</p>
+            <div data-hf-id="hf-knvm" class="share-note" id="frame4-share">
+              <span data-hf-id="hf-d2sc" class="share-arrow">→</span>
+              Send this video to anyone installing Pets.
+            </div>
+          </section>
+
+          <section data-hf-id="hf-xh61" class="visual" aria-label="Completed first-launch steps">
+            <div data-hf-id="hf-q5cj" class="success-glow" id="frame4-glow" data-layout-ignore=""></div>
+            <div data-hf-id="hf-ibeq" class="success-card" id="frame4-card">
+              <div data-hf-id="hf-11rp" class="cat-badge" id="frame4-cat" aria-hidden="true">
+                <span data-hf-id="hf-8m33" class="cat-ear left"></span>
+                <span data-hf-id="hf-yebm" class="cat-ear right"></span>
+                <span data-hf-id="hf-anhz" class="cat-face">
+                  <span data-hf-id="hf-wroe" class="cat-eye left"></span>
+                  <span data-hf-id="hf-u1cl" class="cat-eye right"></span>
+                  <span data-hf-id="hf-fxl9" class="cat-nose"></span>
+                </span>
+                <span data-hf-id="hf-jzi0" class="badge-check" id="frame4-badge-check">✓</span>
+              </div>
+              <div data-hf-id="hf-dn3x" class="check-list">
+                <div data-hf-id="hf-m4lz" class="check-row">
+                  <span data-hf-id="hf-hd0p" class="row-check">✓</span>
+                  <span data-hf-id="hf-3u9b">Control-click</span>
+                </div>
+                <div data-hf-id="hf-yj87" class="check-row">
+                  <span data-hf-id="hf-d5i5" class="row-check">✓</span>
+                  <span data-hf-id="hf-fr24">Choose Open</span>
+                </div>
+                <div data-hf-id="hf-y4x6" class="check-row">
+                  <span data-hf-id="hf-ecf8" class="row-check">✓</span>
+                  <span data-hf-id="hf-ib9x">Confirm Open</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo(
+          "#frame4-label",
+          { x: -50, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.42, ease: "expo.out" },
+          0.15,
+        );
+
+        const titleWords = gsap.utils.toArray(".frame4-title-word");
+        const titleStarts = [0.27, 0.44];
+        const titleOffsets = [76, 48];
+        const titleDurations = [0.19, 0.13];
+        titleWords.forEach((word, index) => {
+          tl.set(word, { opacity: 1, y: titleOffsets[index] }, titleStarts[index]);
+          tl.to(
+            word,
+            { y: 0, duration: titleDurations[index], ease: "power4.out" },
+            titleStarts[index],
+          );
+        });
+
+        tl.fromTo(
+          "#frame4-subtitle",
+          { y: 34, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" },
+          0.58,
+        );
+        tl.fromTo(
+          "#frame4-share",
+          { x: -36, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.44, ease: "sine.out" },
+          0.82,
+        );
+
+        tl.fromTo(
+          "#frame4-glow",
+          { opacity: 0, scale: 0.8 },
+          { opacity: 0.31, scale: 1, duration: 0.94, ease: "power2.out" },
+          0.18,
+        );
+        tl.fromTo(
+          "#frame4-card",
+          { y: 42, scale: 0.94, opacity: 0 },
+          { y: 0, scale: 1, opacity: 1, duration: 0.58, ease: "power3.out" },
+          0.28,
+        );
+        tl.fromTo(
+          "#frame4-cat",
+          { scale: 0, rotation: -8, opacity: 0 },
+          { scale: 1, rotation: 0, opacity: 1, duration: 0.5, ease: "power3.out" },
+          0.46,
+        );
+        tl.fromTo(
+          ".check-row",
+          { x: 42, scale: 0.94, opacity: 0 },
+          { x: 0, scale: 1, opacity: 1, duration: 0.38, stagger: 0.08, ease: "expo.out" },
+          0.64,
+        );
+        tl.fromTo(
+          "#frame4-badge-check",
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.5)" },
+          0.94,
+        );
+        tl.fromTo(
+          "#frame4-corner",
+          { x: 80, y: -40, opacity: 0 },
+          { x: 0, y: 0, opacity: 1, duration: 0.9, ease: "power1.out" },
+          0.2,
+        );
+
+        window.__timelines["frame-4-success"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

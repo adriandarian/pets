@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>How to open Pets on macOS</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        margin: 0;
+        overflow: hidden;
+        background: #f5f1e8;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+
+      #root > .clip {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        will-change: transform;
+      }
+
+      #el-frame1 {
+        z-index: 1;
+      }
+
+      #el-frame2 {
+        z-index: 2;
+      }
+
+      #el-frame3 {
+        z-index: 3;
+      }
+
+      #el-frame4 {
+        z-index: 4;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-mrmw" id="root" data-composition-id="pets-first-open" data-start="0" data-duration="12.2" data-width="1920" data-height="1080">
+      <div data-hf-id="hf-glhp" id="el-frame1" class="clip" data-layout-allow-overflow="" data-composition-id="frame-1-reassure" data-composition-src="compositions/frame-1-reassure.html" data-start="0" data-duration="3.4" data-track-index="1" data-width="1920" data-height="1080"></div>
+
+      <div data-hf-id="hf-ha96" id="el-frame2" class="clip" data-layout-allow-overflow="" data-composition-id="frame-2-control-click" data-composition-src="compositions/frame-2-control-click.html" data-start="2.9" data-duration="3.6" data-track-index="2" data-width="1920" data-height="1080"></div>
+
+      <div data-hf-id="hf-woy9" id="el-frame3" class="clip" data-layout-allow-overflow="" data-composition-id="frame-3-confirm-open" data-composition-src="compositions/frame-3-confirm-open.html" data-start="6" data-duration="3.6" data-track-index="1" data-width="1920" data-height="1080"></div>
+
+      <div data-hf-id="hf-hm4c" id="el-frame4" class="clip" data-layout-allow-overflow="" data-composition-id="frame-4-success" data-composition-src="compositions/frame-4-success.html" data-start="9.1" data-duration="3.1" data-track-index="2" data-width="1920" data-height="1080"></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.to(
+        "#el-frame1",
+        { x: -1920, duration: 0.5, ease: "power3.inOut" },
+        2.9,
+      );
+      tl.fromTo(
+        "#el-frame2",
+        { x: 1920 },
+        { x: 0, duration: 0.5, ease: "power3.inOut", immediateRender: false },
+        2.9,
+      );
+
+      tl.to(
+        "#el-frame2",
+        { y: -1080, duration: 0.5, ease: "power3.inOut" },
+        6,
+      );
+      tl.fromTo(
+        "#el-frame3",
+        { y: 1080 },
+        { y: 0, duration: 0.5, ease: "power3.inOut", immediateRender: false },
+        6,
+      );
+
+      tl.to(
+        "#el-frame3",
+        { x: -1920, duration: 0.5, ease: "power3.inOut" },
+        9.1,
+      );
+      tl.fromTo(
+        "#el-frame4",
+        { x: 1920 },
+        { x: 0, duration: 0.5, ease: "power3.inOut", immediateRender: false },
+        9.1,
+      );
+
+      window.__timelines["pets-first-open"] = tl;
+    </script>
+  </body>
+</html>
