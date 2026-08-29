@@ -21,8 +21,8 @@ struct PetSpriteSourceTests {
     func petSpriteBlendsFramesBeforeOneAmbientTransform() throws {
         let source = try source("Sources/Pets/PetSprites.swift")
 
-        #expect(source.contains("TimelineView(.animation(minimumInterval: Self.frameInterval))"))
-        #expect(source.contains("private static let frameInterval = 1.0 / 30.0"))
+        #expect(source.contains("TimelineView(.animation(minimumInterval: frameInterval))"))
+        #expect(source.contains("visualContext.animationSettings.framesPerSecond"))
         #expect(source.contains("animation.playbackSample(at: playbackElapsed)"))
         #expect(source.contains("secondaryFrameIndex"))
         #expect(source.contains("secondaryOpacity"))
@@ -78,9 +78,9 @@ struct PetSpriteSourceTests {
     func steadyLayerRendererLimitsAndCoalescesContinuousUpdates() {
         let source = (try? source("Sources/Pets/PetLayerRenderer.swift")) ?? ""
 
-        #expect(source.contains("private static let frameInterval = 1.0 / 12.0"))
-        #expect(source.contains("timer.tolerance = Self.frameInterval * 0.25"))
-        #expect(!source.contains("private static let frameInterval = 1.0 / 30.0"))
+        #expect(source.contains("visualContext.animationSettings.framesPerSecond"))
+        #expect(source.contains("timer.tolerance = interval * 0.25"))
+        #expect(source.contains("if frameRateChanged"))
     }
 
     @Test

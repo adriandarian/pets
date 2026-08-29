@@ -724,6 +724,10 @@ private struct PetBehaviorSection: View {
                 Divider()
 
                 SettingSwitchRow("Status moods", isOn: animationBinding(\.areStatusMoodsEnabled))
+
+                Divider()
+
+                AnimationFrameRateRow(framesPerSecond: frameRateBinding)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -744,6 +748,57 @@ private struct PetBehaviorSection: View {
                 store.updateSelectedPetAnimationSettings(settings)
             }
         )
+    }
+
+    private var frameRateBinding: Binding<Int> {
+        Binding(
+            get: { selectedPet.animationSettings.framesPerSecond },
+            set: { framesPerSecond in
+                var settings = selectedPet.animationSettings
+                settings.framesPerSecond = PetAnimationFrameRate.clamped(framesPerSecond)
+                store.updateSelectedPetAnimationSettings(settings)
+            }
+        )
+    }
+}
+
+private struct AnimationFrameRateRow: View {
+    @Binding var framesPerSecond: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                Text("Animation frame rate")
+
+                Spacer()
+
+                Text("\(framesPerSecond) FPS")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+
+            Slider(
+                value: Binding(
+                    get: { Double(framesPerSecond) },
+                    set: { framesPerSecond = Int($0.rounded()) }
+                ),
+                in: frameRateSliderRange,
+                step: 1
+            )
+            .accessibilityLabel("Animation frame rate")
+            .accessibilityValue("\(framesPerSecond) frames per second")
+
+            Text("Lower frame rates reduce animation work; higher rates make motion smoother.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 6)
+    }
+
+    private var frameRateSliderRange: ClosedRange<Double> {
+        let lowerBound = Double(PetAnimationFrameRate.supportedRange.lowerBound)
+        let upperBound = Double(PetAnimationFrameRate.supportedRange.upperBound)
+        return lowerBound...upperBound
     }
 }
 

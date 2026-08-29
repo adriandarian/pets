@@ -80,7 +80,8 @@ struct PetInstanceTests {
                 animationSettings: PetAnimationSettings(
                     isHoverBounceEnabled: false,
                     isIdleMotionEnabled: true,
-                    areStatusMoodsEnabled: false
+                    areStatusMoodsEnabled: false,
+                    framesPerSecond: 24
                 ),
                 isVisible: false,
                 overlayPosition: PetOverlayPosition(
@@ -95,6 +96,7 @@ struct PetInstanceTests {
         let decoded = try JSONDecoder().decode([PetInstance].self, from: data)
 
         #expect(decoded == instances)
+        #expect(decoded[0].animationSettings.framesPerSecond == 24)
     }
 
     @Test
@@ -141,7 +143,29 @@ struct PetInstanceTests {
         #expect(decoded.animationSettings.isHoverBounceEnabled == false)
         #expect(decoded.animationSettings.isIdleMotionEnabled)
         #expect(decoded.animationSettings.areStatusMoodsEnabled)
+        #expect(decoded.animationSettings.framesPerSecond == PetAnimationFrameRate.defaultValue)
         #expect(decoded.overlayPosition == .default)
+    }
+
+    @Test
+    func animationFrameRateDefaultsAndClampsToSupportedValues() {
+        #expect(PetAnimationSettings.default.framesPerSecond == 12)
+
+        let low = PetAnimationSettings(
+            isHoverBounceEnabled: true,
+            isIdleMotionEnabled: true,
+            areStatusMoodsEnabled: true,
+            framesPerSecond: 1
+        )
+        let high = PetAnimationSettings(
+            isHoverBounceEnabled: true,
+            isIdleMotionEnabled: true,
+            areStatusMoodsEnabled: true,
+            framesPerSecond: 120
+        )
+
+        #expect(low.framesPerSecond == 6)
+        #expect(high.framesPerSecond == 60)
     }
 
     @Test

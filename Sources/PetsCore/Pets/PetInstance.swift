@@ -151,27 +151,36 @@ public struct PetAnimationSettings: Equatable, Codable, Sendable {
     public var isHoverBounceEnabled: Bool
     public var isIdleMotionEnabled: Bool
     public var areStatusMoodsEnabled: Bool
+    public var framesPerSecond: Int {
+        didSet {
+            framesPerSecond = PetAnimationFrameRate.clamped(framesPerSecond)
+        }
+    }
 
     public init(
         isHoverBounceEnabled: Bool,
         isIdleMotionEnabled: Bool,
-        areStatusMoodsEnabled: Bool
+        areStatusMoodsEnabled: Bool,
+        framesPerSecond: Int = PetAnimationFrameRate.defaultValue
     ) {
         self.isHoverBounceEnabled = isHoverBounceEnabled
         self.isIdleMotionEnabled = isIdleMotionEnabled
         self.areStatusMoodsEnabled = areStatusMoodsEnabled
+        self.framesPerSecond = PetAnimationFrameRate.clamped(framesPerSecond)
     }
 
     public static let `default` = PetAnimationSettings(
         isHoverBounceEnabled: true,
         isIdleMotionEnabled: true,
-        areStatusMoodsEnabled: true
+        areStatusMoodsEnabled: true,
+        framesPerSecond: PetAnimationFrameRate.defaultValue
     )
 
     private enum CodingKeys: String, CodingKey {
         case isHoverBounceEnabled
         case isIdleMotionEnabled
         case areStatusMoodsEnabled
+        case framesPerSecond
     }
 
     public init(from decoder: any Decoder) throws {
@@ -188,8 +197,21 @@ public struct PetAnimationSettings: Equatable, Codable, Sendable {
             areStatusMoodsEnabled: try container.decodeIfPresent(
                 Bool.self,
                 forKey: .areStatusMoodsEnabled
-            ) ?? true
+            ) ?? true,
+            framesPerSecond: try container.decodeIfPresent(
+                Int.self,
+                forKey: .framesPerSecond
+            ) ?? PetAnimationFrameRate.defaultValue
         )
+    }
+}
+
+public enum PetAnimationFrameRate {
+    public static let supportedRange = 6...60
+    public static let defaultValue = 12
+
+    public static func clamped(_ framesPerSecond: Int) -> Int {
+        min(supportedRange.upperBound, max(supportedRange.lowerBound, framesPerSecond))
     }
 }
 

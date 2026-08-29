@@ -38,8 +38,6 @@ struct LayerBackedAssetPetSprite: NSViewRepresentable {
 
 @MainActor
 final class PetLayerRenderView: NSView {
-    private static let frameInterval = 1.0 / 12.0
-
     private var definition: PetDefinition
     private var artPack: PetArtPack
     private var visualContext: PetVisualContext
@@ -112,9 +110,14 @@ final class PetLayerRenderView: NSView {
         artPack: PetArtPack,
         visualContext: PetVisualContext
     ) {
+        let frameRateChanged = self.visualContext.animationSettings.framesPerSecond
+            != visualContext.animationSettings.framesPerSecond
         self.definition = definition
         self.artPack = artPack
         self.visualContext = visualContext
+        if frameRateChanged {
+            stopAnimating()
+        }
         render(at: Date())
         updateAnimationTimer()
     }
@@ -141,6 +144,10 @@ final class PetLayerRenderView: NSView {
             )
     }
 
+    private var frameInterval: TimeInterval {
+        1.0 / Double(visualContext.animationSettings.framesPerSecond)
+    }
+
     private func updateAnimationTimer() {
         guard let window,
               window.occlusionState.contains(.visible),
@@ -151,14 +158,15 @@ final class PetLayerRenderView: NSView {
         }
         guard animationTimer == nil else { return }
 
+        let interval = frameInterval
         let timer = Timer(
-            timeInterval: Self.frameInterval,
+            timeInterval: interval,
             target: self,
             selector: #selector(animationTimerDidFire(_:)),
             userInfo: nil,
             repeats: true
         )
-        timer.tolerance = Self.frameInterval * 0.25
+        timer.tolerance = interval * 0.25
         RunLoop.main.add(timer, forMode: .common)
         animationTimer = timer
     }

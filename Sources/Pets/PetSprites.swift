@@ -52,8 +52,6 @@ private struct AssetPetSprite: View {
     let artPack: PetArtPack
     let visualContext: PetVisualContext
 
-    private static let frameInterval = 1.0 / 30.0
-
     private var requestedState: PetVisualState {
         PetVisualStateResolver.requestedState(for: visualContext)
     }
@@ -72,6 +70,10 @@ private struct AssetPetSprite: View {
             )
     }
 
+    private var frameInterval: TimeInterval {
+        1.0 / Double(visualContext.animationSettings.framesPerSecond)
+    }
+
     var body: some View {
         Group {
             if visualContext.reaction == nil {
@@ -81,7 +83,7 @@ private struct AssetPetSprite: View {
                     visualContext: visualContext
                 )
             } else if usesTimeline {
-                TimelineView(.animation(minimumInterval: Self.frameInterval)) { timeline in
+                TimelineView(.animation(minimumInterval: frameInterval)) { timeline in
                     renderedFrame(at: timeline.date)
                 }
             } else {
