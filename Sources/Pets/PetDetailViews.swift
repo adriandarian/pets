@@ -175,6 +175,7 @@ private struct PetPreview: View {
     let pet: PetInstance
     let dominantStatus: HarnessSessionStatus
     let changePet: () -> Void
+    @State private var isExpandedPreviewPresented = false
 
     var body: some View {
         ZStack {
@@ -214,8 +215,69 @@ private struct PetPreview: View {
             .accessibilityLabel("Change Pet")
             .padding(12)
         }
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                isExpandedPreviewPresented = true
+            } label: {
+                Image(systemName: "arrow.down.left.and.arrow.up.right")
+                    .font(.title3.weight(.medium))
+                    .frame(width: 32, height: 32)
+                    .background(.thinMaterial, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .help("Expand preview")
+            .accessibilityLabel("Expand preview")
+            .padding(12)
+        }
+        .sheet(isPresented: $isExpandedPreviewPresented) {
+            ExpandedPetPreview(pet: pet, dominantStatus: dominantStatus)
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(pet.name) preview")
+    }
+}
+
+private struct ExpandedPetPreview: View {
+    let pet: PetInstance
+    let dominantStatus: HarnessSessionStatus
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
+            SpritePreviewGridBackground()
+            PetSprite(
+                petID: pet.petID,
+                visualContext: PetVisualContext(
+                    status: dominantStatus,
+                    hasActiveSessions: dominantStatus != .unknown,
+                    isHovered: false,
+                    animationSettings: pet.animationSettings
+                ),
+                pixelation: pet.pixelation
+            )
+            .frame(width: 380, height: 380)
+        }
+        .frame(width: 560, height: 520)
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button { dismiss() } label: {
+                Image(systemName: "arrow.up.right.and.arrow.down.left")
+                    .font(.title3.weight(.medium))
+                    .frame(width: 36, height: 36)
+                    .background(.thinMaterial, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .help("Close expanded preview")
+            .accessibilityLabel("Close expanded preview")
+            .keyboardShortcut(.cancelAction)
+            .padding(14)
+        }
+        .padding(20)
     }
 }
 
