@@ -7,9 +7,17 @@ struct PetUsageSourceRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: sourceIconName)
-                .foregroundStyle(status.errorMessage == nil ? Color.secondary : Color.red)
-                .frame(width: 18)
+            if let provider = PetTrackingProvider(rawValue: status.id) {
+                PetProviderIcon(
+                    provider: provider,
+                    isDisabled: status.errorMessage != nil,
+                    size: 20
+                )
+            } else {
+                Image(systemName: "terminal.fill")
+                    .foregroundStyle(status.errorMessage == nil ? Color.secondary : Color.red)
+                    .frame(width: 20, height: 20)
+            }
             Text(status.displayName)
                 .font(.subheadline.weight(.medium))
             if let errorMessage = status.errorMessage {
@@ -28,14 +36,6 @@ struct PetUsageSourceRow: View {
                 .foregroundStyle(status.tokens == nil ? .secondary : .primary)
         }
         .accessibilityElement(children: .combine)
-    }
-
-    private var sourceIconName: String {
-        switch status.id {
-        case "claude": "sparkles"
-        case "copilot": "chevron.left.forwardslash.chevron.right"
-        default: "terminal.fill"
-        }
     }
 }
 

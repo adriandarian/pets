@@ -50,56 +50,6 @@ struct PetTrackingSection: View {
     }
 }
 
-private struct PetProviderIcon: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let provider: PetTrackingProvider
-    let isDisabled: Bool
-
-    var body: some View {
-        Group {
-            if let image = resourceImage {
-                if provider == .claudeCode {
-                    Image(nsImage: image)
-                        .resizable()
-                        .renderingMode(.template)
-                        .interpolation(.high)
-                        .foregroundStyle(isDisabled ? Color.secondary : claudeOrange)
-                } else {
-                    Image(nsImage: image)
-                        .resizable()
-                        .renderingMode(.original)
-                        .interpolation(.high)
-                        .saturation(isDisabled ? 0 : 1)
-                        .opacity(isDisabled ? 0.45 : 1)
-                }
-            } else {
-                Image(systemName: provider.systemImageName)
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundStyle(isDisabled ? .secondary : .primary)
-            }
-        }
-        .scaledToFit()
-        .frame(width: 24, height: 24)
-        .accessibilityHidden(true)
-    }
-
-    private var resourceImage: NSImage? {
-        guard let url = PetProviderIconResourceLocator.url(
-            for: provider,
-            appearance: colorScheme == .dark ? .dark : .light
-        ) else {
-            return nil
-        }
-        return NSImage(contentsOf: url)
-    }
-
-    private var claudeOrange: Color {
-        Color(red: 0.86, green: 0.47, blue: 0.34)
-    }
-}
-
 struct PetBehaviorSection: View {
     @ObservedObject var store: PetStore
 

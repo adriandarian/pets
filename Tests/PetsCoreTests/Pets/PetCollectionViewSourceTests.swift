@@ -58,6 +58,23 @@ struct PetCollectionViewSourceTests {
     }
 
     @Test
+    func rewardUsageRowsUseTheSharedOfficialProviderLogos() throws {
+        let source = try source("Sources/Pets/PetChestComponents.swift")
+        let usageRow = try sourceSlice(
+            source,
+            from: "struct PetUsageSourceRow",
+            to: "struct PetChestCard"
+        )
+
+        #expect(usageRow.contains("PetTrackingProvider(rawValue: status.id)"))
+        #expect(usageRow.contains("PetProviderIcon("))
+        #expect(usageRow.contains("size: 20"))
+        #expect(!usageRow.contains("sourceIconName"))
+        #expect(!usageRow.contains("\"sparkles\""))
+        #expect(!usageRow.contains("\"chevron.left.forwardslash.chevron.right\""))
+    }
+
+    @Test
     func keyBalancesAppearOnlyOnTheirChestCards() throws {
         let chestView = try source("Sources/Pets/PetChestView.swift")
         let chestComponents = try source("Sources/Pets/PetChestComponents.swift")
