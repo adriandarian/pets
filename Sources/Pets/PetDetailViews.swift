@@ -65,13 +65,15 @@ struct PetDetailPane: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .layoutPriority(1)
             }
             .padding(.leading, 18)
             .padding(.trailing, 24)
             .padding(.vertical, 24)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onChange(of: pet.id) { _, _ in
             selectedSection = .details
         }
@@ -133,8 +135,10 @@ private struct PetDetailSectionNavigation: View {
     @Binding var selection: PetDetailSection
 
     var body: some View {
-        GeometryReader { proxy in
-            navigation(showsTitles: proxy.size.width >= Self.titleVisibilityThreshold)
+        ViewThatFits(in: .horizontal) {
+            navigation(showsTitles: true)
+                .frame(minWidth: Self.titleVisibilityThreshold)
+            navigation(showsTitles: false)
         }
         .frame(height: 48)
     }
@@ -149,6 +153,7 @@ private struct PetDetailSectionNavigation: View {
                         if showsTitles {
                             Label(section.title, systemImage: section.systemImage)
                                 .lineLimit(1)
+                                .fixedSize()
                         } else {
                             Image(systemName: section.systemImage)
                                 .font(.title2)
@@ -166,6 +171,7 @@ private struct PetDetailSectionNavigation: View {
                 .frame(maxWidth: .infinity, minHeight: 48)
                 .contentShape(Rectangle())
                 .focusable()
+                .focusEffectDisabled()
                 .onKeyPress(.space) {
                     selection = section
                     return .handled
