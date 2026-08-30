@@ -1,3 +1,4 @@
+import AppKit
 import PetsCore
 import SwiftUI
 
@@ -24,18 +25,15 @@ struct PetTrackingSection: View {
         let isAssignedElsewhere = assignedPet.map { $0.id != pet.id } ?? false
 
         return HStack(spacing: 12) {
-            Image(systemName: provider.systemImageName)
-                .frame(width: 22)
-                .foregroundStyle(isAssignedElsewhere ? .secondary : .primary)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(provider.displayName)
-                Text(isAssignedElsewhere
-                    ? "Tracked by \(assignedPet?.name ?? "another pet")"
-                    : provider.sessionDescription)
+            PetProviderIcon(provider: provider, isDisabled: isAssignedElsewhere)
+            Text(provider.displayName)
+            Spacer()
+            if isAssignedElsewhere {
+                Text("Tracked by \(assignedPet?.name ?? "another pet")")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
-            Spacer()
             Toggle(provider.displayName, isOn: trackingBinding(provider))
                 .labelsHidden()
                 .toggleStyle(.switch)
@@ -49,6 +47,56 @@ struct PetTrackingSection: View {
             get: { store.petInstance(for: pet.id)?.trackingProviders.contains(provider) == true },
             set: { store.setTrackingProvider(provider, isEnabled: $0, for: pet.id) }
         )
+    }
+}
+
+private struct PetProviderIcon: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let provider: PetTrackingProvider
+    let isDisabled: Bool
+
+    var body: some View {
+        Group {
+            if let image = resourceImage {
+                if provider == .claudeCode {
+                    Image(nsImage: image)
+                        .resizable()
+                        .renderingMode(.template)
+                        .interpolation(.high)
+                        .foregroundStyle(isDisabled ? Color.secondary : claudeOrange)
+                } else {
+                    Image(nsImage: image)
+                        .resizable()
+                        .renderingMode(.original)
+                        .interpolation(.high)
+                        .saturation(isDisabled ? 0 : 1)
+                        .opacity(isDisabled ? 0.45 : 1)
+                }
+            } else {
+                Image(systemName: provider.systemImageName)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(isDisabled ? .secondary : .primary)
+            }
+        }
+        .scaledToFit()
+        .frame(width: 24, height: 24)
+        .accessibilityHidden(true)
+    }
+
+    private var resourceImage: NSImage? {
+        guard let url = PetProviderIconResourceLocator.url(
+            for: provider,
+            appearance: colorScheme == .dark ? .dark : .light
+        ) else {
+            return nil
+        }
+        return NSImage(contentsOf: url)
+    }
+
+    private var claudeOrange: Color {
+        Color(red: 0.86, green: 0.47, blue: 0.34)
     }
 }
 

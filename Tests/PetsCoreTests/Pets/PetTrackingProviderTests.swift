@@ -12,6 +12,18 @@ struct PetTrackingProviderTests {
     }
 
     @Test
+    func everyProviderHasAnOfficialIconForEachAppearance() {
+        for provider in PetTrackingProvider.allCases {
+            for appearance in PetProviderIconAppearance.allCases {
+                #expect(PetProviderIconResourceLocator.url(
+                    for: provider,
+                    appearance: appearance
+                ) != nil)
+            }
+        }
+    }
+
+    @Test
     func normalizationKeepsEachProviderOnOnlyTheFirstAssignedPet() {
         var first = PetInstance.defaultInstance(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!

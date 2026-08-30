@@ -14,7 +14,10 @@ let package = Package(
     targets: [
         .target(
             name: "PetsCore",
-            resources: [.copy("Resources/PetArt")]
+            resources: [
+                .copy("Resources/PetArt"),
+                .copy("Resources/ProviderIcons")
+            ]
         ),
         .executableTarget(
             name: "Pets",

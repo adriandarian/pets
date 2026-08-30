@@ -16,17 +16,6 @@ public enum PetTrackingProvider: String, CaseIterable, Codable, Hashable, Sendab
         }
     }
 
-    public var sessionDescription: String {
-        switch self {
-        case .claudeCode:
-            "Claude Code chats"
-        case .codex:
-            "App and CLI tasks"
-        case .githubCopilot:
-            "CLI and chat sessions"
-        }
-    }
-
     public var systemImageName: String {
         switch self {
         case .claudeCode:
