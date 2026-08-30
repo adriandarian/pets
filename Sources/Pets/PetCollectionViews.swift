@@ -31,7 +31,7 @@ struct PetCollectionView: View {
 
             Divider()
 
-            ScrollView(.vertical, showsIndicators: true) {
+            ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(filteredCategories.enumerated()), id: \.element.id) { index, category in
                         PetFamilySidebarRow(
@@ -101,7 +101,7 @@ struct PetCollectionView: View {
     }
 
     private var familyDetail: some View {
-        ScrollView(.vertical, showsIndicators: true) {
+        ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 26) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(selectedCategory.displayName)

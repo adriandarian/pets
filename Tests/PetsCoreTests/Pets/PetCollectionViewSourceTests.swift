@@ -166,6 +166,12 @@ struct PetCollectionViewSourceTests {
         #expect(collectionSource.contains(".frame(width: 220)"))
         #expect(collectionSource.contains("count: 5"))
         #expect(collectionSource.contains(".onChange(of: familySearch)"))
+        #expect(
+            collectionSource.components(
+                separatedBy: "ScrollView(.vertical, showsIndicators: false)"
+            ).count - 1 == 2
+        )
+        #expect(!collectionSource.contains("ScrollView(.vertical, showsIndicators: true)"))
         #expect(collectionSource.contains("ForEach(Array(filteredCategories.enumerated())"))
         #expect(collectionSource.contains("ForEach(selectedCategory.petIDs"))
         #expect(collectionSource.contains("\"Obtained\""))
