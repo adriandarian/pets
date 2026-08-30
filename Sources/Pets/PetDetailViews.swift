@@ -128,19 +128,19 @@ struct PetDetailPane: View {
 }
 
 private struct PetDetailSectionNavigation: View {
+    private static let titleVisibilityThreshold: CGFloat = 540
+
     @Binding var selection: PetDetailSection
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            navigation(showsTitles: true)
-                .frame(minWidth: 470)
-            navigation(showsTitles: false)
+        GeometryReader { proxy in
+            navigation(showsTitles: proxy.size.width >= Self.titleVisibilityThreshold)
         }
-        .frame(maxWidth: .infinity)
+        .frame(height: 48)
     }
 
     private func navigation(showsTitles: Bool) -> some View {
-        HStack(spacing: showsTitles ? 34 : 0) {
+        HStack(spacing: showsTitles ? 20 : 8) {
             ForEach(PetDetailSection.allCases, id: \.self) { section in
                 Button {
                     selection = section
@@ -158,11 +158,22 @@ private struct PetDetailSectionNavigation: View {
                             .fill(selection == section ? Color.accentColor : Color.clear)
                             .frame(width: showsTitles ? 72 : 30, height: 2)
                     }
+                    .frame(maxWidth: .infinity, minHeight: 48)
                     .foregroundStyle(selection == section ? Color.accentColor : Color.secondary)
-                    .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .contentShape(Rectangle())
+                .focusable()
+                .onKeyPress(.space) {
+                    selection = section
+                    return .handled
+                }
+                .onKeyPress(.return) {
+                    selection = section
+                    return .handled
+                }
                 .help(section.title)
                 .accessibilityLabel(section.title)
                 .accessibilityAddTraits(selection == section ? .isSelected : [])
