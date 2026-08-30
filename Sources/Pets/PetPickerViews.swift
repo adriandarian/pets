@@ -76,7 +76,7 @@ struct PetPickerOverlay: View {
             PetPickerSheet(store: store, isPresented: $isPresented)
                 .background {
                     Color(nsColor: .windowBackgroundColor)
-                    PetPickerWindowClickMonitor { isPresented = false }
+                    PetWindowOutsideClickMonitor { isPresented = false }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .overlay {
@@ -86,79 +86,6 @@ struct PetPickerOverlay: View {
                 .shadow(color: .black.opacity(0.35), radius: 24, y: 10)
         }
         .onExitCommand { isPresented = false }
-    }
-}
-
-private struct PetPickerWindowClickMonitor: NSViewRepresentable {
-    let dismiss: () -> Void
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(dismiss: dismiss)
-    }
-
-    func makeNSView(context: Context) -> NSView {
-        let view = HitPassthroughView()
-        context.coordinator.startMonitoring(view: view)
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        context.coordinator.dismiss = dismiss
-        context.coordinator.startMonitoring(view: nsView)
-    }
-
-    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
-        coordinator.stopMonitoring()
-    }
-
-    @MainActor
-    final class Coordinator {
-        var dismiss: () -> Void
-        private weak var view: NSView?
-        private var eventMonitor: Any?
-
-        init(dismiss: @escaping () -> Void) {
-            self.dismiss = dismiss
-        }
-
-        func startMonitoring(view: NSView) {
-            self.view = view
-            guard eventMonitor == nil else { return }
-
-            eventMonitor = NSEvent.addLocalMonitorForEvents(
-                matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
-            ) { [weak self] event in
-                precondition(Thread.isMainThread)
-                let eventBox = MainThreadEvent(event)
-                let shouldSwallow = MainActor.assumeIsolated {
-                    self?.handle(eventBox.value) ?? false
-                }
-                return shouldSwallow ? nil : event
-            }
-        }
-
-        private func handle(_ event: NSEvent) -> Bool {
-            guard let view, event.window === view.window else { return false }
-            let pointInPicker = view.convert(event.locationInWindow, from: nil)
-            guard !view.bounds.contains(pointInPicker) else { return false }
-            dismiss()
-            return true
-        }
-
-        func stopMonitoring() {
-            guard let eventMonitor else { return }
-            NSEvent.removeMonitor(eventMonitor)
-            self.eventMonitor = nil
-        }
-    }
-
-    private struct MainThreadEvent: @unchecked Sendable {
-        let value: NSEvent
-        init(_ value: NSEvent) { self.value = value }
-    }
-
-    private final class HitPassthroughView: NSView {
-        override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }
 

@@ -272,12 +272,16 @@ private struct ExpandedPetPreview: View {
                     .background(.thinMaterial, in: Circle())
             }
             .buttonStyle(.plain)
-            .help("Close expanded preview")
+            .help("Close expanded preview (Esc)")
             .accessibilityLabel("Close expanded preview")
             .keyboardShortcut(.cancelAction)
             .padding(14)
         }
         .padding(20)
+        .background {
+            PetWindowOutsideClickMonitor { dismiss() }
+        }
+        .onExitCommand { dismiss() }
     }
 }
 

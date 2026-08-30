@@ -236,6 +236,10 @@ struct PetOverlayTransparencyTests {
             contentsOf: sourceFile("Sources/Pets/PetSettingsSections.swift"),
             encoding: .utf8
         )
+        let outsideClickMonitor = try String(
+            contentsOf: sourceFile("Sources/Pets/PetWindowOutsideClickMonitor.swift"),
+            encoding: .utf8
+        )
 
         #expect(settings.contains("ToolbarItem(placement: .principal)"))
         #expect(settings.contains("if #available(macOS 26.0, *)"))
@@ -266,6 +270,11 @@ struct PetOverlayTransparencyTests {
         #expect(detail.contains("Image(systemName: \"arrow.down.left.and.arrow.up.right\")"))
         #expect(detail.contains(".help(\"Expand preview\")"))
         #expect(detail.contains(".sheet(isPresented: $isExpandedPreviewPresented)"))
+        #expect(detail.contains("PetWindowOutsideClickMonitor { dismiss() }"))
+        #expect(detail.contains(".onExitCommand { dismiss() }"))
+        #expect(detail.contains(".keyboardShortcut(.cancelAction)"))
+        #expect(outsideClickMonitor.contains("event.window !== monitoredWindow"))
+        #expect(outsideClickMonitor.contains("dismiss()"))
         #expect(!detail.contains("Button(\"Change Pet...\")"))
         #expect(configuration.contains("Button(\"Delete Pet\", role: .destructive)"))
         #expect(sections.contains("SettingSwitchRow(\"Hover bounce\""))
@@ -365,7 +374,8 @@ struct PetOverlayTransparencyTests {
             "Sources/Pets/PetSettingsViews.swift",
             "Sources/Pets/PetConfigurationViews.swift",
             "Sources/Pets/PetDetailViews.swift",
-            "Sources/Pets/PetPickerViews.swift"
+            "Sources/Pets/PetPickerViews.swift",
+            "Sources/Pets/PetWindowOutsideClickMonitor.swift"
         ].map { path in
             try String(contentsOf: sourceFile(path), encoding: .utf8)
         }.joined(separator: "\n")
@@ -382,12 +392,12 @@ struct PetOverlayTransparencyTests {
         #expect(source.contains("isPresented = false"))
         #expect(source.contains(".onExitCommand {"))
         #expect(source.contains(".keyboardShortcut(.cancelAction)"))
-        #expect(source.contains("PetPickerWindowClickMonitor"))
+        #expect(source.contains("PetWindowOutsideClickMonitor"))
         #expect(source.contains("NSEvent.addLocalMonitorForEvents"))
         #expect(source.contains("precondition(Thread.isMainThread)"))
-        #expect(source.contains("event.window === view.window"))
+        #expect(source.contains("event.window !== monitoredWindow"))
         #expect(source.contains("view.convert(event.locationInWindow, from: nil)"))
-        #expect(source.contains("!view.bounds.contains(pointInPicker)"))
+        #expect(source.contains("!view.bounds.contains(pointInMonitoredView)"))
         #expect(source.contains("NSEvent.removeMonitor(eventMonitor)"))
         #expect(source.contains("ForEach(PetCatalog.builtInCategories"))
     }
