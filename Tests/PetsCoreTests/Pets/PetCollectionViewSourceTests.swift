@@ -17,6 +17,8 @@ struct PetCollectionViewSourceTests {
         #expect(source.contains("PetSettingsDestination.allCases"))
         #expect(source.contains("case .chests: \"Chests\""))
         #expect(source.contains("case .collection: \"Collection\""))
+        #expect(source.contains("var keyboardShortcut: KeyEquivalent"))
+        #expect(source.contains(".keyboardShortcut(destination.keyboardShortcut, modifiers: .command)"))
     }
 
     @Test
@@ -35,8 +37,9 @@ struct PetCollectionViewSourceTests {
         #expect(conversion.contains("5 Common Keys → 1 Rare Key"))
         #expect(conversion.contains("5 Rare Keys → 1 Legendary Key"))
         #expect(collection.contains("struct PetCollectionView: View"))
-        #expect(collection.contains("Text(\"Pet Collection\")"))
+        #expect(collection.contains("Text(selectedCategory.displayName)"))
         #expect(collection.contains("ForEach(selectedCategory.petIDs"))
+        #expect(!collection.contains("Text(\"Pet Collection\")"))
         #expect(!collection.contains("ProgressView(value: store.collectionState.progressFraction)"))
         #expect(!collection.contains("PetChestCard"))
         #expect(!chest.contains("ForEach(selectedCategory.petIDs"))
@@ -155,13 +158,21 @@ struct PetCollectionViewSourceTests {
         let revealSource = try source("Sources/Pets/PetChestRevealView.swift")
 
         #expect(collectionSource.contains("@State private var selectedCategoryID"))
-        #expect(collectionSource.contains("Picker(\"Pet family\", selection: $selectedCategoryID)"))
-        #expect(collectionSource.contains("ForEach(PetCatalog.builtInCategories"))
+        #expect(collectionSource.contains("@State private var familySearch"))
+        #expect(collectionSource.contains("HSplitView"))
+        #expect(collectionSource.contains("TextField(\"Search\", text: $familySearch)"))
+        #expect(collectionSource.contains("filteredCategories"))
+        #expect(collectionSource.contains("PetFamilySidebarRow("))
+        #expect(collectionSource.contains(".frame(width: 220)"))
+        #expect(collectionSource.contains("count: 5"))
+        #expect(collectionSource.contains(".onChange(of: familySearch)"))
+        #expect(collectionSource.contains("ForEach(Array(filteredCategories.enumerated())"))
         #expect(collectionSource.contains("ForEach(selectedCategory.petIDs"))
         #expect(collectionSource.contains("\"Obtained\""))
         #expect(collectionSource.contains("\"Missing · \\(PetCatalog.rarity(for: petID).displayName)\""))
         #expect(revealSource.contains("PetCatalog.category(for: petID)?.displayName"))
-        #expect(!collectionSource.contains("Cloud Pet"))
+        #expect(!collectionSource.contains("Picker(\"Pet family\""))
+        #expect(!collectionSource.contains("Text(\"Pet Collection\")"))
         #expect(!collectionSource.contains("Label(\"Add\", systemImage: \"plus\")"))
     }
 

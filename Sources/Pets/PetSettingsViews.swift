@@ -21,6 +21,14 @@ enum PetSettingsDestination: Hashable, CaseIterable {
         case .collection: "book.closed"
         }
     }
+
+    var keyboardShortcut: KeyEquivalent {
+        switch self {
+        case .pets: "1"
+        case .chests: "2"
+        case .collection: "3"
+        }
+    }
 }
 
 struct PetSettingsView: View {
@@ -100,6 +108,7 @@ private struct PetSettingsDestinationBar: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .keyboardShortcut(destination.keyboardShortcut, modifiers: .command)
                 .disabled(isDisabled)
                 .accessibilityLabel(destination.title)
                 .accessibilityAddTraits(selection == destination ? .isSelected : [])
