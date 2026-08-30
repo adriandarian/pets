@@ -10,7 +10,7 @@
 
 ## Required fidelity surfaces
 
-- Navigation: Pets, Chests, and Collection are separate top-level destinations with full icon-and-text labels and a pink selection underline.
+- Navigation: Pets, Chests, and Collection are separate top-level destinations with full icon-and-text labels and a pink selection underline, with no shared rounded toolbar container.
 - Configuration structure: the pet editor has no vertical scroll surface at the default size.
 - Secondary navigation: Details, Tracking, and Look & Motion use bare icons at the default width; only the selected icon and short underline receive accent color.
 - Adaptive behavior: `ViewThatFits(in: .horizontal)` swaps those bare icons for icon-and-text labels when the settings pane has enough width.
@@ -26,12 +26,14 @@
 2. Pass 2 forced title-and-icon toolbar labels, hid the menu indicator, and tightened the style strip. It found one remaining P2 truncation: Collection and Chunky Pixels still compressed in the native toolbar and settings row.
 3. Pass 3 fixed intrinsic toolbar sizing and text-strip metrics. All destination labels and all four current style names are visible at 900 pixels wide.
 4. Pass 4 matched the selected horizontal proportions: a 260-point preview, source-aligned body inset, and a wider settings pane. The final side-by-side comparison has no remaining P0, P1, or P2 implementation issue. Pet species, visibility, slider value, and disabled style availability are persisted content-state differences.
+5. Pass 5 removed the macOS 26 shared Liquid Glass toolbar background with `sharedBackgroundVisibility(.hidden)`. The signed Pets Dev render confirms the destination icons, labels, and underline now sit directly on the toolbar with no containing box.
 
 ## Verification
 
 - The accessibility tree exposes all three top destinations, all three secondary configuration sections, Change Pet, the Name field, all four style options, Session preview, its 1 through 4 slider, and the trailing line count.
 - The isolated signed `dist/Pets Dev.app` bundle launches successfully without replacing the normal Pets app.
 - The affected source-contract suites pass 42 tests across three suites.
+- The toolbar-background regression suite passes 27 tests and the signed app was visually rechecked on macOS 26.
 - The canonical full project check passes 271 tests across 32 suites and a clean debug build.
 
 final result: passed

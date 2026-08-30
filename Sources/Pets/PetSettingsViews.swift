@@ -55,13 +55,24 @@ struct PetSettingsView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                PetSettingsDestinationBar(
-                    selection: $selectedDestination,
-                    isDisabled: isPetPickerPresented
-                )
+            if #available(macOS 26.0, *) {
+                ToolbarItem(placement: .principal) {
+                    destinationBar
+                }
+                .sharedBackgroundVisibility(.hidden)
+            } else {
+                ToolbarItem(placement: .principal) {
+                    destinationBar
+                }
             }
         }
+    }
+
+    private var destinationBar: some View {
+        PetSettingsDestinationBar(
+            selection: $selectedDestination,
+            isDisabled: isPetPickerPresented
+        )
     }
 }
 

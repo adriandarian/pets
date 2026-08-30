@@ -238,6 +238,8 @@ struct PetOverlayTransparencyTests {
         )
 
         #expect(settings.contains("ToolbarItem(placement: .principal)"))
+        #expect(settings.contains("if #available(macOS 26.0, *)"))
+        #expect(settings.contains(".sharedBackgroundVisibility(.hidden)"))
         #expect(settings.contains("PetSettingsDestination.allCases"))
         #expect(settings.contains("case chests"))
         #expect(settings.contains(".frame(minWidth: 900, minHeight: 620)"))
