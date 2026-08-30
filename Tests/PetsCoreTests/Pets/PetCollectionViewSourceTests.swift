@@ -4,44 +4,51 @@ import Testing
 @Suite
 struct PetCollectionViewSourceTests {
     @Test
-    func settingsExposeCollectionAlongsidePets() throws {
+    func settingsExposePetsChestsAndCollectionAsPeers() throws {
         let source = try source("Sources/Pets/PetSettingsViews.swift")
 
         #expect(!source.contains("case general"))
         #expect(!source.contains("Label(\"General\""))
         #expect(source.contains("case pets"))
+        #expect(source.contains("case chests"))
         #expect(source.contains("case collection"))
+        #expect(source.contains("PetChestView(store: store)"))
         #expect(source.contains("PetCollectionView(store: store)"))
-        #expect(source.contains("Label(\"Collection\", systemImage: \"square.grid.2x2\")"))
+        #expect(source.contains("PetSettingsDestination.allCases"))
+        #expect(source.contains("case .chests: \"Chests\""))
+        #expect(source.contains("case .collection: \"Collection\""))
     }
 
     @Test
-    func collectionHubContainsTheCoreRewardJourney() throws {
-        let source = try source("Sources/Pets/PetCollectionViews.swift")
+    func chestAndCollectionJourneysAreSeparated() throws {
+        let chest = try source("Sources/Pets/PetChestView.swift")
+        let components = try source("Sources/Pets/PetChestComponents.swift")
+        let conversion = try source("Sources/Pets/PetKeyConversionView.swift")
+        let collection = try source("Sources/Pets/PetCollectionViews.swift")
 
-        #expect(source.contains("struct PetCollectionView: View"))
-        #expect(!source.contains("Text(\"Pet Keys\")"))
-        #expect(!source.contains("Every 500 million combined tokens earns one Common Key."))
-        #expect(source.contains("ProgressView(value: store.collectionState.progressFraction)"))
-        #expect(source.contains("store.refreshRewardUsage()"))
-        #expect(source.contains("PetKeyConversionPopover"))
-        #expect(source.contains("Slider("))
-        #expect(source.contains("5 Common Keys → 1 Rare Key"))
-        #expect(source.contains("5 Rare Keys → 1 Legendary Key"))
-        #expect(source.contains("ForEach(PetRarity.allCases"))
-        #expect(source.contains("store.openChest(rarity)"))
-        #expect(source.contains("PetArtResourceLocator.url(for:"))
-        #expect(source.contains("\"Pet Collection\""))
-        #expect(source.contains("UnlockedPetSheet"))
+        #expect(chest.contains("ProgressView(value: store.collectionState.progressFraction)"))
+        #expect(chest.contains("store.refreshRewardUsage()"))
+        #expect(chest.contains("ForEach(PetRarity.allCases"))
+        #expect(chest.contains("UnlockedPetSheet"))
+        #expect(components.contains("store.openChest(rarity)"))
+        #expect(components.contains("PetArtResourceLocator.url(for:"))
+        #expect(conversion.contains("5 Common Keys → 1 Rare Key"))
+        #expect(conversion.contains("5 Rare Keys → 1 Legendary Key"))
+        #expect(collection.contains("struct PetCollectionView: View"))
+        #expect(collection.contains("Text(\"Pet Collection\")"))
+        #expect(collection.contains("ForEach(selectedCategory.petIDs"))
+        #expect(!collection.contains("ProgressView(value: store.collectionState.progressFraction)"))
+        #expect(!collection.contains("PetChestCard"))
+        #expect(!chest.contains("ForEach(selectedCategory.petIDs"))
     }
 
     @Test
     func rewardHeaderKeepsProgressInlineAndCompact() throws {
-        let source = try source("Sources/Pets/PetCollectionViews.swift")
+        let source = try source("Sources/Pets/PetChestView.swift")
         let rewardProgress = try sourceSlice(
             source,
             from: "private var rewardProgress",
-            to: "private var selectedCategory"
+            to: "private var unlockSheetBinding"
         )
 
         #expect(rewardProgress.contains("HStack(alignment: .center, spacing: 12)"))
@@ -52,19 +59,20 @@ struct PetCollectionViewSourceTests {
 
     @Test
     func keyBalancesAppearOnlyOnTheirChestCards() throws {
-        let source = try source("Sources/Pets/PetCollectionViews.swift")
+        let chestView = try source("Sources/Pets/PetChestView.swift")
+        let chestComponents = try source("Sources/Pets/PetChestComponents.swift")
         let rewardProgress = try sourceSlice(
-            source,
+            chestView,
             from: "private var rewardProgress",
-            to: "private var selectedCategory"
+            to: "private var unlockSheetBinding"
         )
         let chestCard = try sourceSlice(
-            source,
-            from: "private struct PetChestCard",
-            to: "private struct PetKeyConversionPopover"
+            chestComponents,
+            from: "struct PetChestCard",
+            to: "struct PetChestArtwork"
         )
 
-        #expect(!source.contains("PetKeyBalanceCard"))
+        #expect(!chestView.contains("PetKeyBalanceCard"))
         #expect(!rewardProgress.contains("ForEach(PetRarity.allCases"))
         #expect(chestCard.contains("Label(keyBalanceLabel, systemImage: \"key.fill\")"))
         #expect(chestCard.contains("matchingKeyCount == 1 ? \"Key\" : \"Keys\""))
@@ -72,10 +80,10 @@ struct PetCollectionViewSourceTests {
 
     @Test
     func chestButtonConvertsWhenItsMatchingKeyIsMissing() throws {
-        let source = try source("Sources/Pets/PetCollectionViews.swift")
+        let source = try source("Sources/Pets/PetChestComponents.swift")
         let chestCard = try sourceSlice(
             source,
-            from: "private struct PetChestCard",
+            from: "struct PetChestCard",
             to: "struct PetChestArtwork"
         )
 
@@ -88,12 +96,7 @@ struct PetCollectionViewSourceTests {
 
     @Test
     func conversionPopoverChoosesAnAffordableBulkAmount() throws {
-        let source = try source("Sources/Pets/PetCollectionViews.swift")
-        let popover = try sourceSlice(
-            source,
-            from: "private struct PetKeyConversionPopover",
-            to: "struct PetChestArtwork"
-        )
+        let popover = try source("Sources/Pets/PetKeyConversionView.swift")
 
         #expect(popover.contains("Slider("))
         #expect(popover.contains("in: 1...Double(maxConversionCount)"))
@@ -103,7 +106,7 @@ struct PetCollectionViewSourceTests {
 
     @Test
     func eachChestUsesTheMatchingRarityKey() throws {
-        let source = try source("Sources/Pets/PetCollectionViews.swift")
+        let source = try source("Sources/Pets/PetChestComponents.swift")
 
         #expect(source.contains("store.collectionState.keyInventory.count(for: rarity)"))
         #expect(source.contains("keyBalanceLabel"))
@@ -167,7 +170,7 @@ struct PetCollectionViewSourceTests {
 
     @Test
     func spritePickerShowsLockedSpeciesButCannotSelectThem() throws {
-        let source = try source("Sources/Pets/PetSettingsViews.swift")
+        let source = try source("Sources/Pets/PetPickerViews.swift")
 
         #expect(source.contains("isOwned: store.isPetOwned(petID)"))
         #expect(source.contains(".disabled(!isOwned)"))

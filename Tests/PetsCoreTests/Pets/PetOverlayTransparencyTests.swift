@@ -112,9 +112,14 @@ struct PetOverlayTransparencyTests {
     @Test
     func menuLinksToPetConfigurationAndFutureCreationSurface() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
-        let settingsSourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
-        let settingsSource = try String(contentsOf: settingsSourceURL, encoding: .utf8)
+        let settingsSource = try [
+            "Sources/Pets/PetSettingsViews.swift",
+            "Sources/Pets/PetDetailViews.swift",
+            "Sources/Pets/PetPickerViews.swift"
+        ].map { path in
+            try String(contentsOf: sourceFile(path), encoding: .utf8)
+        }.joined(separator: "\n")
 
         #expect(source.contains("Window(PetsWindowID.configurationTitle, id: PetsWindowID.configuration)"))
         #expect(source.contains("static let configurationTitle = \"Pets\""))
@@ -139,7 +144,7 @@ struct PetOverlayTransparencyTests {
         #expect(!settingsSource.contains("Open at Login"))
         #expect(!settingsSource.contains("case general"))
         #expect(!settingsSource.contains("Label(\"General\""))
-        #expect(settingsSource.contains("Text(PetCatalog.displayName(for: pet.petID))"))
+        #expect(settingsSource.contains("Text(PetCatalog.displayName(for: petID))"))
         #expect(settingsSource.contains("PetCatalog.builtInCategories"))
         #expect(!source.contains("PetConfigurationRow"))
     }
@@ -190,17 +195,19 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func menuAndOverlayExposeSessionContextLineCount() throws {
-        let appSourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
+        let appSourceURL = try sourceFile("Sources/Pets/PetDetailViews.swift")
         let overlaySourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let appSource = try String(contentsOf: appSourceURL, encoding: .utf8)
         let overlaySource = try String(contentsOf: overlaySourceURL, encoding: .utf8)
 
-        #expect(appSource.contains("Text(\"Context\")"))
+        #expect(appSource.contains("Text(\"Session preview\")"))
+        #expect(appSource.contains("Text(\"Lines shown in each session bubble\")"))
         #expect(appSource.contains("PetSessionContextLineCount.supportedRange"))
         #expect(appSource.contains("Slider("))
         #expect(appSource.contains("step: 1"))
         #expect(appSource.contains("contextLineCountSliderBinding"))
         #expect(appSource.contains("store.updateSelectedPetContextLineCount"))
+        #expect(!appSource.contains("Text(\"Context\")"))
         #expect(!appSource.contains("Picker(\"Context Lines\""))
         #expect(overlaySource.contains("contextLineCount: petInstance.sessionContextLineCount"))
         #expect(overlaySource.contains(".lineLimit(contextLineCount)"))
@@ -209,96 +216,96 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petSettingsUseNativeAdaptiveSidebarAndDetailLayout() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
-        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let settings = try String(
+            contentsOf: sourceFile("Sources/Pets/PetSettingsViews.swift"),
+            encoding: .utf8
+        )
+        let configuration = try String(
+            contentsOf: sourceFile("Sources/Pets/PetConfigurationViews.swift"),
+            encoding: .utf8
+        )
+        let sidebar = try String(
+            contentsOf: sourceFile("Sources/Pets/PetSidebarViews.swift"),
+            encoding: .utf8
+        )
+        let detail = try String(
+            contentsOf: sourceFile("Sources/Pets/PetDetailViews.swift"),
+            encoding: .utf8
+        )
+        let sections = try String(
+            contentsOf: sourceFile("Sources/Pets/PetSettingsSections.swift"),
+            encoding: .utf8
+        )
 
-        #expect(source.contains("ToolbarItem(placement: .principal)"))
-        #expect(source.contains("Picker(\"Settings Section\", selection: $selectedTab)"))
-        #expect(source.contains(".pickerStyle(.segmented)"))
-        #expect(source.contains("switch selectedTab"))
-        #expect(source.contains("private struct PetConfigurationPane: View"))
-        #expect(source.contains("NavigationSplitView {"))
-        #expect(!source.contains("NavigationSplitView(columnVisibility:"))
-        #expect(!source.contains("TabView(selection: $selectedTab)"))
-        #expect(source.contains("private struct PetSidebar: View"))
-        #expect(source.contains("List(selection: selectedPetBinding)"))
-        #expect(source.contains(".listStyle(.sidebar)"))
-        #expect(source.contains("PetSidebar("))
-        #expect(!source.contains("EdgeToEdgeSidebarBackground"))
-        #expect(!source.contains(".ignoresSafeArea(.container, edges: [.top, .leading, .bottom])"))
-        #expect(source.contains("private struct PetDetailPane: View"))
-        #expect(source.contains("ScrollView(.vertical, showsIndicators: false)"))
-        #expect(!source.contains("ScrollView {"))
-        #expect(source.contains("private struct FlatSettingsSection<Content: View>: View"))
-        #expect(source.contains("FlatSettingsSection(\"Pet Details\")"))
-        #expect(source.contains("FlatSettingsSection(\"Appearance\")"))
-        #expect(source.contains("FlatSettingsSection(\"Behavior\")"))
-        #expect(!source.contains("GroupBox {"))
-        #expect(source.contains("SpritePreviewGridBackground()"))
-        #expect(source.contains("Color(nsColor: .separatorColor)"))
-        #expect(source.contains("PetCatalog.category(for: pet.petID)?.displayName"))
-        #expect(source.contains("Text(PetCatalog.displayName(for: pet.petID))"))
-        #expect(source.contains("Menu {"))
-        #expect(source.contains("Button(\"Duplicate\")"))
-        #expect(source.contains("Button(\"Delete\", role: .destructive)"))
-        #expect(source.contains("Color(nsColor: .controlAccentColor)"))
-        #expect(source.contains("Button(\"Change Pet...\")"))
-        #expect(!source.contains("Change Sprite"))
-        #expect(source.contains("PetPickerSheet"))
-        #expect(source.contains("Button(\"Delete Pet\", role: .destructive)"))
-        #expect(source.contains("store.removePet(pet.id)"))
-        #expect(source.contains("EmptyPetCollectionView"))
-        #expect(!source.contains(".disabled(store.petInstances.count <= 1)"))
-        #expect(source.contains("SettingSwitchRow(\"Hover bounce\""))
-        #expect(source.contains(".toggleStyle(.switch)"))
-        #expect(source.contains("TextField(\"\", text: nameBinding)"))
-        #expect(!source.contains(".preferredColorScheme("))
-        #expect(!source.contains("SettingsDesignPalette"))
-        #expect(!source.contains("GradientSettingsToggleStyle"))
-        #expect(!source.contains("PetInstanceCarouselView"))
-        #expect(!source.contains("ScrollView(.horizontal"))
+        #expect(settings.contains("ToolbarItem(placement: .principal)"))
+        #expect(settings.contains("PetSettingsDestination.allCases"))
+        #expect(settings.contains("case chests"))
+        #expect(settings.contains(".frame(minWidth: 900, minHeight: 620)"))
+        #expect(configuration.contains("NavigationSplitView {"))
+        #expect(sidebar.contains("List(selection: selectedPetBinding)"))
+        #expect(sidebar.contains(".listStyle(.sidebar)"))
+        #expect(detail.contains("HStack(alignment: .top, spacing: 28)"))
+        #expect(!detail.contains("ScrollView(.vertical"))
+        #expect(detail.contains("ViewThatFits(in: .horizontal)"))
+        #expect(detail.contains("navigation(showsTitles: false)"))
+        #expect(detail.contains(".buttonStyle(.plain)"))
+        #expect(!detail.contains(".background(Color.accentColor"))
+        #expect(detail.contains("ScrollView(.horizontal, showsIndicators: false)"))
+        #expect(detail.contains("Text(\"Session preview\")"))
+        #expect(detail.contains("Text(\"Lines shown in each session bubble\")"))
+        #expect(detail.contains("Slider("))
+        #expect(detail.contains("Button(\"Respawn\")"))
+        #expect(detail.contains("Button(pet.isVisible ? \"Hide\" : \"Show\")"))
+        #expect(detail.contains("Button(\"Duplicate\")"))
+        #expect(detail.contains("Button(\"Delete\", role: .destructive)"))
+        #expect(detail.contains("Image(systemName: \"arrow.triangle.2.circlepath\")"))
+        #expect(detail.contains("Image(systemName: \"pawprint.fill\")"))
+        #expect(detail.contains(".help(\"Change Pet\")"))
+        #expect(!detail.contains("Button(\"Change Pet...\")"))
+        #expect(configuration.contains("Button(\"Delete Pet\", role: .destructive)"))
+        #expect(sections.contains("SettingSwitchRow(\"Hover bounce\""))
+        #expect(sections.contains(".toggleStyle(.switch)"))
     }
 
     @Test
     func petSidebarSelectionUsesStoreAsSourceOfTruth() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
-        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let sidebar = try String(
+            contentsOf: sourceFile("Sources/Pets/PetSidebarViews.swift"),
+            encoding: .utf8
+        )
+        let configuration = try String(
+            contentsOf: sourceFile("Sources/Pets/PetConfigurationViews.swift"),
+            encoding: .utf8
+        )
 
-        #expect(source.contains("get: { store.selectedPetInstanceID }"))
-        #expect(source.contains("store.selectPetInstance(selectedID)"))
-        #expect(source.contains("ForEach(store.petInstances)"))
-        #expect(source.contains("PetSidebarRow("))
-        #expect(source.contains("pet: pet,"))
-        #expect(source.contains("store.addPet()"))
-        #expect(!source.contains("carouselContentWidth"))
-        #expect(!source.contains("PetCarouselArrow"))
+        #expect(sidebar.contains("get: { store.selectedPetInstanceID }"))
+        #expect(sidebar.contains("store.selectPetInstance(selectedID)"))
+        #expect(sidebar.contains("ForEach(store.petInstances)"))
+        #expect(sidebar.contains("PetSidebarRow("))
+        #expect(sidebar.contains("pet: pet,"))
+        #expect(sidebar.contains("store.addPet()"))
+        #expect(configuration.contains("PetSidebar(store: store"))
+        #expect(!sidebar.contains("PetCarouselArrow"))
     }
 
     @Test
     func petSidebarContextMenuTargetsTheClickedPet() throws {
-        let settingsSourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
+        let sidebarSourceURL = try sourceFile("Sources/Pets/PetSidebarViews.swift")
+        let configurationSourceURL = try sourceFile("Sources/Pets/PetConfigurationViews.swift")
         let storeSourceURL = try sourceFile("Sources/Pets/PetStore.swift")
         let appSourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
-        let settingsSource = try String(contentsOf: settingsSourceURL, encoding: .utf8)
+        let sidebarSource = try String(contentsOf: sidebarSourceURL, encoding: .utf8)
+        let configurationSource = try String(contentsOf: configurationSourceURL, encoding: .utf8)
         let storeSource = try String(contentsOf: storeSourceURL, encoding: .utf8)
         let appSource = try String(contentsOf: appSourceURL, encoding: .utf8)
-        let sidebarStart = try #require(settingsSource.range(of: "private struct PetSidebar: View"))
-        let sidebarEnd = try #require(
-            settingsSource.range(
-                of: "private struct PetSidebarRow: View",
-                range: sidebarStart.upperBound..<settingsSource.endIndex
-            )
-        )
-        let sidebarSource = String(settingsSource[sidebarStart.lowerBound..<sidebarEnd.lowerBound])
-
         #expect(sidebarSource.contains(".contextMenu"))
         #expect(sidebarSource.contains("Button(pet.isVisible ? \"Hide\" : \"Show\")"))
         #expect(sidebarSource.contains("respawnPet(pet.id)"))
         #expect(sidebarSource.contains("store.duplicatePet(pet.id)"))
         #expect(sidebarSource.contains("store.removePet(pet.id)"))
         #expect(!sidebarSource.contains("deletePet"))
-        #expect(settingsSource.contains("@State private var petPendingDeletionID: PetInstance.ID?"))
-        #expect(settingsSource.contains("store.removePet(pet.id)"))
+        #expect(configurationSource.contains("@State private var petPendingDeletionID: PetInstance.ID?"))
+        #expect(configurationSource.contains("store.removePet(pet.id)"))
         #expect(storeSource.contains("func duplicatePet(_ id: PetInstance.ID)"))
         #expect(storeSource.contains("func removePet(_ id: PetInstance.ID)"))
         #expect(appSource.contains("func respawnPet(_ id: PetInstance.ID)"))
@@ -306,7 +313,7 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petSidebarContextMenuSupportsInlineRename() throws {
-        let settingsSourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
+        let settingsSourceURL = try sourceFile("Sources/Pets/PetSidebarViews.swift")
         let storeSourceURL = try sourceFile("Sources/Pets/PetStore.swift")
         let settingsSource = try String(contentsOf: settingsSourceURL, encoding: .utf8)
         let storeSource = try String(contentsOf: storeSourceURL, encoding: .utf8)
@@ -326,11 +333,10 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func petSidebarRowDoesNotShowVisibilitySubtext() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
+        let sourceURL = try sourceFile("Sources/Pets/PetSidebarViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
         let rowStart = try #require(source.range(of: "private struct PetSidebarRow: View"))
-        let rowEnd = try #require(source.range(of: "private struct PetDetailPane: View", range: rowStart.upperBound..<source.endIndex))
-        let rowSource = String(source[rowStart.lowerBound..<rowEnd.lowerBound])
+        let rowSource = String(source[rowStart.lowerBound..<source.endIndex])
 
         #expect(!rowSource.contains("\"Visible\""))
         #expect(!rowSource.contains("\"Hidden\""))
@@ -350,15 +356,21 @@ struct PetOverlayTransparencyTests {
 
     @Test
     func settingsOfferPetSelectionAndBackdropDismissal() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetSettingsViews.swift")
-        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let source = try [
+            "Sources/Pets/PetSettingsViews.swift",
+            "Sources/Pets/PetConfigurationViews.swift",
+            "Sources/Pets/PetDetailViews.swift",
+            "Sources/Pets/PetPickerViews.swift"
+        ].map { path in
+            try String(contentsOf: sourceFile(path), encoding: .utf8)
+        }.joined(separator: "\n")
 
         #expect(source.contains("PetPickerSheet"))
         #expect(source.contains("PetPickerCard"))
         #expect(source.contains("PetPickerOverlay"))
-        #expect(source.contains("Change Pet..."))
+        #expect(source.contains(".help(\"Change Pet\")"))
         #expect(source.contains("if isPetPickerPresented"))
-        #expect(source.contains(".disabled(isPetPickerPresented)"))
+        #expect(source.contains("isDisabled: isPetPickerPresented"))
         #expect(source.contains("Color.black.opacity(0.42)"))
         #expect(source.contains(".contentShape(Rectangle())"))
         #expect(source.contains(".onTapGesture {"))
@@ -426,7 +438,7 @@ struct PetOverlayTransparencyTests {
             encoding: .utf8
         )
         let settingsSource = try String(
-            contentsOf: sourceFile("Sources/Pets/PetSettingsViews.swift"),
+            contentsOf: sourceFile("Sources/Pets/PetSettingsSections.swift"),
             encoding: .utf8
         )
         let overlaySource = try String(
@@ -440,7 +452,7 @@ struct PetOverlayTransparencyTests {
         #expect(storeSource.contains("PetTrackerAssignments.setting("))
         #expect(storeSource.contains("func sessions(for petID: PetInstance.ID)"))
         #expect(storeSource.contains("PetSessionRouting.sessions(sessions, trackedBy: pet)"))
-        #expect(settingsSource.contains("FlatSettingsSection(\"Tracking\")"))
+        #expect(settingsSource.contains("struct PetTrackingSection: View"))
         #expect(settingsSource.contains("ForEach(Array(PetTrackingProvider.allCases.enumerated())"))
         #expect(settingsSource.contains("Tracked by "))
         #expect(settingsSource.contains(".disabled(isAssignedElsewhere)"))

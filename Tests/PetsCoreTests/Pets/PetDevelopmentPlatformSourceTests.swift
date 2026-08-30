@@ -20,27 +20,28 @@ struct PetDevelopmentPlatformSourceTests {
     func releaseBuildDoesNotCompileOrPackageDevelopmentMode() throws {
         let releaseScript = try source("scripts/build_release.sh")
         let store = try source("Sources/Pets/PetStore.swift")
-        let collectionView = try source("Sources/Pets/PetCollectionViews.swift")
+        let chestView = try source("Sources/Pets/PetChestView.swift")
         let app = try source("Sources/Pets/PetsApp.swift")
 
         #expect(!releaseScript.contains("PETS_DEVELOPMENT"))
         #expect(store.contains("#if PETS_DEVELOPMENT"))
-        #expect(collectionView.contains("#if PETS_DEVELOPMENT"))
-        #expect(collectionView.contains("PetDevelopmentControls"))
+        #expect(chestView.contains("#if PETS_DEVELOPMENT"))
+        #expect(chestView.contains("PetDevelopmentControls"))
         #expect(app.contains("Label(\"Pets Dev\", systemImage: \"hammer.circle\")"))
     }
 
     @Test
     func developmentCollectionSupportsUnlimitedKeysResetAndUnlockAll() throws {
         let store = try source("Sources/Pets/PetStore.swift")
-        let collectionView = try source("Sources/Pets/PetCollectionViews.swift")
+        let chestView = try source("Sources/Pets/PetChestView.swift")
+        let chestComponents = try source("Sources/Pets/PetChestComponents.swift")
 
         #expect(store.contains("PetKeyInventory(rarity: rarity, count: 1)"))
         #expect(store.contains("func resetCollectedPetsForDevelopment()"))
         #expect(store.contains("func unlockAllPetsForDevelopment()"))
-        #expect(collectionView.contains("Unlimited \\(rarity.displayName) Keys"))
-        #expect(collectionView.contains("Button(\"Unlock All Pets\")"))
-        #expect(collectionView.contains("Button(\"Reset Collected Pets\", role: .destructive)"))
+        #expect(chestComponents.contains("Unlimited \\(rarity.displayName) Keys"))
+        #expect(chestView.contains("Button(\"Unlock All Pets\")"))
+        #expect(chestView.contains("Button(\"Reset Collected Pets\", role: .destructive)"))
     }
 
     private func source(_ path: String) throws -> String {

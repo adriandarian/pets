@@ -27,7 +27,8 @@ struct PetsApp: App {
                 }
             )
         }
-        .windowResizability(.contentSize)
+        .defaultSize(width: 900, height: 620)
+        .windowResizability(.contentMinSize)
 
         MenuBarExtra {
             PetMenuView(

@@ -1,35 +1,37 @@
-# Pet Collection Family Browser design QA
+# Pet configuration and collection navigation design QA
 
 ## Evidence
 
-- Source visual truth: `.artifacts/pet-collection-family-browser/source.png`.
-- Rendered implementation: `.artifacts/pet-collection-family-browser/implementation.png`.
-- Combined comparison: `.artifacts/pet-collection-family-browser/comparison-source-vs-implementation.png`.
-- Viewport: 900 x 672 native app screenshot.
-- State: Cloud Pets family, persisted 3 of 5 ownership state.
+- Source visual truth: `.artifacts/pet-settings-no-scroll/source.png`.
+- Native implementation: `.artifacts/pet-settings-no-scroll/implementation.jpeg`.
+- Combined comparison: `.artifacts/pet-settings-no-scroll/comparison-source-vs-implementation.png`.
+- Viewport: 900 x 672 native Pets Dev window, corresponding to the 900 x 620 content minimum plus macOS toolbar.
+- Implementation state: persisted isolated Pets Dev state with Nova, two preview lines, and Chunky Pixels unavailable for that Whiskerkin sprite. The source visual uses Nimbus and one preview line.
 
 ## Required fidelity surfaces
 
-- Typography: Native system hierarchy remains consistent with the approved Collection screen and every status label is legible without truncation.
-- Spacing and layout rhythm: The family picker, progress text, and five-card Cloud Pets grid fit the 900 x 672 capture without horizontal clipping.
-- Colors and visual tokens: Obtained and missing states use semantic accent and secondary colors with sufficient dark-mode contrast.
-- Image quality and asset fidelity: Existing `PetSprite` assets remain sharp; obtained sprites stay full color and missing sprites remain recognizable when desaturated.
-- Copy and content: The selected family reads Cloud Pets, progress reads 3 of 5 obtained, and cards use only Obtained or Missing plus rarity.
-- Symbols and actions: Obtained cards use check symbols, missing cards use lock symbols, and the Collection cards contain no Add controls.
-
-## Interaction verification
-
-- Family picker is visible with Cloud Pets selected, and the selected category renders as one five-card family row.
-- Cumulus, Nimbus, and Snow Cloud are full-color and explicitly marked Obtained.
-- Cirrus and Lenticular are subdued and explicitly marked Missing · Rare.
-- Collection contains no Add action.
-- Unlock reveal is browse-only. The persisted state had 0 keys, so the reveal could not be reopened naturally; the passing `unlockRevealIsBrowseOnly()` source regression verifies that the reveal contains only Done.
-- Pets retains desktop-pet creation through Add Pet and lets the user choose Cumulus, Nimbus, or Snow Cloud while Cirrus and Lenticular remain visibly locked.
+- Navigation: Pets, Chests, and Collection are separate top-level destinations with full icon-and-text labels and a pink selection underline.
+- Configuration structure: the pet editor has no vertical scroll surface at the default size.
+- Secondary navigation: Details, Tracking, and Look & Motion use bare icons at the default width; only the selected icon and short underline receive accent color.
+- Adaptive behavior: `ViewThatFits(in: .horizontal)` swaps those bare icons for icon-and-text labels when the settings pane has enough width.
+- Pet actions: the header contains one ellipsis menu; Respawn, Hide or Show, Duplicate, and Delete are inside it.
+- Pet selection: Change Pet is a compact paw-and-arrows control inside the preview.
+- Style: styles are plain inline text choices with a selected underline inside a horizontal overflow container, so future styles do not force a dropdown or widen the pane.
+- Session preview: the ambiguous Context label is replaced by Session preview, helper copy, a discrete 1 through 4 slider, ticks, and a trailing singular or plural line count.
+- Collection separation: the chest screen contains reward progress and chest opening only; the dedicated Collection screen owns family browsing and the pet grid.
 
 ## Comparison history
 
-1. Evidence preflight: The supplied 1770 x 456 Retina reference and exact 900 x 672 Computer Use capture were opened and accepted. An initial composite command accidentally included the reference twice and produced a 4464 x 672 artifact; it was rejected before visual QA and replaced.
-2. Pass 1: The source and packaged implementation were inspected together in a 2694 x 672 native-pixel composite. No implementation P0/P1/P2 issue was found, but the Retina source appeared at twice the implementation's effective scale, a P2 comparison-quality issue that made direct spacing judgment weaker.
-3. Pass 2: The source was normalized once to its 885 x 228 logical size with a sharp Lanczos downsample and centered in a 900 x 672 pane beside the unscaled 900 x 672 implementation. The final 1824 x 672 PNG shows matching five-card order, sharp sprites, legible labels, correct lock/check semantics, explicit ownership status, no Add controls, and the approved native Cloud Pets picker. No P0/P1/P2 issue remains.
+1. Pass 1 confirmed the native two-column structure, bare section icons, in-preview Change Pet control, discrete slider, and no vertical configuration scroll. It found three platform-rendered P2 issues: toolbar labels collapsed to icons, Chunky Pixels was clipped, and the ellipsis menu showed an unwanted indicator.
+2. Pass 2 forced title-and-icon toolbar labels, hid the menu indicator, and tightened the style strip. It found one remaining P2 truncation: Collection and Chunky Pixels still compressed in the native toolbar and settings row.
+3. Pass 3 fixed intrinsic toolbar sizing and text-strip metrics. All destination labels and all four current style names are visible at 900 pixels wide.
+4. Pass 4 matched the selected horizontal proportions: a 260-point preview, source-aligned body inset, and a wider settings pane. The final side-by-side comparison has no remaining P0, P1, or P2 implementation issue. Pet species, visibility, slider value, and disabled style availability are persisted content-state differences.
+
+## Verification
+
+- The accessibility tree exposes all three top destinations, all three secondary configuration sections, Change Pet, the Name field, all four style options, Session preview, its 1 through 4 slider, and the trailing line count.
+- The isolated signed `dist/Pets Dev.app` bundle launches successfully without replacing the normal Pets app.
+- The affected source-contract suites pass 42 tests across three suites.
+- The canonical full project check passes 271 tests across 32 suites and a clean debug build.
 
 final result: passed
