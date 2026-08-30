@@ -60,18 +60,38 @@ struct PetCollectionViewSourceTests {
     @Test
     func rewardUsageRowsUseTheSharedOfficialProviderLogos() throws {
         let source = try source("Sources/Pets/PetChestComponents.swift")
-        let usageRow = try sourceSlice(
+        let usageSources = try sourceSlice(
             source,
-            from: "struct PetUsageSourceRow",
+            from: "struct PetUsageSourceStrip",
             to: "struct PetChestCard"
         )
 
-        #expect(usageRow.contains("PetTrackingProvider(rawValue: status.id)"))
-        #expect(usageRow.contains("PetProviderIcon("))
-        #expect(usageRow.contains("size: 20"))
-        #expect(!usageRow.contains("sourceIconName"))
-        #expect(!usageRow.contains("\"sparkles\""))
-        #expect(!usageRow.contains("\"chevron.left.forwardslash.chevron.right\""))
+        #expect(usageSources.contains("PetTrackingProvider(rawValue: status.id)"))
+        #expect(usageSources.contains("PetProviderIcon("))
+        #expect(usageSources.contains("size: 20"))
+        #expect(!usageSources.contains("sourceIconName"))
+        #expect(!usageSources.contains("\"sparkles\""))
+        #expect(!usageSources.contains("\"chevron.left.forwardslash.chevron.right\""))
+    }
+
+    @Test
+    func rewardUsageSummaryHasBoundedHeightAndMovesOverflowIntoAPopover() throws {
+        let chest = try source("Sources/Pets/PetChestView.swift")
+        let components = try source("Sources/Pets/PetChestComponents.swift")
+        let usageStrip = try sourceSlice(
+            components,
+            from: "struct PetUsageSourceStrip",
+            to: "private struct PetUsageSourceSummary"
+        )
+
+        #expect(chest.contains("PetUsageSourceStrip(statuses: store.usageSourceStatuses)"))
+        #expect(!chest.contains("ForEach(store.usageSourceStatuses)"))
+        #expect(usageStrip.contains("maximumVisibleSources = 3"))
+        #expect(usageStrip.contains("statuses.prefix(Self.maximumVisibleSources)"))
+        #expect(usageStrip.contains("statuses.dropFirst(Self.maximumVisibleSources)"))
+        #expect(usageStrip.contains(#"+\(overflowStatuses.count) more"#))
+        #expect(usageStrip.contains(".popover(isPresented: $isShowingOverflow"))
+        #expect(usageStrip.contains(".frame(minHeight: 38)"))
     }
 
     @Test

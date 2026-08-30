@@ -84,11 +84,7 @@ struct PetChestView: View {
 
             Divider()
 
-            VStack(spacing: 8) {
-                ForEach(store.usageSourceStatuses) { status in
-                    PetUsageSourceRow(status: status)
-                }
-            }
+            PetUsageSourceStrip(statuses: store.usageSourceStatuses)
 
             if let collectionError = store.collectionError {
                 Label(collectionError, systemImage: "exclamationmark.triangle.fill")

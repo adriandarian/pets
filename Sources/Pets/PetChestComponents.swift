@@ -2,22 +2,134 @@ import AppKit
 import PetsCore
 import SwiftUI
 
+struct PetUsageSourceStrip: View {
+    private static let maximumVisibleSources = 3
+
+    let statuses: [PetUsageSourceStatus]
+    @State private var isShowingOverflow = false
+
+    var body: some View {
+        HStack(spacing: 0) {
+            if visibleStatuses.isEmpty {
+                Text("No usage sources configured")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ForEach(Array(visibleStatuses.enumerated()), id: \.element.id) { index, status in
+                    if index > 0 {
+                        Divider()
+                            .frame(height: 34)
+                    }
+
+                    PetUsageSourceSummary(status: status)
+                        .frame(maxWidth: .infinity)
+                }
+
+                if !overflowStatuses.isEmpty {
+                    Divider()
+                        .frame(height: 34)
+
+                    Button {
+                        isShowingOverflow.toggle()
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text("+\(overflowStatuses.count) more")
+                            Image(systemName: "chevron.down")
+                                .font(.caption2.weight(.semibold))
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 10)
+                        .frame(minHeight: 34)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Show remaining usage sources")
+                    .accessibilityLabel("Show \(overflowStatuses.count) more usage sources")
+                    .popover(isPresented: $isShowingOverflow, arrowEdge: .bottom) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("More Usage Sources")
+                                .font(.headline)
+
+                            ForEach(overflowStatuses) { status in
+                                PetUsageSourceRow(status: status)
+                            }
+                        }
+                        .padding(14)
+                        .frame(width: 380)
+                    }
+                }
+            }
+        }
+        .frame(minHeight: 38)
+    }
+
+    private var visibleStatuses: [PetUsageSourceStatus] {
+        Array(statuses.prefix(Self.maximumVisibleSources))
+    }
+
+    private var overflowStatuses: [PetUsageSourceStatus] {
+        Array(statuses.dropFirst(Self.maximumVisibleSources))
+    }
+}
+
+private struct PetUsageSourceSummary: View {
+    let status: PetUsageSourceStatus
+
+    var body: some View {
+        HStack(spacing: 9) {
+            PetUsageSourceIcon(status: status)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(status.displayName)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
+
+                Text(detailText)
+                    .font(.caption2)
+                    .foregroundStyle(status.errorMessage == nil ? Color.secondary : Color.red)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 6)
+
+            Text(status.tokens.map(petCompactTokens) ?? "—")
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(status.tokens == nil ? .secondary : .primary)
+        }
+        .padding(.horizontal, 10)
+        .accessibilityElement(children: .combine)
+        .help(helpText)
+    }
+
+    private var detailText: String {
+        if status.errorMessage != nil {
+            return "Unavailable"
+        }
+        if let periodID = status.periodID {
+            return "Week of \(periodID)"
+        }
+        return "Not scanned"
+    }
+
+    private var helpText: String {
+        if let errorMessage = status.errorMessage {
+            return "\(status.displayName): \(errorMessage)"
+        }
+        if let periodID = status.periodID {
+            return "\(status.displayName), week of \(periodID)"
+        }
+        return "\(status.displayName) has not been scanned"
+    }
+}
+
 struct PetUsageSourceRow: View {
     let status: PetUsageSourceStatus
 
     var body: some View {
         HStack(spacing: 10) {
-            if let provider = PetTrackingProvider(rawValue: status.id) {
-                PetProviderIcon(
-                    provider: provider,
-                    isDisabled: status.errorMessage != nil,
-                    size: 20
-                )
-            } else {
-                Image(systemName: "terminal.fill")
-                    .foregroundStyle(status.errorMessage == nil ? Color.secondary : Color.red)
-                    .frame(width: 20, height: 20)
-            }
+            PetUsageSourceIcon(status: status)
             Text(status.displayName)
                 .font(.subheadline.weight(.medium))
             if let errorMessage = status.errorMessage {
@@ -36,6 +148,26 @@ struct PetUsageSourceRow: View {
                 .foregroundStyle(status.tokens == nil ? .secondary : .primary)
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+private struct PetUsageSourceIcon: View {
+    let status: PetUsageSourceStatus
+
+    var body: some View {
+        Group {
+            if let provider = PetTrackingProvider(rawValue: status.id) {
+                PetProviderIcon(
+                    provider: provider,
+                    isDisabled: status.errorMessage != nil,
+                    size: 20
+                )
+            } else {
+                Image(systemName: "terminal.fill")
+                    .foregroundStyle(status.errorMessage == nil ? Color.secondary : Color.red)
+                    .frame(width: 20, height: 20)
+            }
+        }
     }
 }
 
