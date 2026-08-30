@@ -105,11 +105,23 @@ struct PetBehaviorSection: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SettingSwitchRow("Hover bounce", isOn: animationBinding(\.isHoverBounceEnabled))
+            SettingSwitchRow(
+                "Hover bounce",
+                detail: "Adds a playful lift when your pointer moves over the pet.",
+                isOn: animationBinding(\.isHoverBounceEnabled)
+            )
             Divider()
-            SettingSwitchRow("Idle motion", isOn: animationBinding(\.isIdleMotionEnabled))
+            SettingSwitchRow(
+                "Idle motion",
+                detail: "Keeps the pet gently moving when no sessions are active.",
+                isOn: animationBinding(\.isIdleMotionEnabled)
+            )
             Divider()
-            SettingSwitchRow("Status moods", isOn: animationBinding(\.areStatusMoodsEnabled))
+            SettingSwitchRow(
+                "Status moods",
+                detail: "Reflects session activity through expressions and poses.",
+                isOn: animationBinding(\.areStatusMoodsEnabled)
+            )
             Divider()
             AnimationFrameRateRow(framesPerSecond: frameRateBinding)
         }
@@ -182,21 +194,32 @@ private struct AnimationFrameRateRow: View {
 
 private struct SettingSwitchRow: View {
     let title: String
+    let detail: String
     @Binding var isOn: Bool
 
-    init(_ title: String, isOn: Binding<Bool>) {
+    init(_ title: String, detail: String, isOn: Binding<Bool>) {
         self.title = title
+        self.detail = detail
         self._isOn = isOn
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            Text(title).lineLimit(1)
-            Spacer()
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .lineLimit(1)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 16)
             Toggle(title, isOn: $isOn)
                 .labelsHidden()
                 .toggleStyle(.switch)
+                .accessibilityLabel(title)
+                .accessibilityHint(detail)
         }
-        .padding(.vertical, 11)
+        .padding(.vertical, 12)
     }
 }

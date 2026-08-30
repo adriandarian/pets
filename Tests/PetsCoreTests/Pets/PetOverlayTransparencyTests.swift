@@ -277,7 +277,13 @@ struct PetOverlayTransparencyTests {
         #expect(outsideClickMonitor.contains("dismiss()"))
         #expect(!detail.contains("Button(\"Change Pet...\")"))
         #expect(configuration.contains("Button(\"Delete Pet\", role: .destructive)"))
-        #expect(sections.contains("SettingSwitchRow(\"Hover bounce\""))
+        #expect(sections.contains("\"Hover bounce\""))
+        #expect(sections.contains("Adds a playful lift when your pointer moves over the pet."))
+        #expect(sections.contains("Keeps the pet gently moving when no sessions are active."))
+        #expect(sections.contains("Reflects session activity through expressions and poses."))
+        #expect(sections.contains("Toggle(title, isOn: $isOn)"))
+        #expect(sections.contains(".accessibilityLabel(title)"))
+        #expect(sections.contains(".accessibilityHint(detail)"))
         #expect(sections.contains(".toggleStyle(.switch)"))
     }
 
