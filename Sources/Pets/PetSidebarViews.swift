@@ -39,14 +39,14 @@ struct PetSidebar: View {
 
             Divider()
 
-            HStack {
-                Button { store.addPet() } label: {
-                    Label("Add Pet", systemImage: "plus")
-                }
-                .buttonStyle(.borderless)
-                .help("Add Pet")
-                Spacer()
+            Button { store.addPet() } label: {
+                Label("Add Pet", systemImage: "plus")
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
+            .buttonStyle(.borderless)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+            .help("Add Pet")
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
         }

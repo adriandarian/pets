@@ -357,6 +357,24 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
+    func petSidebarCentersTheAddPetFooterButton() throws {
+        let sourceURL = try sourceFile("Sources/Pets/PetSidebarViews.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let footerStart = try #require(source.range(of: "Button { store.addPet() }"))
+        let footerEnd = try #require(
+            source.range(
+                of: "private var selectedPetBinding",
+                range: footerStart.upperBound..<source.endIndex
+            )
+        )
+        let footerSource = String(source[footerStart.lowerBound..<footerEnd.lowerBound])
+
+        #expect(footerSource.contains(".frame(maxWidth: .infinity, alignment: .center)"))
+        #expect(footerSource.contains(".frame(maxWidth: .infinity)"))
+        #expect(!footerSource.contains("Spacer()"))
+    }
+
+    @Test
     func petSpriteUsesOnlyGeneratedAssetRenderer() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetSprites.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
