@@ -21,6 +21,7 @@ struct PetsReleaseTests {
           "html_url": "https://github.com/adriandarian/pets/releases/tag/v0.2.0",
           "name": "Pets 0.2.0",
           "body": "New pets and fixes."
+          ,"assets": [{"name":"Pets-0.2.0.zip","browser_download_url":"https://github.com/adriandarian/pets/releases/download/v0.2.0/Pets-0.2.0.zip"}]
         }
         """#.utf8)
 
@@ -31,6 +32,7 @@ struct PetsReleaseTests {
 
         #expect(release?.displayVersion == "0.2.0")
         #expect(release?.releaseNotes == "New pets and fixes.")
+        #expect(release?.downloadURL?.absoluteString.contains("Pets-0.2.0.zip") == true)
         #expect(release?.htmlURL.absoluteString == "https://github.com/adriandarian/pets/releases/tag/v0.2.0")
     }
 

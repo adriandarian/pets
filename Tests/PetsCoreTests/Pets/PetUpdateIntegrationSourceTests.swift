@@ -5,7 +5,7 @@ import Testing
 @Suite
 struct PetUpdateIntegrationSourceTests {
     @Test
-    func appChecksGitHubAndOffersManualReleaseDownload() throws {
+    func appChecksGitHubAndInstallsReleaseDownload() throws {
         let controller = try source("Sources/Pets/PetUpdateController.swift")
         let app = try source("Sources/Pets/PetsApp.swift")
         let overlay = try source("Sources/Pets/PetOverlayView.swift")
@@ -13,14 +13,15 @@ struct PetUpdateIntegrationSourceTests {
 
         #expect(controller.contains("api.github.com/repos/adriandarian/pets/releases/latest"))
         #expect(controller.contains("PetsReleaseParser.newerRelease"))
-        #expect(controller.contains("NSWorkspace.shared.open"))
+        #expect(controller.contains("downloadAndScheduleReplacement"))
+        #expect(controller.contains("replace-and-relaunch.sh"))
         #expect(app.contains("updateController.start()"))
         #expect(app.contains("presentReleaseGiftIfNeeded()"))
         #expect(app.contains("A gift arrived with Pets"))
         #expect(overlay.contains("Check for Updates"))
         #expect(overlay.contains("updateController.openAvailableRelease()"))
         #expect(settings.contains("PetUpdateBanner"))
-        #expect(settings.contains("View on GitHub"))
+        #expect(settings.contains("Install Update"))
     }
 
     @Test

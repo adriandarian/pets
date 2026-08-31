@@ -58,7 +58,8 @@ struct PetSettingsView: View {
             if let release = updateController.availableRelease {
                 PetUpdateBanner(
                     release: release,
-                    openRelease: updateController.openAvailableRelease
+                    openRelease: updateController.openAvailableRelease,
+                    isInstalling: updateController.isInstalling
                 )
             }
         }
@@ -121,6 +122,7 @@ private struct PetSettingsDestinationBar: View {
 private struct PetUpdateBanner: View {
     let release: PetsRelease
     let openRelease: () -> Void
+    let isInstalling: Bool
 
     var body: some View {
         HStack(spacing: 12) {
@@ -131,15 +133,16 @@ private struct PetUpdateBanner: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Pets \(release.displayVersion) is available")
                     .font(.headline)
-                Text("Download it from GitHub and replace the app. Your pets and preferences will stay in place.")
+                Text("Download and install it automatically. Your pets and preferences will stay in place.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 16)
 
-            Button("View on GitHub", action: openRelease)
+            Button(isInstalling ? "Installing…" : "Install Update", action: openRelease)
                 .buttonStyle(.borderedProminent)
+                .disabled(isInstalling)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 10)

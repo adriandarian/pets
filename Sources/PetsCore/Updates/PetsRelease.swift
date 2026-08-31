@@ -44,6 +44,7 @@ public struct PetsRelease: Equatable, Sendable {
     public let version: PetsVersion
     public let displayVersion: String
     public let htmlURL: URL
+    public let downloadURL: URL?
     public let title: String?
     public let releaseNotes: String?
 
@@ -51,12 +52,14 @@ public struct PetsRelease: Equatable, Sendable {
         version: PetsVersion,
         displayVersion: String,
         htmlURL: URL,
+        downloadURL: URL? = nil,
         title: String?,
         releaseNotes: String?
     ) {
         self.version = version
         self.displayVersion = displayVersion
         self.htmlURL = htmlURL
+        self.downloadURL = downloadURL
         self.title = title
         self.releaseNotes = releaseNotes
     }
@@ -107,6 +110,11 @@ public enum PetsReleaseParser {
             version: releaseVersion,
             displayVersion: displayVersion,
             htmlURL: url,
+            downloadURL: (response.assets ?? []).compactMap { (asset: GitHubReleaseAsset) -> URL? in
+                guard asset.name.lowercased().hasSuffix(".zip"),
+                      let url = URL(string: asset.browserDownloadURL), url.scheme == "https", url.host != nil else { return nil }
+                return url
+            }.first,
             title: response.name?.nilIfEmpty,
             releaseNotes: response.body?.nilIfEmpty
         )
@@ -118,12 +126,23 @@ private struct GitHubReleaseResponse: Decodable {
     let htmlURL: String
     let name: String?
     let body: String?
+    let assets: [GitHubReleaseAsset]?
 
     private enum CodingKeys: String, CodingKey {
         case tagName = "tag_name"
         case htmlURL = "html_url"
         case name
         case body
+        case assets
+    }
+}
+
+private struct GitHubReleaseAsset: Decodable {
+    let name: String
+    let browserDownloadURL: String
+    private enum CodingKeys: String, CodingKey {
+        case name
+        case browserDownloadURL = "browser_download_url"
     }
 }
 
