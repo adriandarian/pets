@@ -36,6 +36,17 @@ public struct CodexSessionScanner: Sendable {
             .compactMap { fileURL in
                 try parseSession(at: fileURL, now: currentDate)
             }
+            .reduce(into: [String: HarnessSession]()) { uniqueSessions, session in
+                guard let existing = uniqueSessions[session.sessionID] else {
+                    uniqueSessions[session.sessionID] = session
+                    return
+                }
+
+                if (session.updatedAt ?? .distantPast) > (existing.updatedAt ?? .distantPast) {
+                    uniqueSessions[session.sessionID] = session
+                }
+            }
+            .values
             .sorted { ($0.updatedAt ?? .distantPast) > ($1.updatedAt ?? .distantPast) }
             .prefix(maximumSessionCount)
             .map { $0 }

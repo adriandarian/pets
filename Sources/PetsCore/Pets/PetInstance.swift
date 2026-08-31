@@ -147,6 +147,12 @@ public struct PetInstance: Identifiable, Equatable, Codable, Sendable {
     }
 }
 
+public enum PetVisibilityLifecycle {
+    public static func allPetsAreHidden(_ petInstances: [PetInstance]) -> Bool {
+        !petInstances.isEmpty && !petInstances.contains(where: \.isVisible)
+    }
+}
+
 public struct PetAnimationSettings: Equatable, Codable, Sendable {
     public var isHoverBounceEnabled: Bool
     public var isIdleMotionEnabled: Bool

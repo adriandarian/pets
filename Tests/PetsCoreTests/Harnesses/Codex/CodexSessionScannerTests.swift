@@ -98,6 +98,42 @@ struct CodexSessionScannerTests {
     }
 
     @Test
+    func scannerDeduplicatesFilesForTheSameCodexSessionUsingTheNewestRecord() throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        try writeSession(
+            root: root,
+            name: "older-copy.jsonl",
+            lines: [
+                sessionMeta(id: "same-task", source: "vscode", threadSource: "user"),
+                userMessage("Older copy"),
+                taskEvent("task_started", timestamp: "2026-07-20T20:28:00Z"),
+            ]
+        )
+        try writeSession(
+            root: root,
+            name: "newer-copy.jsonl",
+            lines: [
+                sessionMeta(id: "same-task", source: "vscode", threadSource: "user"),
+                userMessage("Newer copy"),
+                taskEvent("task_complete", timestamp: "2026-07-20T20:29:00Z"),
+            ]
+        )
+
+        let sessions = try CodexSessionScanner(
+            roots: [root],
+            recentSessionInterval: 60 * 60,
+            now: { now }
+        ).scan()
+
+        #expect(sessions.count == 1)
+        #expect(sessions.first?.sessionID == "same-task")
+        #expect(sessions.first?.chatPreview == "Newer copy")
+        #expect(sessions.first?.status == .idle)
+    }
+
+    @Test
     func defaultLayoutOnlyWalksDateFoldersThatCanContainRecentSessions() throws {
         let codexHome = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: codexHome) }
