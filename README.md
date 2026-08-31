@@ -41,7 +41,9 @@ Claude Code, Codex, and GitHub Copilot have transcript-aware adapters that can s
 
 Pets also tracks real local app and CLI activity for Cursor, Ollama, Gemini, Antigravity, Hermes, T3 Code, Open Design, Kiro, Zed, Windsurf, opencode, pi, NotebookLM, LM Studio, and Stitch. NotebookLM and Stitch are detected when their installed web apps are running. Ollama's always-on `ollama serve` helper is ignored; an interactive `ollama run` command or active Ollama window is tracked instead.
 
-These additional activity trackers do not claim account quota or token totals and do not contribute to Collection key progress. They report only activity visible on this Mac.
+Every tracker enabled for a pet also becomes a Collection reward source. Claude Code, Codex, and GitHub Copilot use trustworthy local token totals, with every 500 million newly observed tokens awarding one Common Key. The other trackers never invent token counts: they contribute verified local activity instead, with eight combined active hours awarding one Common Key.
+
+Activity is credited only while Pets is running and repeatedly observes an enabled provider as active. Foreground local apps, interactive CLI processes, and detected installed web-app processes qualify; background-only helpers such as `ollama serve` do not. Long gaps between scans are capped so sleep or downtime cannot mint keys.
 
 ## What It Reads
 
