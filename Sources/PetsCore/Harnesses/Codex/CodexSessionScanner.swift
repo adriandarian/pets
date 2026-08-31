@@ -169,9 +169,6 @@ public struct CodexSessionScanner: Sendable {
         let title = rawTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else { return "Untitled Codex task" }
 
-        // Codex can persist the complete prompt as a provisional title. In
-        // that case, use the request section instead of the file metadata
-        // heading that precedes it.
         if requestBody(in: title) != nil {
             return fallbackTitle(from: title)
         }
@@ -187,9 +184,6 @@ public struct CodexSessionScanner: Sendable {
     private static func displayPreview(from rawMessage: String) -> String {
         var preview = rawMessage.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Attachment prompts include a machine-generated Markdown envelope
-        // before the user's actual message. That metadata is useful to Codex,
-        // but it makes a poor session description in the pet overlay.
         if let requestBody = requestBody(in: preview) {
             preview = requestBody
         }
@@ -208,9 +202,6 @@ public struct CodexSessionScanner: Sendable {
               !title.isEmpty
         else { return "Untitled Codex task" }
 
-        // The app prepends attachment metadata as Markdown headings. Always
-        // jump straight to the user's request when that section exists so a
-        // filename heading can never become the session title.
         if let requestBody = requestBody(in: title) {
             title = requestBody
         } else if title.range(of: #"^#{1,6}\s+Files mentioned by the user:\s*"#, options: .regularExpression) != nil {

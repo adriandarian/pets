@@ -195,9 +195,7 @@ struct UnlockedPetSheet: View {
                 petRevealAmount = 1
             }
         } catch is CancellationError {
-            // The sheet or its parent window was dismissed before the reveal completed.
         } catch {
-            // No other error is expected from the animation clock.
         }
     }
 }

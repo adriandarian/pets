@@ -17,8 +17,6 @@ RESOURCE_BUNDLE_NAME="${APP_NAME}_PetsCore.bundle"
 RESOURCE_BUNDLE_SOURCE=".build/release/${RESOURCE_BUNDLE_NAME}"
 RESOURCE_BUNDLE_DESTINATION="${BUNDLE_PATH}/Contents/Resources/${RESOURCE_BUNDLE_NAME}"
 ARCHIVE_PATH="dist/${APP_NAME}-${VERSION}.zip"
-# Use the unambiguous SHA-1 identity because two login-keychain certificates
-# currently have the same display name.
 RELEASE_SIGNING_IDENTITY="C27D9B4458FF4C055F91B09861E39A3FB90771AB"
 
 if [[ ! "${VERSION}" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then

@@ -582,8 +582,6 @@ struct PetArtResourceTests {
         let pixels = substantiveAlphaPixels(in: image)
         guard let bounds = alphaBounds(in: image) else { return nil }
 
-        // Relative crops remain stable as the character rises and its silhouette breathes:
-        // the top 40% isolates the cap assembly, while the bottom 28% isolates the base.
         let upperLimit = bounds.minY + bounds.height * 0.40
         let lowerLimit = bounds.maxY - bounds.height * 0.28
         let upper = pixels.filter { CGFloat($0.y) < upperLimit }
@@ -611,9 +609,6 @@ struct PetArtResourceTests {
         var visited = [Bool](repeating: false, count: occupied.count)
         var substantivePixels: [(x: Int, y: Int)] = []
 
-        // Ignore only tiny extraction noise while retaining detached sprite details such as
-        // raindrops. Sixteen occupied pixels is above Lenticular's 8-pixel speck and far
-        // below Nimbus's smallest legitimate detached weather component (223 pixels).
         let minimumSubstantiveComponentPixels = 16
 
         for start in occupied.indices where occupied[start] && !visited[start] {
