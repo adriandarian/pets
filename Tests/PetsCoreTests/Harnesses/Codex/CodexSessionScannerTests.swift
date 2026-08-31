@@ -230,6 +230,32 @@ struct CodexSessionScannerTests {
         #expect(sessions.first?.chatPreview == prompt)
     }
 
+    @Test
+    func scannerRemovesPromptMetadataHeadingFromStoredProvisionalTitle() throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let databaseURL = root.appending(path: "state_5.sqlite")
+        let prompt = "# Files mentioned by the user:"
+        try writeStateDatabase(
+            at: databaseURL,
+            threads: ["metadata-title": (title: prompt, firstUserMessage: "different prompt")]
+        )
+        try writeSession(
+            root: root,
+            name: "metadata-title.jsonl",
+            lines: [
+                sessionMeta(id: "metadata-title", source: "vscode", threadSource: "user"),
+                userMessage(prompt),
+            ]
+        )
+
+        let sessions = try CodexSessionScanner(
+            roots: [root], recentSessionInterval: 60 * 60, now: { now }, stateDatabaseURL: databaseURL
+        ).scan()
+
+        #expect(sessions.first?.title == "Files mentioned by the user:")
+    }
+
     private func sessionMeta(id: String, source: String, threadSource: String) -> String {
         #"{"timestamp":"2026-07-20T20:28:00Z","type":"session_meta","payload":{"id":"\#(id)","cwd":"/tmp/project","source":"\#(source)","thread_source":"\#(threadSource)"}}"#
     }

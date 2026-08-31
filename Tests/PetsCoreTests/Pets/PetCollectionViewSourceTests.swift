@@ -60,6 +60,8 @@ struct PetCollectionViewSourceTests {
         #expect(rewardProgress.contains("ProgressView(value: store.collectionState.activityProgressFraction)"))
         #expect(rewardProgress.contains("hasTrackedActivityRewardSources"))
         #expect(rewardProgress.contains("/ 8h tracked activity"))
+        #expect(rewardProgress.contains(".tint(Color(nsColor: .controlAccentColor))"))
+        #expect(!rewardProgress.contains(".tint(Color.accentColor.opacity"))
         #expect(rewardProgress.contains(".padding(14)"))
     }
 

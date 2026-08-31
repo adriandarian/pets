@@ -92,7 +92,7 @@ struct PetChestView: View {
                     VStack(alignment: .leading, spacing: 5) {
                         ProgressView(value: store.collectionState.activityProgressFraction)
                             .progressViewStyle(.linear)
-                            .tint(Color.accentColor.opacity(0.8))
+                            .tint(Color(nsColor: .controlAccentColor))
                             .accessibilityLabel("Tracked activity progress to the next pet key")
                             .accessibilityValue(activityProgressAccessibilityValue)
 

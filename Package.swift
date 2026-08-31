@@ -26,6 +26,10 @@ let package = Package(
         .testTarget(
             name: "PetsCoreTests",
             dependencies: ["PetsCore"]
+        ),
+        .testTarget(
+            name: "PetsInteractionTests",
+            dependencies: ["Pets"]
         )
     ]
 )

@@ -7,8 +7,12 @@ private enum PetOverlayMetrics {
     static let chatBubbleScale: CGFloat = 0.86
     static let petScale: CGFloat = 0.72
     static let sessionBubbleMaxWidth: CGFloat = 500
+    static let sessionBubbleResizeMaxWidth: CGFloat = 680
     static let visibleSessionRowLimit = 4
     static let scrollableSessionStackMaxHeight: CGFloat = 410
+    static let scrollableSessionStackResizeMaxHeight: CGFloat = 500
+    static let sessionBubbleMinWidth: CGFloat = 280
+    static let sessionBubbleMinHeight: CGFloat = 120
     static let scrollableSessionContentBleed: CGFloat = 12
     static let spriteSize: CGFloat = 132
     static let chatControlSize: CGFloat = 50
@@ -49,6 +53,11 @@ struct PetOverlayView: View {
     let openConfiguration: () -> Void
     @State private var areChatsExpanded = true
     @State private var isPetHovered = false
+    @State private var chatWidth: CGFloat = PetOverlayMetrics.sessionBubbleMaxWidth
+    @State private var chatHeight: CGFloat = PetOverlayMetrics.scrollableSessionStackMaxHeight
+    @State private var resizeStartWidth: CGFloat?
+    @State private var resizeStartHeight: CGFloat?
+    @State private var isChatHovered = false
 
     var body: some View {
         Group {
@@ -61,14 +70,22 @@ struct PetOverlayView: View {
                             SessionBubble(
                                 store: store,
                                 petInstanceID: petInstance.id,
-                                contextLineCount: petInstance.sessionContextLineCount
+                                contextLineCount: petInstance.sessionContextLineCount,
+                                maxHeight: chatHeight
                             )
-                                .frame(maxWidth: PetOverlayMetrics.sessionBubbleMaxWidth)
+                                .frame(width: chatWidth)
                                 .scaleEffect(PetOverlayMetrics.chatBubbleScale, anchor: scaleAnchor)
                                 .frame(
-                                    width: PetOverlayMetrics.sessionBubbleMaxWidth * PetOverlayMetrics.chatBubbleScale,
+                                    width: chatWidth * PetOverlayMetrics.chatBubbleScale,
                                     alignment: frameAlignment
                                 )
+                                .overlay {
+                                    if hasResizableSessions {
+                                        chatResizeHandles
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                                .onHover { isChatHovered = $0 }
                                 .transition(.opacity.combined(with: .move(edge: .bottom)))
                         }
 
@@ -137,6 +154,7 @@ struct PetOverlayView: View {
                                     }
                                     .disabled(updateController.isChecking)
                                 }
+                                .overlay(WindowDragSurface())
 
                             ChatCollapseButton(
                                 isExpanded: areChatsExpanded,
@@ -206,12 +224,79 @@ struct PetOverlayView: View {
     private var panelEdge: Edge.Set {
         isLeadingPlacement ? .leading : .trailing
     }
+
+    private var hasResizableSessions: Bool {
+        !store.visibleSessions(for: petInstanceID).isEmpty
+    }
+
+    private var shouldShowResizeHandles: Bool {
+        isChatHovered || resizeStartWidth != nil || resizeStartHeight != nil
+    }
+
+    private var chatResizeHandles: some View {
+        ZStack {
+            ChatResizeControl(
+                axis: .horizontal,
+                isVisible: shouldShowResizeHandles,
+                onChanged: resizeWidth,
+                onEnded: endWidthResize
+            )
+                .padding(.bottom, 8)
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity,
+                    alignment: isLeadingPlacement ? .bottomTrailing : .bottomLeading
+                )
+
+            ChatResizeControl(
+                axis: .vertical,
+                isVisible: shouldShowResizeHandles,
+                onChanged: resizeHeight,
+                onEnded: endHeightResize
+            )
+                .frame(maxHeight: .infinity, alignment: .bottom)
+        }
+    }
+
+    private func resizeWidth(_ translation: CGSize) {
+        if resizeStartWidth == nil { resizeStartWidth = chatWidth }
+        let direction: CGFloat = isLeadingPlacement ? 1 : -1
+        let startWidth = resizeStartWidth ?? chatWidth
+        chatWidth = min(
+            PetOverlayMetrics.sessionBubbleResizeMaxWidth,
+            max(
+                PetOverlayMetrics.sessionBubbleMinWidth,
+                startWidth + translation.width * direction / PetOverlayMetrics.chatBubbleScale
+            )
+        )
+    }
+
+    private func endWidthResize() {
+        resizeStartWidth = nil
+    }
+
+    private func resizeHeight(_ translation: CGSize) {
+        if resizeStartHeight == nil { resizeStartHeight = chatHeight }
+        let startHeight = resizeStartHeight ?? chatHeight
+        chatHeight = min(
+            PetOverlayMetrics.scrollableSessionStackResizeMaxHeight,
+            max(
+                PetOverlayMetrics.sessionBubbleMinHeight,
+                startHeight + translation.height / PetOverlayMetrics.chatBubbleScale
+            )
+        )
+    }
+
+    private func endHeightResize() {
+        resizeStartHeight = nil
+    }
 }
 
 private struct SessionBubble: View {
     @ObservedObject var store: PetStore
     let petInstanceID: PetInstance.ID
     let contextLineCount: Int
+    let maxHeight: CGFloat
 
     var body: some View {
         if let lastError = store.lastError {
@@ -243,6 +328,7 @@ private struct SessionBubble: View {
                 sessions: store.visibleSessions(for: petInstanceID),
                 visibleRowLimit: PetOverlayMetrics.visibleSessionRowLimit,
                 contextLineCount: contextLineCount,
+                maxHeight: maxHeight,
                 onActivate: { session in
                     store.activateSession(session)
                 },
@@ -348,6 +434,7 @@ private struct SessionCardStack: View {
     let sessions: [HarnessSession]
     let visibleRowLimit: Int
     let contextLineCount: Int
+    let maxHeight: CGFloat
     let onActivate: (HarnessSession) -> Void
     let onReply: (HarnessSession, String) -> Void
     let onDismiss: (HarnessSession) -> Void
@@ -367,7 +454,7 @@ private struct SessionCardStack: View {
                             .background(HiddenAppKitScrollIndicators())
                     }
                     .coordinateSpace(name: Self.scrollCoordinateSpace)
-                    .frame(maxHeight: PetOverlayMetrics.scrollableSessionStackMaxHeight, alignment: .top)
+                    .frame(maxHeight: maxHeight, alignment: .top)
                     .contentShape(Rectangle())
                     .background(viewportHeightReader)
                     .overlay(SessionScrollWheelCapture())
@@ -445,6 +532,143 @@ private struct SessionCardStack: View {
                 value: [id: proxy.frame(in: .named(Self.scrollCoordinateSpace)).minY]
             )
         }
+    }
+}
+
+private struct ChatResizeHandle: View {
+    enum Axis { case horizontal, vertical }
+    let axis: Axis
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(Color.white.opacity(0.32))
+            .frame(width: axis == .horizontal ? 5 : 34, height: axis == .horizontal ? 34 : 5)
+            .padding(axis == .horizontal ? .horizontal : .vertical, 5)
+            .contentShape(Rectangle())
+            .help(axis == .horizontal ? "Drag to resize chat width" : "Drag up or down to resize chat height")
+    }
+}
+
+private struct ChatResizeControl: View {
+    let axis: ChatResizeHandle.Axis
+    let isVisible: Bool
+    let onChanged: (CGSize) -> Void
+    let onEnded: () -> Void
+
+    var body: some View {
+        ZStack {
+            ChatResizeHandle(axis: axis)
+                .opacity(isVisible ? 1 : 0)
+                .allowsHitTesting(false)
+
+            ScreenCoordinateDragSurface(
+                onChanged: onChanged,
+                onEnded: onEnded
+            )
+        }
+        .frame(
+            width: axis == .horizontal ? 15 : 34,
+            height: axis == .horizontal ? 34 : 15
+        )
+        .animation(.easeOut(duration: 0.12), value: isVisible)
+    }
+}
+
+private struct WindowDragSurface: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        PetWindowDragView(frame: .zero)
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+final class PetWindowDragView: NSView {
+    var eventTypeProvider: () -> NSEvent.EventType? = { NSApp.currentEvent?.type }
+
+    override var isOpaque: Bool { false }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard bounds.contains(point), eventTypeProvider() == .leftMouseDown else {
+            return nil
+        }
+        return self
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        window?.performDrag(with: event)
+    }
+}
+
+private struct ScreenCoordinateDragSurface: NSViewRepresentable {
+    let onChanged: (CGSize) -> Void
+    let onEnded: () -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = PetScreenCoordinateDragView(frame: .zero)
+        view.onChanged = onChanged
+        view.onEnded = onEnded
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        guard let view = nsView as? PetScreenCoordinateDragView else { return }
+        view.onChanged = onChanged
+        view.onEnded = onEnded
+    }
+}
+
+final class PetScreenCoordinateDragView: NSView {
+    var onChanged: ((CGSize) -> Void)?
+    var onEnded: (() -> Void)?
+    var eventTypeProvider: () -> NSEvent.EventType? = { NSApp.currentEvent?.type }
+    private var startLocation: NSPoint?
+
+    override var isOpaque: Bool { false }
+
+    override var mouseDownCanMoveWindow: Bool { false }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard bounds.contains(point), eventTypeProvider() == .leftMouseDown else {
+            return nil
+        }
+        return self
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        beginDrag(at: NSEvent.mouseLocation)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        continueDrag(to: NSEvent.mouseLocation)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        endDrag()
+    }
+
+    func beginDrag(at location: NSPoint) {
+        startLocation = location
+    }
+
+    func continueDrag(to location: NSPoint) {
+        guard let startLocation else { return }
+        onChanged?(CGSize(
+            width: location.x - startLocation.x,
+            height: location.y - startLocation.y
+        ))
+    }
+
+    func endDrag() {
+        startLocation = nil
+        onEnded?()
     }
 }
 

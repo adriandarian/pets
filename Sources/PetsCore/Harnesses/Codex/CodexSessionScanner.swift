@@ -57,7 +57,7 @@ public struct CodexSessionScanner: Sendable {
             guard let storedTitle = storedTitles[session.sessionID] else { return session }
             return Self.replacingTitle(
                 in: session,
-                with: Self.clamped(storedTitle, limit: 80)
+                with: Self.displayTitle(from: storedTitle)
             )
         }
     }
@@ -163,6 +163,25 @@ public struct CodexSessionScanner: Sendable {
             .joined(separator: " ")
         guard cleaned.count > limit else { return cleaned }
         return String(cleaned.prefix(max(1, limit - 1))) + "…"
+    }
+
+    private static func displayTitle(from rawTitle: String) -> String {
+        let title = rawTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return "Untitled Codex task" }
+
+        // Codex can persist the complete prompt as a provisional title. In
+        // that case, use the request section instead of the file metadata
+        // heading that precedes it.
+        if title.range(of: "## My request for Codex:", options: [.caseInsensitive]) != nil {
+            return fallbackTitle(from: title)
+        }
+
+        let withoutMarkdownHeading = title.replacingOccurrences(
+            of: #"^#{1,6}\s+"#,
+            with: "",
+            options: .regularExpression
+        )
+        return clamped(withoutMarkdownHeading, limit: 80)
     }
 
     private static func fallbackTitle(from firstUserMessage: String?) -> String {
