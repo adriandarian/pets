@@ -5,48 +5,301 @@ import SwiftUI
 struct PetTrackingSection: View {
     @ObservedObject var store: PetStore
     let pet: PetInstance
+    @State private var searchText = ""
+    @State private var selectedFilter = TrackerFilter.all
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(PetTrackingProvider.allCases.enumerated()), id: \.element) { index, provider in
-                trackerRow(provider)
-                if index < PetTrackingProvider.allCases.count - 1 { Divider() }
+        VStack(alignment: .leading, spacing: 14) {
+            trackerSummary
+            trackerSearchField
+            trackerFilters
+
+            if filteredProviders.isEmpty {
+                emptyState
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: trackerColumns, alignment: .leading, spacing: 10) {
+                        ForEach(filteredProviders, id: \.self) { provider in
+                            trackerTile(provider)
+                        }
+                    }
+                    .padding(.trailing, 4)
+                    .padding(.bottom, 2)
+                }
+                .scrollIndicators(.visible)
             }
 
-            Text("Each provider can be tracked by one pet. A pet can track any combination—or nothing at all.")
+            Text("One pet per tracker. Chat status is available for Claude Code, Codex, and Copilot.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(.top, 12)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onChange(of: pet.id) { _, _ in
+            searchText = ""
+            selectedFilter = .all
         }
     }
 
-    private func trackerRow(_ provider: PetTrackingProvider) -> some View {
+    private var trackerSummary: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text("Trackers")
+                .font(.headline)
+            Text("\(activeProviderCount) active · \(availableProviderCount) available")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .contentTransition(.numericText())
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var trackerSearchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+
+            TextField("Search trackers", text: $searchText)
+                .textFieldStyle(.plain)
+
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .help("Clear search")
+                .accessibilityLabel("Clear tracker search")
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 34)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        }
+    }
+
+    private var trackerFilters: some View {
+        HStack(spacing: 8) {
+            ForEach(TrackerFilter.allCases, id: \.self) { filter in
+                Button {
+                    selectedFilter = filter
+                } label: {
+                    Text(filter.title)
+                        .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 13)
+                        .frame(height: 30)
+                        .background(
+                            selectedFilter == filter ? Color.accentColor : Color.clear,
+                            in: Capsule()
+                        )
+                        .overlay {
+                            if selectedFilter != filter {
+                                Capsule()
+                                    .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+                            }
+                        }
+                        .foregroundStyle(selectedFilter == filter ? Color.white : Color.primary)
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selectedFilter == filter ? .isSelected : [])
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.title2)
+                .foregroundStyle(.tertiary)
+            Text(emptyStateTitle)
+                .font(.headline)
+            if !searchText.isEmpty {
+                Text("Try another name or clear the search.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(24)
+    }
+
+    private func trackerTile(_ provider: PetTrackingProvider) -> some View {
         let assignedPet = store.trackingPet(for: provider)
         let isAssignedElsewhere = assignedPet.map { $0.id != pet.id } ?? false
+        let isActive = activeProviders.contains(provider)
 
-        return HStack(spacing: 12) {
-            PetProviderIcon(provider: provider, isDisabled: isAssignedElsewhere)
-            Text(provider.displayName)
-            Spacer()
-            if isAssignedElsewhere {
-                Text("Tracked by \(assignedPet?.name ?? "another pet")")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Toggle(provider.displayName, isOn: trackingBinding(provider))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .disabled(isAssignedElsewhere)
+        return PetTrackerTile(
+            provider: provider,
+            isActive: isActive,
+            assignedPetName: isAssignedElsewhere ? assignedPet?.name : nil
+        ) {
+            store.setTrackingProvider(provider, isEnabled: !isActive, for: pet.id)
         }
-        .padding(.vertical, 11)
     }
 
-    private func trackingBinding(_ provider: PetTrackingProvider) -> Binding<Bool> {
-        Binding(
-            get: { store.petInstance(for: pet.id)?.trackingProviders.contains(provider) == true },
-            set: { store.setTrackingProvider(provider, isEnabled: $0, for: pet.id) }
-        )
+    private var trackerColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 118, maximum: 170), spacing: 10)]
+    }
+
+    private var activeProviders: Set<PetTrackingProvider> {
+        store.petInstance(for: pet.id)?.trackingProviders ?? []
+    }
+
+    private var activeProviderCount: Int {
+        activeProviders.count
+    }
+
+    private var availableProviderCount: Int {
+        PetTrackingProvider.allCases.filter { provider in
+            guard let assignedPet = store.trackingPet(for: provider) else { return true }
+            return assignedPet.id == pet.id
+        }.count
+    }
+
+    private var filteredProviders: [PetTrackingProvider] {
+        PetTrackingProvider.allCases.filter { provider in
+            let matchesSearch = searchText.isEmpty
+                || provider.displayName.localizedCaseInsensitiveContains(searchText)
+            guard matchesSearch else { return false }
+
+            switch selectedFilter {
+            case .all:
+                return true
+            case .active:
+                return activeProviders.contains(provider)
+            case .available:
+                guard let assignedPet = store.trackingPet(for: provider) else { return true }
+                return assignedPet.id == pet.id
+            }
+        }
+    }
+
+    private var emptyStateTitle: String {
+        if !searchText.isEmpty { return "No trackers found" }
+        switch selectedFilter {
+        case .active:
+            return "No active trackers"
+        case .all, .available:
+            return "No trackers available"
+        }
+    }
+}
+
+private enum TrackerFilter: String, CaseIterable {
+    case all
+    case active
+    case available
+
+    var title: String {
+        rawValue.capitalized
+    }
+}
+
+private struct PetTrackerTile: View {
+    let provider: PetTrackingProvider
+    let isActive: Bool
+    let assignedPetName: String?
+    let toggle: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: toggle) {
+            ZStack(alignment: .topTrailing) {
+                VStack(spacing: 8) {
+                    PetProviderIcon(
+                        provider: provider,
+                        isDisabled: isAssignedElsewhere,
+                        size: 30
+                    )
+
+                    Text(provider.displayName)
+                        .font(.subheadline.weight(.medium))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+
+                    if let assignedPetName {
+                        Text("Tracked by \(assignedPetName)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 12)
+
+                selectionIndicator
+                    .padding(8)
+            }
+            .frame(maxWidth: .infinity, minHeight: 96)
+            .background(tileFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(tileBorder, lineWidth: isActive ? 1.5 : 1)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isAssignedElsewhere)
+        .onHover { isHovering = $0 }
+        .help(helpText)
+        .accessibilityLabel(provider.displayName)
+        .accessibilityValue(accessibilityValue)
+        .accessibilityHint(isAssignedElsewhere ? "Assigned trackers cannot be selected." : "Toggle tracker")
+    }
+
+    private var isAssignedElsewhere: Bool {
+        assignedPetName != nil
+    }
+
+    @ViewBuilder
+    private var selectionIndicator: some View {
+        if isAssignedElsewhere {
+            Image(systemName: "minus.circle.fill")
+                .foregroundStyle(.secondary)
+        } else if isActive {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(Color.accentColor)
+        } else {
+            Image(systemName: "circle")
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var tileFill: Color {
+        if isActive {
+            return Color.accentColor.opacity(isHovering ? 0.18 : 0.11)
+        }
+        if isHovering && !isAssignedElsewhere {
+            return Color.primary.opacity(0.055)
+        }
+        return Color(nsColor: .controlBackgroundColor)
+    }
+
+    private var tileBorder: Color {
+        if isActive { return Color.accentColor.opacity(0.9) }
+        if isHovering && !isAssignedElsewhere { return Color.primary.opacity(0.18) }
+        return Color(nsColor: .separatorColor)
+    }
+
+    private var helpText: String {
+        if let assignedPetName {
+            return "Tracked by \(assignedPetName)"
+        }
+        return isActive ? "Stop tracking \(provider.displayName)" : "Track \(provider.displayName)"
+    }
+
+    private var accessibilityValue: String {
+        if let assignedPetName {
+            return "Tracked by \(assignedPetName)"
+        }
+        return isActive ? "Active" : "Inactive"
     }
 }
 

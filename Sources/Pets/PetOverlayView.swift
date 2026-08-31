@@ -44,7 +44,9 @@ func statusColor(_ status: HarnessSessionStatus) -> Color {
 
 struct PetOverlayView: View {
     @ObservedObject var store: PetStore
+    @ObservedObject var updateController: PetUpdateController
     let petInstanceID: PetInstance.ID
+    let openConfiguration: () -> Void
     @State private var areChatsExpanded = true
     @State private var isPetHovered = false
 
@@ -93,22 +95,43 @@ struct PetOverlayView: View {
                                     height: PetOverlayMetrics.spriteSize * PetOverlayMetrics.petScale
                                 )
                                 .contentShape(Rectangle())
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel(petInstance.name)
+                                .accessibilityHint("Right-click for pet controls")
                                 .animation(.spring(response: 0.18, dampingFraction: 0.52), value: isPetHovered)
                                 .onHover { hovering in
                                     isPetHovered = petInstance.animationSettings.isHoverBounceEnabled && hovering
                                 }
                                 .contextMenu {
-                                    ForEach(PetCatalog.builtInPetIDs.filter(store.isPetOwned), id: \.self) { petID in
+                                    if let release = updateController.availableRelease {
                                         Button {
-                                            store.selectPetInstance(petInstance.id)
-                                            store.selectPet(petID)
+                                            updateController.openAvailableRelease()
                                         } label: {
                                             Label(
-                                                PetCatalog.displayName(for: petID),
-                                                systemImage: petInstance.petID == petID ? "checkmark" : "cloud"
+                                                "Update to \(release.displayVersion)…",
+                                                systemImage: "arrow.down.circle"
                                             )
                                         }
+
+                                        Divider()
                                     }
+
+                                    Button("Hide") {
+                                        store.updatePetVisibility(petInstance.id, isVisible: false)
+                                    }
+
+                                    Divider()
+
+                                    Button {
+                                        openConfiguration()
+                                    } label: {
+                                        Label("Configure...", systemImage: "slider.horizontal.3")
+                                    }
+
+                                    Button("Check for Updates…") {
+                                        updateController.checkForUpdates(showingResult: true)
+                                    }
+                                    .disabled(updateController.isChecking)
                                 }
 
                             ChatCollapseButton(
@@ -626,10 +649,7 @@ private struct SessionRow: View {
                         .foregroundStyle(.white.opacity(0.94))
                         .lineLimit(1)
 
-                    Text(subtitle)
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundStyle(.white.opacity(0.80))
-                        .lineLimit(contextLineCount)
+                    subtitleView
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.trailing, titleTrailingPadding)
@@ -697,8 +717,19 @@ private struct SessionRow: View {
         }
     }
 
-    private var subtitle: String {
-        "\(session.sourceDisplayName) · \(session.chatPreview ?? "No chat preview yet")"
+    private var subtitleView: some View {
+        HStack(alignment: .center, spacing: 5) {
+            if let provider = PetTrackingProvider(rawValue: session.harnessID) {
+                PetProviderIcon(provider: provider, size: 14)
+            }
+
+            Text(session.chatPreview ?? "No chat preview yet")
+                .lineLimit(contextLineCount)
+        }
+        .font(.system(size: 13, weight: .regular))
+        .foregroundStyle(.white.opacity(0.80))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(session.sourceDisplayName). \(session.chatPreview ?? "No chat preview yet")")
     }
 
     private var shouldShowReplyButton: Bool {

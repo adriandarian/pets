@@ -8,6 +8,7 @@ struct PetUpdateIntegrationSourceTests {
     func appChecksGitHubAndOffersManualReleaseDownload() throws {
         let controller = try source("Sources/Pets/PetUpdateController.swift")
         let app = try source("Sources/Pets/PetsApp.swift")
+        let overlay = try source("Sources/Pets/PetOverlayView.swift")
         let settings = try source("Sources/Pets/PetSettingsViews.swift")
 
         #expect(controller.contains("api.github.com/repos/adriandarian/pets/releases/latest"))
@@ -16,7 +17,8 @@ struct PetUpdateIntegrationSourceTests {
         #expect(app.contains("updateController.start()"))
         #expect(app.contains("presentReleaseGiftIfNeeded()"))
         #expect(app.contains("A gift arrived with Pets"))
-        #expect(app.contains("Check for Updates"))
+        #expect(overlay.contains("Check for Updates"))
+        #expect(overlay.contains("updateController.openAvailableRelease()"))
         #expect(settings.contains("PetUpdateBanner"))
         #expect(settings.contains("View on GitHub"))
     }

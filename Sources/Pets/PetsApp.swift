@@ -19,35 +19,39 @@ struct PetsApp: App {
 
     var body: some Scene {
         Window(PetsWindowID.configurationTitle, id: PetsWindowID.configuration) {
-            PetSettingsView(
+            PetConfigurationScene(
                 store: appDelegate.store,
                 updateController: appDelegate.updateController,
                 respawnPet: { petID in
                     appDelegate.respawnPet(petID)
-                }
+                },
+                registerOpenConfiguration: appDelegate.registerOpenConfiguration
             )
         }
         .defaultSize(width: 900, height: 620)
         .windowResizability(.contentMinSize)
+    }
+}
 
-        MenuBarExtra {
-            PetMenuView(
-                store: appDelegate.store,
-                updateController: appDelegate.updateController,
-                setAllPetsVisible: { isVisible in
-                    appDelegate.setAllPetsVisible(isVisible)
-                },
-                respawnPet: {
-                    appDelegate.respawnPet()
-                },
-                bringConfigurationToFront: {
-                    appDelegate.bringConfigurationToFront()
-                }
-            )
-        } label: {
-            PetMenuBarLabel(updateController: appDelegate.updateController)
+private struct PetConfigurationScene: View {
+    @Environment(\.openWindow) private var openWindow
+
+    @ObservedObject var store: PetStore
+    @ObservedObject var updateController: PetUpdateController
+    let respawnPet: (PetInstance.ID) -> Void
+    let registerOpenConfiguration: (@escaping () -> Void) -> Void
+
+    var body: some View {
+        PetSettingsView(
+            store: store,
+            updateController: updateController,
+            respawnPet: respawnPet
+        )
+        .onAppear {
+            registerOpenConfiguration {
+                openWindow(id: PetsWindowID.configuration)
+            }
         }
-        .menuBarExtraStyle(.menu)
     }
 }
 
@@ -59,16 +63,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var isAdjustingPanelFrame = false
     private var isSyncingPetPanels = false
     private var cancellables: Set<AnyCancellable> = []
+    private var openConfigurationAction: (() -> Void)?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         disableLegacyOpenAtLogin()
 
+        if PetVisibilityLifecycle.allPetsAreHidden(store.petInstances) {
+            store.setAllPetsVisible(true)
+        }
+
         store.$petInstances
-            .sink { [weak self] _ in
+            .sink { [weak self] petInstances in
+                let allPetsAreHidden = PetVisibilityLifecycle.allPetsAreHidden(petInstances)
                 Task { @MainActor [weak self] in
                     await Task.yield()
-                    self?.syncPetPanels()
+                    guard let self else { return }
+                    self.syncPetPanels()
+                    if allPetsAreHidden,
+                       PetVisibilityLifecycle.allPetsAreHidden(self.store.petInstances) {
+                        NSApp.terminate(nil)
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -122,15 +137,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return "\(commonKeys) Common \(commonKeys == 1 ? "Key" : "Keys")"
     }
 
-    func setAllPetsVisible(_ isVisible: Bool) {
-        store.setAllPetsVisible(isVisible)
+    func registerOpenConfiguration(_ action: @escaping () -> Void) {
+        openConfigurationAction = action
     }
 
-    func respawnPet() {
-        respawnVisiblePets()
-    }
-
-    func bringConfigurationToFront() {
+    func openConfiguration() {
+        openConfigurationAction?()
         NSApp.activate(ignoringOtherApps: true)
 
         Task { @MainActor in
@@ -168,7 +180,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         panel.petInstanceID = petInstance.id
         panel.contentView = FirstMouseHostingView(
-            rootView: PetOverlayView(store: store, petInstanceID: petInstance.id)
+            rootView: PetOverlayView(
+                store: store,
+                updateController: updateController,
+                petInstanceID: petInstance.id,
+                openConfiguration: { [weak self] in
+                    self?.openConfiguration()
+                }
+            )
         )
         panel.delegate = self
         return panel
@@ -199,14 +218,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 updateOverlayPlacement(for: panel)
             }
         }
-    }
-
-    private func respawnVisiblePets() {
-        for panel in panels.values {
-            panel.close()
-        }
-        panels.removeAll()
-        syncPetPanels()
     }
 
     private static func initialFrame(for petInstance: PetInstance, index: Int) -> NSRect {
@@ -254,73 +265,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             origin: adjustedFrame.origin,
             placement: placement
         )
-    }
-}
-
-private struct PetMenuView: View {
-    @Environment(\.openWindow) private var openWindow
-
-    @ObservedObject var store: PetStore
-    @ObservedObject var updateController: PetUpdateController
-    let setAllPetsVisible: (Bool) -> Void
-    let respawnPet: () -> Void
-    let bringConfigurationToFront: () -> Void
-
-    var body: some View {
-        if let release = updateController.availableRelease {
-            Button {
-                updateController.openAvailableRelease()
-            } label: {
-                Label("Update to \(release.displayVersion)…", systemImage: "arrow.down.circle")
-            }
-
-            Divider()
-        }
-
-        Button("Respawn Pet") {
-            respawnPet()
-        }
-        .disabled(store.petInstances.isEmpty)
-
-        Button(store.areAnyPetsVisible ? "Hide Pets" : "Show Pets") {
-            setAllPetsVisible(!store.areAnyPetsVisible)
-        }
-        .disabled(store.petInstances.isEmpty)
-
-        Button {
-            openWindow(id: PetsWindowID.configuration)
-            bringConfigurationToFront()
-        } label: {
-            Label("Configure...", systemImage: "slider.horizontal.3")
-        }
-
-        Divider()
-
-        Button("Check for Updates…") {
-            updateController.checkForUpdates(showingResult: true)
-        }
-        .disabled(updateController.isChecking)
-
-        Button("Quit Pets") {
-            NSApplication.shared.terminate(nil)
-        }
-    }
-}
-
-private struct PetMenuBarLabel: View {
-    @ObservedObject var updateController: PetUpdateController
-
-    var body: some View {
-#if PETS_DEVELOPMENT
-        Label("Pets Dev", systemImage: "hammer.circle")
-#else
-        Label(
-            "Pets",
-            systemImage: updateController.availableRelease == nil
-                ? "pawprint.circle"
-                : "arrow.down.circle"
-        )
-#endif
     }
 }
 

@@ -79,15 +79,26 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
-    func appDefinesMenuBarExtraForPetControls() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
-        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+    func appUsesEachPetContextMenuInsteadOfAMenuBarExtra() throws {
+        let appSource = try String(
+            contentsOf: sourceFile("Sources/Pets/PetsApp.swift"),
+            encoding: .utf8
+        )
+        let overlaySource = try String(
+            contentsOf: sourceFile("Sources/Pets/PetOverlayView.swift"),
+            encoding: .utf8
+        )
 
-        #expect(source.contains("MenuBarExtra {"))
-        #expect(source.contains("PetMenuBarLabel(updateController:"))
-        #expect(source.contains("\"pawprint.circle\""))
-        #expect(source.contains(".menuBarExtraStyle(.menu)"))
-        #expect(source.contains("PetMenuView("))
+        #expect(!appSource.contains("MenuBarExtra {"))
+        #expect(!appSource.contains("PetMenuBarLabel"))
+        #expect(!appSource.contains("PetMenuView"))
+        #expect(!appSource.contains(".menuBarExtraStyle"))
+        #expect(overlaySource.contains(".contextMenu"))
+        #expect(overlaySource.contains("Button(\"Hide\")"))
+        #expect(!overlaySource.contains("Button(\"Respawn"))
+        #expect(!overlaySource.contains("Menu(\"Change Pet\")"))
+        #expect(overlaySource.contains(".accessibilityLabel(petInstance.name)"))
+        #expect(overlaySource.contains(".accessibilityHint(\"Right-click for pet controls\")"))
     }
 
     @Test
@@ -106,7 +117,7 @@ struct PetOverlayTransparencyTests {
 
         #expect(subscription.contains("Task { @MainActor [weak self] in"))
         #expect(subscription.contains("await Task.yield()"))
-        #expect(subscription.contains("self?.syncPetPanels()"))
+        #expect(subscription.contains("self.syncPetPanels()"))
     }
 
     @Test
@@ -128,7 +139,8 @@ struct PetOverlayTransparencyTests {
         #expect(!source.contains("Settings {"))
         #expect(!source.contains("@Environment(\\.openSettings)"))
         #expect(!source.contains("openSettings()"))
-        #expect(source.contains("bringConfigurationToFront()"))
+        #expect(source.contains("registerOpenConfiguration"))
+        #expect(source.contains("func openConfiguration()"))
         #expect(source.contains("NSApp.activate(ignoringOtherApps: true)"))
         #expect(source.contains("first(where: Self.isConfigurationWindow)"))
         #expect(source.contains("window.styleMask.contains(.titled)"))
@@ -150,26 +162,36 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
-    func menuKeepsOnlyTopLevelPetCommands() throws {
-        let sourceURL = try sourceFile("Sources/Pets/PetsApp.swift")
-        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+    func petContextMenuKeepsAppAndPetCommandsTogether() throws {
+        let overlaySource = try String(
+            contentsOf: sourceFile("Sources/Pets/PetOverlayView.swift"),
+            encoding: .utf8
+        )
 
-        #expect(source.contains("Button(\"Respawn Pet\")"))
-        #expect(source.contains("\"Hide Pets\" : \"Show Pets\""))
-        #expect(source.contains("setAllPetsVisible(!store.areAnyPetsVisible)"))
-        #expect(source.contains("func setAllPetsVisible(_ isVisible: Bool)"))
-        #expect(source.contains("store.setAllPetsVisible(isVisible)"))
-        #expect(source.contains("Label(\"Configure...\", systemImage: \"slider.horizontal.3\")"))
-        #expect(source.contains("Button(\"Quit Pets\")"))
+        #expect(!overlaySource.contains("Menu(\"Change Pet\")"))
+        #expect(!overlaySource.contains("respawnPet"))
+        #expect(overlaySource.contains("store.updatePetVisibility(petInstance.id, isVisible: false)"))
+        #expect(overlaySource.contains("Label(\"Configure...\", systemImage: \"slider.horizontal.3\")"))
+        #expect(overlaySource.contains("Button(\"Check for Updates…\")"))
+        #expect(overlaySource.contains("updateController.openAvailableRelease()"))
+        #expect(!overlaySource.contains("Quit Pets"))
+        #expect(!overlaySource.contains("Hide Pets"))
+        #expect(!overlaySource.contains("Show Pets"))
+    }
 
-        let menuStart = try #require(source.range(of: "private struct PetMenuView: View"))
-        let menuEnd = try #require(source.range(of: "extension AppDelegate: NSWindowDelegate", range: menuStart.upperBound..<source.endIndex))
-        let menuSource = String(source[menuStart.lowerBound..<menuEnd.lowerBound])
+    @Test
+    func hidingEveryPetTerminatesAndTheNextLaunchRestoresThem() throws {
+        let appSource = try String(
+            contentsOf: sourceFile("Sources/Pets/PetsApp.swift"),
+            encoding: .utf8
+        )
 
-        #expect(!menuSource.contains("Toggle(\"Open at Login\""))
-        #expect(!menuSource.contains("Section(\"Sprite\")"))
-        #expect(!menuSource.contains("Section(\"Pixelation\")"))
-        #expect(!menuSource.contains("Section(\"Context Lines\")"))
+        #expect(appSource.contains("if PetVisibilityLifecycle.allPetsAreHidden(store.petInstances)"))
+        #expect(appSource.contains("store.setAllPetsVisible(true)"))
+        #expect(appSource.contains("let allPetsAreHidden = PetVisibilityLifecycle.allPetsAreHidden(petInstances)"))
+        #expect(appSource.contains("PetVisibilityLifecycle.allPetsAreHidden(self.store.petInstances)"))
+        #expect(appSource.contains("NSApp.terminate(nil)"))
+        #expect(!appSource.contains("Button(\"Quit Pets\")"))
     }
 
     @Test
@@ -438,13 +460,14 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
-    func overlayOffersCloudFamilySwitching() throws {
+    func overlayDoesNotOfferPetSwitching() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
 
-        #expect(source.contains("ForEach(PetCatalog.builtInPetIDs.filter(store.isPetOwned)"))
-        #expect(source.contains("store.selectPet("))
         #expect(source.contains(".contextMenu"))
+        #expect(!source.contains("PetCatalog.builtInPetIDs.filter(store.isPetOwned)"))
+        #expect(!source.contains("store.selectPet("))
+        #expect(!source.contains("Menu(\"Change Pet\")"))
     }
 
     @Test
@@ -503,9 +526,14 @@ struct PetOverlayTransparencyTests {
         #expect(storeSource.contains("func sessions(for petID: PetInstance.ID)"))
         #expect(storeSource.contains("PetSessionRouting.sessions(sessions, trackedBy: pet)"))
         #expect(settingsSource.contains("struct PetTrackingSection: View"))
-        #expect(settingsSource.contains("ForEach(Array(PetTrackingProvider.allCases.enumerated())"))
+        #expect(settingsSource.contains("TextField(\"Search trackers\""))
+        #expect(settingsSource.contains("TrackerFilter.allCases"))
+        #expect(settingsSource.contains("LazyVGrid(columns: trackerColumns"))
+        #expect(settingsSource.contains(".scrollIndicators(.visible)"))
+        #expect(settingsSource.contains("PetTrackerTile("))
         #expect(settingsSource.contains("Tracked by "))
-        #expect(settingsSource.contains("PetProviderIcon(provider: provider"))
+        #expect(settingsSource.contains("PetProviderIcon("))
+        #expect(settingsSource.contains("provider: provider"))
         #expect(!settingsSource.contains("provider.sessionDescription"))
         #expect(!settingsSource.contains("Claude Code chats"))
         #expect(!settingsSource.contains("App and CLI tasks"))
