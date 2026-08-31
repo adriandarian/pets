@@ -73,7 +73,7 @@ struct PetOverlayView: View {
                                 contextLineCount: petInstance.sessionContextLineCount,
                                 maxHeight: chatHeight
                             )
-                                .frame(width: chatWidth)
+                                .frame(width: chatWidth, alignment: frameAlignment)
                                 .scaleEffect(PetOverlayMetrics.chatBubbleScale, anchor: scaleAnchor)
                                 .frame(
                                     width: chatWidth * PetOverlayMetrics.chatBubbleScale,

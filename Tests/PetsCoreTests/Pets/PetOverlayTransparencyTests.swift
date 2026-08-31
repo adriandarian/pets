@@ -42,6 +42,14 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
+    func sessionBubbleContentStaysAnchoredToItsPetEdge() throws {
+        let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+
+        #expect(source.contains(".frame(width: chatWidth, alignment: frameAlignment)"))
+    }
+
+    @Test
     func collapsedChatBadgeUsesStatusTintInsteadOfAlwaysGreen() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetOverlayView.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
