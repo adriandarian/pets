@@ -25,7 +25,11 @@ struct PetCollectionView: View {
 
     private var familySidebar: some View {
         VStack(spacing: 0) {
-            familySearchField
+            PetSidebarSearchField(
+                text: $familySearch,
+                accessibilityLabel: "Search pet families",
+                clearButtonAccessibilityLabel: "Clear family search"
+            )
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
 
@@ -64,40 +68,6 @@ struct PetCollectionView: View {
             }
         }
         .background(.regularMaterial)
-    }
-
-    private var familySearchField: some View {
-        HStack(spacing: 9) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-
-            TextField("Search", text: $familySearch)
-                .textFieldStyle(.plain)
-
-            if !familySearch.isEmpty {
-                Button {
-                    familySearch = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.tertiary)
-                }
-                .buttonStyle(.plain)
-                .help("Clear search")
-                .accessibilityLabel("Clear family search")
-            }
-        }
-        .padding(.horizontal, 12)
-        .frame(height: 36)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.62))
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Search pet families")
     }
 
     private var familyDetail: some View {

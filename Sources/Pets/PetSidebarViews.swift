@@ -7,20 +7,32 @@ struct PetSidebar: View {
     let respawnPet: (PetInstance.ID) -> Void
     @State private var petBeingRenamedID: PetInstance.ID?
     @State private var renameDraft = ""
+    @State private var petSearch = ""
 
     var body: some View {
         VStack(spacing: 0) {
-            List(selection: selectedPetBinding) {
-                Section("My Pets") {
-                    ForEach(store.petInstances) { pet in
+            PetSidebarSearchField(
+                text: $petSearch,
+                accessibilityLabel: "Search pets",
+                clearButtonAccessibilityLabel: "Clear pet search"
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
+
+            Divider()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(filteredPets.enumerated()), id: \.element.id) { index, pet in
                         PetSidebarRow(
                             pet: pet,
+                            isSelected: store.selectedPetInstanceID == pet.id,
                             isRenaming: petBeingRenamedID == pet.id,
                             renameDraft: $renameDraft,
+                            select: { store.selectPetInstance(pet.id) },
                             commitRename: { commitRename(pet.id) },
                             cancelRename: { cancelRename(pet.id) }
                         )
-                        .tag(pet.id)
                         .contextMenu {
                             Button("Rename") { beginRenaming(pet) }
                             Divider()
@@ -32,10 +44,28 @@ struct PetSidebar: View {
                             Divider()
                             Button("Delete", role: .destructive) { store.removePet(pet.id) }
                         }
+
+                        if index < filteredPets.count - 1 {
+                            Divider()
+                                .padding(.leading, 76)
+                        }
+                    }
+
+                    if filteredPets.isEmpty {
+                        VStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.title2)
+                            Text("No pets found")
+                                .font(.subheadline.weight(.medium))
+                        }
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 32)
                     }
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
             }
-            .listStyle(.sidebar)
 
             Divider()
 
@@ -50,16 +80,17 @@ struct PetSidebar: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
         }
+        .background(.regularMaterial)
     }
 
-    private var selectedPetBinding: Binding<PetInstance.ID?> {
-        Binding(
-            get: { store.selectedPetInstanceID },
-            set: { selectedID in
-                guard let selectedID else { return }
-                store.selectPetInstance(selectedID)
-            }
-        )
+    private var filteredPets: [PetInstance] {
+        let query = petSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return store.petInstances }
+
+        return store.petInstances.filter { pet in
+            pet.name.localizedStandardContains(query)
+                || PetCatalog.displayName(for: pet.petID).localizedStandardContains(query)
+        }
     }
 
     private func beginRenaming(_ pet: PetInstance) {
@@ -84,14 +115,28 @@ struct PetSidebar: View {
 
 private struct PetSidebarRow: View {
     let pet: PetInstance
+    let isSelected: Bool
     let isRenaming: Bool
     @Binding var renameDraft: String
+    let select: () -> Void
     let commitRename: () -> Void
     let cancelRename: () -> Void
     @FocusState private var isRenameFieldFocused: Bool
     @State private var isCancellingRename = false
 
+    @ViewBuilder
     var body: some View {
+        if isRenaming {
+            rowContent
+        } else {
+            Button(action: select) {
+                rowContent
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var rowContent: some View {
         HStack(spacing: 10) {
             PetSprite(
                 petID: pet.petID,
@@ -103,12 +148,13 @@ private struct PetSidebarRow: View {
                 ),
                 pixelation: pet.pixelation
             )
-            .frame(width: 34, height: 34)
+            .frame(width: 38, height: 38)
 
             if isRenaming {
                 TextField("Pet name", text: $renameDraft)
                     .labelsHidden()
                     .textFieldStyle(.plain)
+                    .font(.caption.weight(.semibold))
                     .focused($isRenameFieldFocused)
                     .onSubmit(commitRename)
                     .onExitCommand {
@@ -129,10 +175,38 @@ private struct PetSidebarRow: View {
                     }
             } else {
                 Text(pet.name)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
                     .lineLimit(1)
             }
+
+            Spacer(minLength: 8)
         }
-        .padding(.vertical, 2)
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, minHeight: 66)
         .contentShape(Rectangle())
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.accentColor.opacity(0.16))
+            }
+        }
+        .overlay {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.accentColor.opacity(0.58), lineWidth: 1)
+            }
+        }
+        .overlay(alignment: .leading) {
+            if isSelected {
+                Capsule()
+                    .fill(Color.accentColor)
+                    .frame(width: 4, height: 50)
+                    .padding(.leading, 1)
+            }
+        }
+        .help(pet.name)
+        .accessibilityLabel(pet.name)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

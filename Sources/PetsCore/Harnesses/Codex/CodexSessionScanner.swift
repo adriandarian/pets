@@ -133,7 +133,7 @@ public struct CodexSessionScanner: Sendable {
         else { return nil }
 
         let title = Self.fallbackTitle(from: accumulator.firstUserMessage)
-        let preview = accumulator.latestUserMessage.map { Self.clamped($0, limit: 220) }
+        let preview = accumulator.latestUserMessage.map(Self.displayPreview)
         let source = accumulator.source?.lowercased() ?? ""
         let entrypoint = source == "cli" || source == "exec" || source.contains("terminal")
             ? "Codex CLI"
@@ -182,6 +182,25 @@ public struct CodexSessionScanner: Sendable {
             options: .regularExpression
         )
         return clamped(withoutMarkdownHeading, limit: 80)
+    }
+
+    private static func displayPreview(from rawMessage: String) -> String {
+        var preview = rawMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Attachment prompts include a machine-generated Markdown envelope
+        // before the user's actual message. That metadata is useful to Codex,
+        // but it makes a poor session description in the pet overlay.
+        if let requestBody = requestBody(in: preview) {
+            preview = requestBody
+        }
+
+        preview = removingLeadingCommandAndSkillLinks(from: preview)
+        preview = preview.replacingOccurrences(
+            of: #"^#{1,6}\s+"#,
+            with: "",
+            options: .regularExpression
+        )
+        return clamped(preview, limit: 220)
     }
 
     private static func fallbackTitle(from firstUserMessage: String?) -> String {

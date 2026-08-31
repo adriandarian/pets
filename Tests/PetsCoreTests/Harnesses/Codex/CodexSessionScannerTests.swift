@@ -227,7 +227,10 @@ struct CodexSessionScannerTests {
         ).scan()
 
         #expect(sessions.first?.title == "Track Codex and Copilot sessions")
-        #expect(sessions.first?.chatPreview == prompt)
+        #expect(
+            sessions.first?.chatPreview
+                == "Current behavior is limited. I want to give the ability to track Codex and Copilot sessions. Preserve the existing behavior."
+        )
     }
 
     @Test
@@ -254,7 +257,10 @@ struct CodexSessionScannerTests {
         ).scan()
 
         #expect(sessions.first?.title == "Remove the weird hashtags from these titles")
+        #expect(sessions.first?.chatPreview == "remove the weird hashtags from these titles")
         #expect(!sessions.first!.title.contains("#"))
+        #expect(!sessions.first!.chatPreview!.contains("Files mentioned by the user"))
+        #expect(!sessions.first!.chatPreview!.contains("Distinguish instructions"))
     }
 
     private func sessionMeta(id: String, source: String, threadSource: String) -> String {

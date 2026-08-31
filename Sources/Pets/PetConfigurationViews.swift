@@ -11,7 +11,7 @@ struct PetConfigurationPane: View {
         ZStack {
             NavigationSplitView {
                 PetSidebar(store: store, respawnPet: respawnPet)
-                    .navigationSplitViewColumnWidth(min: 180, ideal: 208, max: 250)
+                    .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 260)
             } detail: {
                 Group {
                     if let selectedPet {

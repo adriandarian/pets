@@ -237,7 +237,7 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
-    func petSettingsUseNativeAdaptiveSidebarAndDetailLayout() throws {
+    func petSettingsUseAdaptiveSidebarAndDetailLayout() throws {
         let settings = try String(
             contentsOf: sourceFile("Sources/Pets/PetSettingsViews.swift"),
             encoding: .utf8
@@ -270,8 +270,8 @@ struct PetOverlayTransparencyTests {
         #expect(settings.contains("case chests"))
         #expect(settings.contains(".frame(minWidth: 900, minHeight: 620)"))
         #expect(configuration.contains("NavigationSplitView {"))
-        #expect(sidebar.contains("List(selection: selectedPetBinding)"))
-        #expect(sidebar.contains(".listStyle(.sidebar)"))
+        #expect(sidebar.contains("ScrollView(.vertical, showsIndicators: false)"))
+        #expect(sidebar.contains("PetSidebarSearchField("))
         #expect(detail.contains("HStack(alignment: .top, spacing: 28)"))
         #expect(!detail.contains("ScrollView(.vertical"))
         #expect(!detail.contains("GeometryReader { proxy in"))
@@ -331,9 +331,10 @@ struct PetOverlayTransparencyTests {
             encoding: .utf8
         )
 
-        #expect(sidebar.contains("get: { store.selectedPetInstanceID }"))
-        #expect(sidebar.contains("store.selectPetInstance(selectedID)"))
-        #expect(sidebar.contains("ForEach(store.petInstances)"))
+        #expect(sidebar.contains("isSelected: store.selectedPetInstanceID == pet.id"))
+        #expect(sidebar.contains("select: { store.selectPetInstance(pet.id) }"))
+        #expect(sidebar.contains("ForEach(Array(filteredPets.enumerated())"))
+        #expect(!sidebar.contains("@State private var selectedPet"))
         #expect(sidebar.contains("PetSidebarRow("))
         #expect(sidebar.contains("pet: pet,"))
         #expect(sidebar.contains("store.addPet()"))
@@ -396,13 +397,33 @@ struct PetOverlayTransparencyTests {
     }
 
     @Test
+    func petSidebarMatchesTheCollectionSidebarTreatment() throws {
+        let sidebarSourceURL = try sourceFile("Sources/Pets/PetSidebarViews.swift")
+        let collectionSourceURL = try sourceFile("Sources/Pets/PetCollectionViews.swift")
+        let searchFieldSourceURL = try sourceFile("Sources/Pets/PetSidebarSearchField.swift")
+        let sidebarSource = try String(contentsOf: sidebarSourceURL, encoding: .utf8)
+        let collectionSource = try String(contentsOf: collectionSourceURL, encoding: .utf8)
+        let searchFieldSource = try String(contentsOf: searchFieldSourceURL, encoding: .utf8)
+
+        #expect(sidebarSource.contains("@State private var petSearch"))
+        #expect(sidebarSource.contains("ScrollView(.vertical, showsIndicators: false)"))
+        #expect(sidebarSource.contains("Text(\"No pets found\")"))
+        #expect(sidebarSource.contains("isSelected: store.selectedPetInstanceID == pet.id"))
+        #expect(sidebarSource.contains("Color.accentColor.opacity(0.16)"))
+        #expect(sidebarSource.contains(".background(.regularMaterial)"))
+        #expect(sidebarSource.contains("PetSidebarSearchField("))
+        #expect(collectionSource.contains("PetSidebarSearchField("))
+        #expect(searchFieldSource.contains("TextField(\"Search\", text: $text)"))
+    }
+
+    @Test
     func petSidebarCentersTheAddPetFooterButton() throws {
         let sourceURL = try sourceFile("Sources/Pets/PetSidebarViews.swift")
         let source = try String(contentsOf: sourceURL, encoding: .utf8)
         let footerStart = try #require(source.range(of: "Button { store.addPet() }"))
         let footerEnd = try #require(
             source.range(
-                of: "private var selectedPetBinding",
+                of: "private var filteredPets",
                 range: footerStart.upperBound..<source.endIndex
             )
         )

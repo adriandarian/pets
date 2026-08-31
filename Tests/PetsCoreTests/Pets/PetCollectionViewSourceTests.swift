@@ -162,12 +162,14 @@ struct PetCollectionViewSourceTests {
     @Test
     func collectionBrowsesOneCatalogFamilyAtATime() throws {
         let collectionSource = try source("Sources/Pets/PetCollectionViews.swift")
+        let sidebarSearchSource = try source("Sources/Pets/PetSidebarSearchField.swift")
         let revealSource = try source("Sources/Pets/PetChestRevealView.swift")
 
         #expect(collectionSource.contains("@State private var selectedCategoryID"))
         #expect(collectionSource.contains("@State private var familySearch"))
         #expect(collectionSource.contains("HSplitView"))
-        #expect(collectionSource.contains("TextField(\"Search\", text: $familySearch)"))
+        #expect(collectionSource.contains("PetSidebarSearchField("))
+        #expect(sidebarSearchSource.contains("TextField(\"Search\", text: $text)"))
         #expect(collectionSource.contains("filteredCategories"))
         #expect(collectionSource.contains("PetFamilySidebarRow("))
         #expect(collectionSource.contains(".frame(width: 220)"))
