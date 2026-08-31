@@ -27,7 +27,7 @@ struct PetDevelopmentPlatformSourceTests {
         #expect(store.contains("#if PETS_DEVELOPMENT"))
         #expect(chestView.contains("#if PETS_DEVELOPMENT"))
         #expect(chestView.contains("PetDevelopmentControls"))
-        #expect(app.contains("Label(\"Pets Dev\", systemImage: \"hammer.circle\")"))
+        #expect(app.contains("static let configurationTitle = \"Pets Dev\""))
     }
 
     @Test

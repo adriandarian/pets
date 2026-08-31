@@ -23,14 +23,18 @@ public struct MultiProviderHarness: PetHarness {
 
     private let harnesses: [any PetHarness]
 
-    public init(
-        harnesses: [any PetHarness] = [
+    public init(harnesses: [any PetHarness]? = nil) {
+        self.harnesses = harnesses ?? Self.defaultHarnesses()
+    }
+
+    private static func defaultHarnesses() -> [any PetHarness] {
+        var harnesses: [any PetHarness] = [
             ClaudeHarness(),
             CodexHarness(),
             CopilotHarness(),
         ]
-    ) {
-        self.harnesses = harnesses
+        harnesses.append(contentsOf: LocalProviderHarness.defaultHarnesses())
+        return harnesses
     }
 
     public func scan() throws -> [HarnessSession] {

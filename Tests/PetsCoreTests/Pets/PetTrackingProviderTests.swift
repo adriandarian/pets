@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import PetsCore
@@ -9,16 +10,35 @@ struct PetTrackingProviderTests {
         #expect(PetTrackingProvider.claudeCode.rawValue == "claude")
         #expect(PetTrackingProvider.codex.rawValue == "codex")
         #expect(PetTrackingProvider.githubCopilot.rawValue == "copilot")
+        #expect(PetTrackingProvider.cursor.rawValue == "cursor")
+        #expect(PetTrackingProvider.ollama.rawValue == "ollama")
+        #expect(PetTrackingProvider.gemini.rawValue == "gemini")
+        #expect(PetTrackingProvider.antigravity.rawValue == "antigravity")
+        #expect(PetTrackingProvider.hermes.rawValue == "hermes")
+        #expect(PetTrackingProvider.t3Code.rawValue == "t3code")
+        #expect(PetTrackingProvider.openDesign.rawValue == "open-design")
+        #expect(PetTrackingProvider.kiro.rawValue == "kiro")
+        #expect(PetTrackingProvider.zed.rawValue == "zed")
+        #expect(PetTrackingProvider.windsurf.rawValue == "windsurf")
+        #expect(PetTrackingProvider.openCode.rawValue == "opencode")
+        #expect(PetTrackingProvider.pi.rawValue == "pi")
+        #expect(PetTrackingProvider.notebookLM.rawValue == "notebooklm")
+        #expect(PetTrackingProvider.lmStudio.rawValue == "lm-studio")
+        #expect(PetTrackingProvider.stitch.rawValue == "stitch")
     }
 
     @Test
-    func everyProviderHasAnOfficialIconForEachAppearance() {
+    func bundledProviderIconsAreReadableForEveryTrackerAndAppearance() throws {
         for provider in PetTrackingProvider.allCases {
             for appearance in PetProviderIconAppearance.allCases {
-                #expect(PetProviderIconResourceLocator.url(
+                let iconURL = try #require(PetProviderIconResourceLocator.url(
                     for: provider,
                     appearance: appearance
-                ) != nil)
+                ))
+                let image = try #require(NSImage(contentsOf: iconURL))
+                #expect(image.isValid)
+                #expect(image.size.width > 0)
+                #expect(image.size.height > 0)
             }
         }
     }
@@ -65,24 +85,15 @@ struct PetTrackingProviderTests {
         var pet = PetInstance.defaultInstance()
         pet.trackingProviders = []
 
-        var instances = PetTrackerAssignments.setting(
-            .claudeCode,
-            isEnabled: true,
-            for: pet.id,
-            in: [pet]
-        )
-        instances = PetTrackerAssignments.setting(
-            .codex,
-            isEnabled: true,
-            for: pet.id,
-            in: instances
-        )
-        instances = PetTrackerAssignments.setting(
-            .githubCopilot,
-            isEnabled: true,
-            for: pet.id,
-            in: instances
-        )
+        var instances = [pet]
+        for provider in PetTrackingProvider.allCases {
+            instances = PetTrackerAssignments.setting(
+                provider,
+                isEnabled: true,
+                for: pet.id,
+                in: instances
+            )
+        }
 
         #expect(instances[0].trackingProviders == Set(PetTrackingProvider.allCases))
     }

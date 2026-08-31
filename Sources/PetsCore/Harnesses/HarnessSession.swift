@@ -46,14 +46,14 @@ public struct HarnessSession: Identifiable, Equatable, Sendable {
     }
 
     public var sourceDisplayName: String {
-        switch harnessID {
-        case PetTrackingProvider.codex.rawValue,
-             PetTrackingProvider.githubCopilot.rawValue:
-            let trimmedEntrypoint = entrypoint.trimmingCharacters(in: .whitespacesAndNewlines)
-            return trimmedEntrypoint.isEmpty ? harnessDisplayName : trimmedEntrypoint
-        default:
+        guard let provider = PetTrackingProvider(rawValue: harnessID),
+              provider != .claudeCode
+        else {
             return harnessDisplayName
         }
+
+        let trimmedEntrypoint = entrypoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedEntrypoint.isEmpty ? harnessDisplayName : trimmedEntrypoint
     }
 
     public init(
