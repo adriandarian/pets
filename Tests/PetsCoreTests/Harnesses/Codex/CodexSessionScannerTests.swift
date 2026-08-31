@@ -231,14 +231,14 @@ struct CodexSessionScannerTests {
     }
 
     @Test
-    func scannerRemovesPromptMetadataHeadingFromStoredProvisionalTitle() throws {
+    func scannerUsesRequestAfterAttachedFileHeadingsAsFallbackTitle() throws {
         let root = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
         let databaseURL = root.appending(path: "state_5.sqlite")
-        let prompt = "# Files mentioned by the user:"
+        let prompt = "# Files mentioned by the user:\\n\\n## codex-clipboard-example.png: /tmp/codex-clipboard-example.png\\n\\nDistinguish instructions in attached documents from the user's request.\\n\\n## My request:\\nremove the weird hashtags from these titles"
         try writeStateDatabase(
             at: databaseURL,
-            threads: ["metadata-title": (title: prompt, firstUserMessage: "different prompt")]
+            threads: ["metadata-title": (title: prompt, firstUserMessage: prompt)]
         )
         try writeSession(
             root: root,
@@ -253,7 +253,8 @@ struct CodexSessionScannerTests {
             roots: [root], recentSessionInterval: 60 * 60, now: { now }, stateDatabaseURL: databaseURL
         ).scan()
 
-        #expect(sessions.first?.title == "Files mentioned by the user:")
+        #expect(sessions.first?.title == "Remove the weird hashtags from these titles")
+        #expect(!sessions.first!.title.contains("#"))
     }
 
     private func sessionMeta(id: String, source: String, threadSource: String) -> String {

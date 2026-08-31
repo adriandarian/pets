@@ -45,6 +45,7 @@ struct PetConfigurationPane: View {
         } message: { pet in
             Text("This removes \(pet.name) from your collection.")
         }
+        .toolbar(removing: .sidebarToggle)
     }
 
     private var selectedPet: PetInstance? {

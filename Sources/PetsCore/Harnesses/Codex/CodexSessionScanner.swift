@@ -172,7 +172,7 @@ public struct CodexSessionScanner: Sendable {
         // Codex can persist the complete prompt as a provisional title. In
         // that case, use the request section instead of the file metadata
         // heading that precedes it.
-        if title.range(of: "## My request for Codex:", options: [.caseInsensitive]) != nil {
+        if requestBody(in: title) != nil {
             return fallbackTitle(from: title)
         }
 
@@ -189,15 +189,30 @@ public struct CodexSessionScanner: Sendable {
               !title.isEmpty
         else { return "Untitled Codex task" }
 
-        if let requestMarker = title.range(
-            of: "## My request for Codex:",
-            options: [.caseInsensitive]
-        ) {
-            title = String(title[requestMarker.upperBound])
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+        // The app prepends attachment metadata as Markdown headings. Always
+        // jump straight to the user's request when that section exists so a
+        // filename heading can never become the session title.
+        if let requestBody = requestBody(in: title) {
+            title = requestBody
+        } else if title.range(of: #"^#{1,6}\s+Files mentioned by the user:\s*"#, options: .regularExpression) != nil {
+            if let metadataEnd = title.range(of: "\n\n") {
+                title = String(title[metadataEnd.upperBound...])
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            } else {
+                title = title.replacingOccurrences(
+                    of: #"^#{1,6}\s+Files mentioned by the user:\s*"#,
+                    with: "",
+                    options: .regularExpression
+                )
+            }
         }
 
         title = removingLeadingCommandAndSkillLinks(from: title)
+        title = title.replacingOccurrences(
+            of: #"^#{1,6}\s+"#,
+            with: "",
+            options: .regularExpression
+        )
 
         let intentMarkers = [
             "I want to ",
@@ -233,6 +248,17 @@ public struct CodexSessionScanner: Sendable {
         let firstCharacter = String(title.removeFirst()).uppercased()
         title = firstCharacter + title
         return clamped(title, limit: 80)
+    }
+
+    private static func requestBody(in prompt: String) -> String? {
+        guard let marker = prompt.range(
+            of: #"(?im)^#{1,6}\s+My request(?: for Codex)?:\s*"#,
+            options: .regularExpression
+        ) else { return nil }
+
+        let body = String(prompt[marker.upperBound...])
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return body.isEmpty ? nil : body
     }
 
     private static func removingLeadingCommandAndSkillLinks(from value: String) -> String {
