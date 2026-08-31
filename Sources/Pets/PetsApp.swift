@@ -221,7 +221,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private static func initialFrame(for petInstance: PetInstance, index: Int) -> NSRect {
-        let size = NSSize(width: 500, height: 360)
+        let size = NSSize(width: 620, height: 560)
         let screenFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         if let origin = petInstance.overlayPosition.origin {
             return NSRect(origin: origin, size: size)

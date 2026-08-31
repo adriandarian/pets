@@ -6,9 +6,9 @@ import SwiftUI
 private enum PetOverlayMetrics {
     static let chatBubbleScale: CGFloat = 0.86
     static let petScale: CGFloat = 0.72
-    static let sessionBubbleMaxWidth: CGFloat = 370
-    static let visibleSessionRowLimit = 3
-    static let scrollableSessionStackMaxHeight: CGFloat = 250
+    static let sessionBubbleMaxWidth: CGFloat = 500
+    static let visibleSessionRowLimit = 4
+    static let scrollableSessionStackMaxHeight: CGFloat = 410
     static let scrollableSessionContentBleed: CGFloat = 12
     static let spriteSize: CGFloat = 132
     static let chatControlSize: CGFloat = 50
@@ -172,7 +172,7 @@ struct PetOverlayView: View {
                 Color.clear
             }
         }
-        .frame(width: 500, height: 360)
+        .frame(width: 620, height: 560)
     }
 
     private var petInstance: PetInstance? {
