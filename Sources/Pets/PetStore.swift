@@ -6,9 +6,14 @@ struct PetUsageSourceStatus: Identifiable, Equatable {
     let id: String
     let displayName: String
     var tokens: Int64?
+    var trackedActivitySeconds: Int64?
     var periodID: String?
     var errorMessage: String?
     var updatedAt: Date?
+
+    var rewardTrackingMode: PetRewardTrackingMode {
+        PetTrackingProvider(rawValue: id)?.rewardTrackingMode ?? .tokenUsage
+    }
 }
 
 private struct PetUsageSourceResult: Sendable {
@@ -43,6 +48,7 @@ final class PetStore: ObservableObject {
     private var rewardRefreshTask: Task<Void, Never>?
     private var manualRewardRefreshTask: Task<Void, Never>?
     private var sessionObservationCoordinator = PetSessionObservationCoordinator()
+    private var trackedActivityAccumulator = PetTrackedActivityAccumulator()
     private var completionReactionTask: Task<Void, Never>?
     private var completionReactionExpiry = PetCompletionReactionExpiry()
     private static let refreshInterval: Duration = .seconds(5)
@@ -86,17 +92,41 @@ final class PetStore: ObservableObject {
         self.collectionState = collectionState
         self.collectionError = loadedCollection.error
         self.pendingReleaseGift = pendingReleaseGift
-        self.usageSourceStatuses = usageSources.map { source in
+        let enabledProviderIDs = Set(loadedInstances.flatMap(\.trackingProviders).map(\.rawValue))
+        let tokenUsageStatuses: [PetUsageSourceStatus] = usageSources.compactMap { source in
+            guard enabledProviderIDs.contains(source.id) else { return nil }
             let checkpoint = collectionState.providerCheckpoints[source.id]
             return PetUsageSourceStatus(
                 id: source.id,
                 displayName: source.displayName,
                 tokens: checkpoint?.observedTokens,
+                trackedActivitySeconds: nil,
                 periodID: checkpoint?.periodID,
                 errorMessage: nil,
                 updatedAt: nil
             )
         }
+        let activityPeriod = PetTrackedActivityPeriod()
+        let activityStatuses: [PetUsageSourceStatus] = PetTrackingProvider.allCases.compactMap { provider in
+            guard provider.rewardTrackingMode == .trackedActivity,
+                  loadedInstances.contains(where: { $0.trackingProviders.contains(provider) })
+            else {
+                return nil
+            }
+            let checkpoint = collectionState.providerActivityCheckpoints[provider.rawValue]
+            return PetUsageSourceStatus(
+                id: provider.rawValue,
+                displayName: provider.displayName,
+                tokens: nil,
+                trackedActivitySeconds: checkpoint?.periodID == activityPeriod.id
+                    ? checkpoint?.observedSeconds
+                    : 0,
+                periodID: activityPeriod.id,
+                errorMessage: nil,
+                updatedAt: nil
+            )
+        }
+        self.usageSourceStatuses = tokenUsageStatuses + activityStatuses
         self.lastError = loadedPetConfiguration.error
         self.currentReaction = loadedPetConfiguration.error == nil ? nil : .error
         self.sessionObservationCoordinator.recordError(loadedPetConfiguration.error)
@@ -315,6 +345,7 @@ final class PetStore: ObservableObject {
         }
         persistSelectedPetInstanceID()
         persistPetInstances()
+        synchronizeRewardSourceStatuses()
     }
 
     func selectPetInstance(_ id: PetInstance.ID) {
@@ -387,6 +418,8 @@ final class PetStore: ObservableObject {
             keyInventory: PetKeyInventory(rarity: rarity, count: 1),
             tokenRemainder: updatedState.tokenRemainder,
             providerCheckpoints: updatedState.providerCheckpoints,
+            activityRemainderSeconds: updatedState.activityRemainderSeconds,
+            providerActivityCheckpoints: updatedState.providerActivityCheckpoints,
             claimedReleaseGiftVersions: updatedState.claimedReleaseGiftVersions
         )
 #endif
@@ -408,6 +441,8 @@ final class PetStore: ObservableObject {
                 keyInventory: persistedKeyInventory,
                 tokenRemainder: updatedState.tokenRemainder,
                 providerCheckpoints: updatedState.providerCheckpoints,
+                activityRemainderSeconds: updatedState.activityRemainderSeconds,
+                providerActivityCheckpoints: updatedState.providerActivityCheckpoints,
                 claimedReleaseGiftVersions: updatedState.claimedReleaseGiftVersions
             )
 #endif
@@ -443,6 +478,8 @@ final class PetStore: ObservableObject {
             keyInventory: collectionState.keyInventory,
             tokenRemainder: collectionState.tokenRemainder,
             providerCheckpoints: collectionState.providerCheckpoints,
+            activityRemainderSeconds: collectionState.activityRemainderSeconds,
+            providerActivityCheckpoints: collectionState.providerActivityCheckpoints,
             claimedReleaseGiftVersions: collectionState.claimedReleaseGiftVersions
         )
         collectionState = updatedState
@@ -488,6 +525,10 @@ final class PetStore: ObservableObject {
         guard updated != petInstances else { return }
         petInstances = updated
         persistPetInstances()
+        synchronizeRewardSourceStatuses()
+        if provider.rewardTrackingMode == .tokenUsage {
+            refreshRewardUsage()
+        }
     }
 
     func updatePetOverlayPosition(
@@ -573,29 +614,42 @@ final class PetStore: ObservableObject {
         let refreshedAt = Date()
         var updatedState = collectionState
         var hadSuccessfulReading = false
-        usageSourceStatuses = results.map { result in
+        let previousStatuses = usageSourceStatuses
+        let enabledProviderIDs = enabledRewardProviderIDs
+        let refreshedTokenStatuses: [PetUsageSourceStatus] = results.compactMap { result in
             if let reading = result.reading {
-                hadSuccessfulReading = true
-                _ = updatedState.apply(reading)
+                if enabledProviderIDs.contains(result.id) {
+                    hadSuccessfulReading = true
+                    _ = updatedState.apply(reading)
+                } else {
+                    _ = updatedState.checkpointWithoutReward(reading)
+                }
+                guard enabledProviderIDs.contains(result.id) else { return nil }
                 return PetUsageSourceStatus(
                     id: result.id,
                     displayName: result.displayName,
                     tokens: reading.tokens,
+                    trackedActivitySeconds: nil,
                     periodID: reading.periodID,
                     errorMessage: nil,
                     updatedAt: refreshedAt
                 )
             }
 
-            let previous = usageSourceStatuses.first { $0.id == result.id }
+            guard enabledProviderIDs.contains(result.id) else { return nil }
+            let previous = previousStatuses.first { $0.id == result.id }
             return PetUsageSourceStatus(
                 id: result.id,
                 displayName: result.displayName,
                 tokens: previous?.tokens,
+                trackedActivitySeconds: nil,
                 periodID: previous?.periodID,
                 errorMessage: result.errorMessage,
                 updatedAt: refreshedAt
             )
+        }
+        usageSourceStatuses = refreshedTokenStatuses + previousStatuses.filter {
+            $0.rewardTrackingMode == .trackedActivity && enabledProviderIDs.contains($0.id)
         }
 
         if updatedState != collectionState {
@@ -625,8 +679,10 @@ final class PetStore: ObservableObject {
 
     private func applyRefreshResult(sessions scannedSessions: [HarnessSession]?, error: String?) {
         if let scannedSessions {
+            let observedAt = Date()
             let completedHarnessIDs = sessionObservationCoordinator
                 .observeCompletedHarnessIDs(scannedSessions)
+            recordTrackedActivity(from: scannedSessions, at: observedAt)
             if sessions != scannedSessions {
                 sessions = scannedSessions
                 dismissedSessions.formIntersection(scannedSessions.map(PetDismissedSession.init))
@@ -637,9 +693,87 @@ final class PetStore: ObservableObject {
                 beginCompletionReaction(for: completedHarnessIDs)
             }
         } else {
+            trackedActivityAccumulator.reset()
             setLastError(error)
         }
         lastUpdated = Date()
+    }
+
+    private var enabledRewardProviderIDs: Set<String> {
+        Set(petInstances.flatMap(\.trackingProviders).map(\.rawValue))
+    }
+
+    private var enabledTrackedActivityProviderIDs: Set<String> {
+        Set(petInstances.flatMap(\.trackingProviders).compactMap { provider in
+            provider.rewardTrackingMode == .trackedActivity ? provider.rawValue : nil
+        })
+    }
+
+    private func recordTrackedActivity(
+        from sessions: [HarnessSession],
+        at date: Date
+    ) {
+        let increments = trackedActivityAccumulator.observe(
+            sessions: sessions,
+            eligibleProviderIDs: enabledTrackedActivityProviderIDs,
+            at: date
+        )
+        guard !increments.isEmpty else { return }
+
+        let period = PetTrackedActivityPeriod(containing: date)
+        var updatedState = collectionState
+        for increment in increments {
+            _ = updatedState.applyTrackedActivity(
+                providerID: increment.providerID,
+                periodID: period.id,
+                seconds: increment.seconds
+            )
+        }
+        guard updatedState != collectionState else { return }
+
+        collectionState = updatedState
+        collectionError = nil
+        collectionPersistence.persist(updatedState)
+        synchronizeRewardSourceStatuses(at: date)
+    }
+
+    private func synchronizeRewardSourceStatuses(at date: Date = Date()) {
+        let previousStatuses = Dictionary(
+            uniqueKeysWithValues: usageSourceStatuses.map { ($0.id, $0) }
+        )
+        let tokenStatuses: [PetUsageSourceStatus] = usageSources.compactMap { source in
+            guard enabledRewardProviderIDs.contains(source.id) else { return nil }
+            return previousStatuses[source.id] ?? PetUsageSourceStatus(
+                id: source.id,
+                displayName: source.displayName,
+                tokens: collectionState.providerCheckpoints[source.id]?.observedTokens,
+                trackedActivitySeconds: nil,
+                periodID: collectionState.providerCheckpoints[source.id]?.periodID,
+                errorMessage: nil,
+                updatedAt: nil
+            )
+        }
+        let period = PetTrackedActivityPeriod(containing: date)
+        let activityStatuses: [PetUsageSourceStatus] = PetTrackingProvider.allCases.compactMap { provider in
+            guard provider.rewardTrackingMode == .trackedActivity,
+                  enabledTrackedActivityProviderIDs.contains(provider.rawValue)
+            else {
+                return nil
+            }
+            let checkpoint = collectionState.providerActivityCheckpoints[provider.rawValue]
+            return PetUsageSourceStatus(
+                id: provider.rawValue,
+                displayName: provider.displayName,
+                tokens: nil,
+                trackedActivitySeconds: checkpoint?.periodID == period.id
+                    ? checkpoint?.observedSeconds
+                    : 0,
+                periodID: period.id,
+                errorMessage: nil,
+                updatedAt: previousStatuses[provider.rawValue]?.updatedAt
+            )
+        }
+        usageSourceStatuses = tokenStatuses + activityStatuses
     }
 
     private func applyActivationResult(_ result: HarnessActivationResult) {

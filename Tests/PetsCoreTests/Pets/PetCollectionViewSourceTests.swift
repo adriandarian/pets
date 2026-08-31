@@ -57,6 +57,9 @@ struct PetCollectionViewSourceTests {
         #expect(rewardProgress.contains("HStack(alignment: .center, spacing: 12)"))
         #expect(rewardProgress.contains(".frame(width: 34, height: 34)"))
         #expect(rewardProgress.contains("ProgressView(value: store.collectionState.progressFraction)"))
+        #expect(rewardProgress.contains("ProgressView(value: store.collectionState.activityProgressFraction)"))
+        #expect(rewardProgress.contains("hasTrackedActivityRewardSources"))
+        #expect(rewardProgress.contains("/ 8h tracked activity"))
         #expect(rewardProgress.contains(".padding(14)"))
     }
 
@@ -72,6 +75,8 @@ struct PetCollectionViewSourceTests {
         #expect(usageSources.contains("PetTrackingProvider(rawValue: status.id)"))
         #expect(usageSources.contains("PetProviderIcon("))
         #expect(usageSources.contains("size: 20"))
+        #expect(usageSources.contains("status.rewardTrackingMode == .trackedActivity"))
+        #expect(usageSources.contains("petCompactActivityDuration"))
         #expect(!usageSources.contains("sourceIconName"))
         #expect(!usageSources.contains("\"sparkles\""))
         #expect(!usageSources.contains("\"chevron.left.forwardslash.chevron.right\""))

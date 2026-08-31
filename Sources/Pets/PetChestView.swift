@@ -82,6 +82,36 @@ struct PetChestView: View {
                 .accessibilityLabel("Refresh token usage")
             }
 
+            if hasTrackedActivityRewardSources {
+                HStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 34, height: 28)
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        ProgressView(value: store.collectionState.activityProgressFraction)
+                            .progressViewStyle(.linear)
+                            .tint(Color.accentColor.opacity(0.8))
+                            .accessibilityLabel("Tracked activity progress to the next pet key")
+                            .accessibilityValue(activityProgressAccessibilityValue)
+
+                        HStack {
+                            Text("\(petCompactActivityDuration(store.collectionState.activityRemainderSeconds)) / 8h tracked activity")
+                                .monospacedDigit()
+                            Spacer()
+                            Text("\(petCompactActivityDuration(store.collectionState.activitySecondsUntilNextKey)) to next key")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    Color.clear
+                        .frame(width: 16, height: 16)
+                }
+            }
+
             Divider()
 
             PetUsageSourceStrip(statuses: store.usageSourceStatuses)
@@ -114,6 +144,14 @@ struct PetChestView: View {
 
     private var progressAccessibilityValue: String {
         "\(petExactTokens(store.collectionState.tokenRemainder)) of 500,000,000 tokens"
+    }
+
+    private var hasTrackedActivityRewardSources: Bool {
+        store.usageSourceStatuses.contains { $0.rewardTrackingMode == .trackedActivity }
+    }
+
+    private var activityProgressAccessibilityValue: String {
+        "\(petCompactActivityDuration(store.collectionState.activityRemainderSeconds)) of 8 hours"
     }
 }
 
@@ -154,4 +192,14 @@ func petCompactTokens(_ tokens: Int64) -> String {
 
 func petExactTokens(_ tokens: Int64) -> String {
     tokens.formatted(.number.grouping(.automatic))
+}
+
+func petCompactActivityDuration(_ seconds: Int64) -> String {
+    let normalized = max(0, seconds)
+    let hours = normalized / 3_600
+    let minutes = (normalized % 3_600) / 60
+    if hours > 0 {
+        return minutes > 0 ? "\(hours)h \(minutes)m" : "\(hours)h"
+    }
+    return "\(minutes)m"
 }

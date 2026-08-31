@@ -11,7 +11,7 @@ struct PetUsageSourceStrip: View {
     var body: some View {
         HStack(spacing: 0) {
             if visibleStatuses.isEmpty {
-                Text("No usage sources configured")
+                Text("No reward sources configured")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -45,11 +45,11 @@ struct PetUsageSourceStrip: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .help("Show remaining usage sources")
-                    .accessibilityLabel("Show \(overflowStatuses.count) more usage sources")
+                    .help("Show remaining reward sources")
+                    .accessibilityLabel("Show \(overflowStatuses.count) more reward sources")
                     .popover(isPresented: $isShowingOverflow, arrowEdge: .bottom) {
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("More Usage Sources")
+                            Text("More Reward Sources")
                                 .font(.headline)
 
                             ForEach(overflowStatuses) { status in
@@ -94,9 +94,9 @@ private struct PetUsageSourceSummary: View {
 
             Spacer(minLength: 6)
 
-            Text(status.tokens.map(petCompactTokens) ?? "—")
+            Text(amountText)
                 .font(.subheadline.monospacedDigit())
-                .foregroundStyle(status.tokens == nil ? .secondary : .primary)
+                .foregroundStyle(hasMeasurement ? .primary : .secondary)
         }
         .padding(.horizontal, 10)
         .accessibilityElement(children: .combine)
@@ -108,7 +108,9 @@ private struct PetUsageSourceSummary: View {
             return "Unavailable"
         }
         if let periodID = status.periodID {
-            return "Week of \(periodID)"
+            return status.rewardTrackingMode == .trackedActivity
+                ? "Active time · Week of \(periodID)"
+                : "Week of \(periodID)"
         }
         return "Not scanned"
     }
@@ -118,9 +120,25 @@ private struct PetUsageSourceSummary: View {
             return "\(status.displayName): \(errorMessage)"
         }
         if let periodID = status.periodID {
-            return "\(status.displayName), week of \(periodID)"
+            if status.rewardTrackingMode == .trackedActivity {
+                return "\(status.displayName), tracked activity for the week of \(periodID)"
+            }
+            return "\(status.displayName), token usage for the week of \(periodID)"
         }
         return "\(status.displayName) has not been scanned"
+    }
+
+    private var amountText: String {
+        if status.rewardTrackingMode == .trackedActivity {
+            return status.trackedActivitySeconds.map(petCompactActivityDuration) ?? "—"
+        }
+        return status.tokens.map(petCompactTokens) ?? "—"
+    }
+
+    private var hasMeasurement: Bool {
+        status.rewardTrackingMode == .trackedActivity
+            ? status.trackedActivitySeconds != nil
+            : status.tokens != nil
     }
 }
 
@@ -138,16 +156,31 @@ struct PetUsageSourceRow: View {
                     .foregroundStyle(.red)
                     .lineLimit(1)
             } else if let periodID = status.periodID {
-                Text("Week of \(periodID)")
+                Text(status.rewardTrackingMode == .trackedActivity
+                    ? "Active time · Week of \(periodID)"
+                    : "Week of \(periodID)")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
             Spacer()
-            Text(status.tokens.map(petCompactTokens) ?? "Not scanned")
+            Text(amountText)
                 .font(.subheadline.monospacedDigit())
-                .foregroundStyle(status.tokens == nil ? .secondary : .primary)
+                .foregroundStyle(hasMeasurement ? .primary : .secondary)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private var amountText: String {
+        if status.rewardTrackingMode == .trackedActivity {
+            return status.trackedActivitySeconds.map(petCompactActivityDuration) ?? "Not tracked"
+        }
+        return status.tokens.map(petCompactTokens) ?? "Not scanned"
+    }
+
+    private var hasMeasurement: Bool {
+        status.rewardTrackingMode == .trackedActivity
+            ? status.trackedActivitySeconds != nil
+            : status.tokens != nil
     }
 }
 

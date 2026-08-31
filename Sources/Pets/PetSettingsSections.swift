@@ -29,10 +29,6 @@ struct PetTrackingSection: View {
                 .scrollIndicators(.visible)
             }
 
-            Text("One pet per tracker. Chat status is available for Claude Code, Codex, and Copilot.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onChange(of: pet.id) { _, _ in

@@ -131,6 +131,7 @@ struct PetDetailPane: View {
 
 private struct PetDetailSectionNavigation: View {
     private static let titleVisibilityThreshold: CGFloat = 540
+    private static let controlHeight: CGFloat = 36
 
     @Binding var selection: PetDetailSection
 
@@ -140,7 +141,7 @@ private struct PetDetailSectionNavigation: View {
                 .frame(minWidth: Self.titleVisibilityThreshold)
             navigation(showsTitles: false)
         }
-        .frame(height: 48)
+        .frame(height: Self.controlHeight)
     }
 
     private func navigation(showsTitles: Bool) -> some View {
@@ -149,7 +150,7 @@ private struct PetDetailSectionNavigation: View {
                 Button {
                     selection = section
                 } label: {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 5) {
                         if showsTitles {
                             Label(section.title, systemImage: section.systemImage)
                                 .lineLimit(1)
@@ -163,12 +164,12 @@ private struct PetDetailSectionNavigation: View {
                             .fill(selection == section ? Color.accentColor : Color.clear)
                             .frame(width: showsTitles ? 72 : 30, height: 2)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .frame(maxWidth: .infinity, minHeight: Self.controlHeight)
                     .foregroundStyle(selection == section ? Color.accentColor : Color.secondary)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, minHeight: 48)
+                .frame(maxWidth: .infinity, minHeight: Self.controlHeight)
                 .contentShape(Rectangle())
                 .focusable()
                 .focusEffectDisabled()

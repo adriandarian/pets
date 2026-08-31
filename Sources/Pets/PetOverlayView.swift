@@ -116,8 +116,10 @@ struct PetOverlayView: View {
                                         Divider()
                                     }
 
-                                    Button("Hide") {
+                                    Button(role: .destructive) {
                                         store.updatePetVisibility(petInstance.id, isVisible: false)
+                                    } label: {
+                                        Label("Hide", systemImage: "eye.slash")
                                     }
 
                                     Divider()
@@ -125,11 +127,13 @@ struct PetOverlayView: View {
                                     Button {
                                         openConfiguration()
                                     } label: {
-                                        Label("Configure...", systemImage: "slider.horizontal.3")
+                                        Label("Configure…", systemImage: "slider.horizontal.3")
                                     }
 
-                                    Button("Check for Updates…") {
+                                    Button {
                                         updateController.checkForUpdates(showingResult: true)
+                                    } label: {
+                                        Label("Check for Updates…", systemImage: "arrow.clockwise")
                                     }
                                     .disabled(updateController.isChecking)
                                 }
