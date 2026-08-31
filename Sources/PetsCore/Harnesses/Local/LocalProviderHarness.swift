@@ -183,7 +183,7 @@ struct LocalProviderSessionScanner: Sendable {
             dismissalToken: "app:\(application.processID)",
             kind: "Local application",
             entrypoint: "\(displayName) app",
-            status: .idle,
+            status: application.isActive ? .busy : .idle,
             replyTarget: nil,
             updatedAt: application.launchedAt,
             startedAt: application.launchedAt
@@ -234,7 +234,7 @@ struct LocalProviderSessionScanner: Sendable {
             dismissalToken: "app-process:\(command.processID)",
             kind: "Local application",
             entrypoint: "\(displayName) app",
-            status: .idle,
+            status: .busy,
             replyTarget: nil,
             updatedAt: nil,
             startedAt: nil

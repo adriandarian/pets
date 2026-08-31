@@ -22,6 +22,16 @@ public struct PetUsageCheckpoint: Equatable, Codable, Sendable {
     }
 }
 
+public struct PetTrackedActivityCheckpoint: Equatable, Codable, Sendable {
+    public let periodID: String
+    public let observedSeconds: Int64
+
+    public init(periodID: String, observedSeconds: Int64) {
+        self.periodID = periodID
+        self.observedSeconds = max(0, observedSeconds)
+    }
+}
+
 public struct PetKeyInventory: Equatable, Codable, Sendable {
     public private(set) var common: Int
     public private(set) var rare: Int
@@ -102,11 +112,14 @@ public enum PetChestOpenError: Error, Equatable, LocalizedError, Sendable {
 
 public struct PetCollectionState: Equatable, Codable, Sendable {
     public static let rewardTokenThreshold: Int64 = 500_000_000
+    public static let rewardActivityThresholdSeconds: Int64 = 8 * 60 * 60
 
     public private(set) var ownedPetIDs: Set<PetID>
     public private(set) var keyInventory: PetKeyInventory
     public private(set) var tokenRemainder: Int64
     public private(set) var providerCheckpoints: [String: PetUsageCheckpoint]
+    public private(set) var activityRemainderSeconds: Int64
+    public private(set) var providerActivityCheckpoints: [String: PetTrackedActivityCheckpoint]
     public private(set) var claimedReleaseGiftVersions: Set<String>
 
     public init(
@@ -114,12 +127,17 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
         keyInventory: PetKeyInventory = PetKeyInventory(),
         tokenRemainder: Int64 = 0,
         providerCheckpoints: [String: PetUsageCheckpoint] = [:],
+        activityRemainderSeconds: Int64 = 0,
+        providerActivityCheckpoints: [String: PetTrackedActivityCheckpoint] = [:],
         claimedReleaseGiftVersions: Set<String> = []
     ) {
         self.ownedPetIDs = ownedPetIDs.union([.cuteCloud])
         self.keyInventory = keyInventory.normalized()
         self.tokenRemainder = max(0, tokenRemainder) % Self.rewardTokenThreshold
         self.providerCheckpoints = providerCheckpoints
+        self.activityRemainderSeconds = max(0, activityRemainderSeconds)
+            % Self.rewardActivityThresholdSeconds
+        self.providerActivityCheckpoints = providerActivityCheckpoints
         self.claimedReleaseGiftVersions = claimedReleaseGiftVersions
     }
 
@@ -131,12 +149,22 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
         Self.rewardTokenThreshold - tokenRemainder
     }
 
+    public var activityProgressFraction: Double {
+        Double(activityRemainderSeconds) / Double(Self.rewardActivityThresholdSeconds)
+    }
+
+    public var activitySecondsUntilNextKey: Int64 {
+        Self.rewardActivityThresholdSeconds - activityRemainderSeconds
+    }
+
     public func normalized(grandfathering petIDs: some Sequence<PetID>) -> PetCollectionState {
         var normalized = self
         normalized.ownedPetIDs.formUnion(petIDs)
         normalized.ownedPetIDs.insert(.cuteCloud)
         normalized.keyInventory = normalized.keyInventory.normalized()
         normalized.tokenRemainder = max(0, normalized.tokenRemainder) % Self.rewardTokenThreshold
+        normalized.activityRemainderSeconds = max(0, normalized.activityRemainderSeconds)
+            % Self.rewardActivityThresholdSeconds
         return normalized
     }
 
@@ -153,6 +181,21 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
 
     @discardableResult
     public mutating func apply(_ reading: PetUsageReading) -> Int {
+        let newlyObservedTokens = checkpoint(reading)
+        guard newlyObservedTokens > 0 else { return 0 }
+        let total = tokenRemainder + newlyObservedTokens
+        let earnedKeys = Int(total / Self.rewardTokenThreshold)
+        tokenRemainder = total % Self.rewardTokenThreshold
+        keyInventory.add(earnedKeys, to: .common)
+        return earnedKeys
+    }
+
+    @discardableResult
+    public mutating func checkpointWithoutReward(_ reading: PetUsageReading) -> Int64 {
+        checkpoint(reading)
+    }
+
+    private mutating func checkpoint(_ reading: PetUsageReading) -> Int64 {
         let previous = providerCheckpoints[reading.providerID]
         let newlyObservedTokens: Int64
 
@@ -172,10 +215,34 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
             )
         }
 
-        guard newlyObservedTokens > 0 else { return 0 }
-        let total = tokenRemainder + newlyObservedTokens
-        let earnedKeys = Int(total / Self.rewardTokenThreshold)
-        tokenRemainder = total % Self.rewardTokenThreshold
+        return newlyObservedTokens
+    }
+
+    @discardableResult
+    public mutating func applyTrackedActivity(
+        providerID: String,
+        periodID: String,
+        seconds: Int64
+    ) -> Int {
+        let newlyObservedSeconds = max(0, seconds)
+        guard newlyObservedSeconds > 0 else { return 0 }
+
+        let previous = providerActivityCheckpoints[providerID]
+        let previousSeconds = previous?.periodID == periodID ? previous?.observedSeconds ?? 0 : 0
+        let (observedSeconds, checkpointOverflowed) = previousSeconds.addingReportingOverflow(
+            newlyObservedSeconds
+        )
+        providerActivityCheckpoints[providerID] = PetTrackedActivityCheckpoint(
+            periodID: periodID,
+            observedSeconds: checkpointOverflowed ? Int64.max : observedSeconds
+        )
+
+        let (total, totalOverflowed) = activityRemainderSeconds.addingReportingOverflow(
+            newlyObservedSeconds
+        )
+        let safeTotal = totalOverflowed ? Int64.max : total
+        let earnedKeys = Int(safeTotal / Self.rewardActivityThresholdSeconds)
+        activityRemainderSeconds = safeTotal % Self.rewardActivityThresholdSeconds
         keyInventory.add(earnedKeys, to: .common)
         return earnedKeys
     }
@@ -248,6 +315,8 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
         case keyCount
         case tokenRemainder
         case providerCheckpoints
+        case activityRemainderSeconds
+        case providerActivityCheckpoints
         case claimedReleaseGiftVersions
     }
 
@@ -270,6 +339,14 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
             [String: PetUsageCheckpoint].self,
             forKey: .providerCheckpoints
         ) ?? [:]
+        let activityRemainderSeconds = try container.decodeIfPresent(
+            Int64.self,
+            forKey: .activityRemainderSeconds
+        ) ?? 0
+        let providerActivityCheckpoints = try container.decodeIfPresent(
+            [String: PetTrackedActivityCheckpoint].self,
+            forKey: .providerActivityCheckpoints
+        ) ?? [:]
         let claimedReleaseGiftVersions = try container.decodeIfPresent(
             Set<String>.self,
             forKey: .claimedReleaseGiftVersions
@@ -280,6 +357,8 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
             keyInventory: keyInventory,
             tokenRemainder: tokenRemainder,
             providerCheckpoints: providerCheckpoints,
+            activityRemainderSeconds: activityRemainderSeconds,
+            providerActivityCheckpoints: providerActivityCheckpoints,
             claimedReleaseGiftVersions: claimedReleaseGiftVersions
         )
     }
@@ -290,6 +369,8 @@ public struct PetCollectionState: Equatable, Codable, Sendable {
         try container.encode(keyInventory, forKey: .keyInventory)
         try container.encode(tokenRemainder, forKey: .tokenRemainder)
         try container.encode(providerCheckpoints, forKey: .providerCheckpoints)
+        try container.encode(activityRemainderSeconds, forKey: .activityRemainderSeconds)
+        try container.encode(providerActivityCheckpoints, forKey: .providerActivityCheckpoints)
         try container.encode(claimedReleaseGiftVersions, forKey: .claimedReleaseGiftVersions)
     }
 }

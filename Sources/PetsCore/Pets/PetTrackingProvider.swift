@@ -1,5 +1,10 @@
 import Foundation
 
+public enum PetRewardTrackingMode: Equatable, Sendable {
+    case tokenUsage
+    case trackedActivity
+}
+
 public enum PetTrackingProvider: String, CaseIterable, Codable, Hashable, Sendable {
     case claudeCode = "claude"
     case codex
@@ -58,6 +63,17 @@ public enum PetTrackingProvider: String, CaseIterable, Codable, Hashable, Sendab
             "LM Studio"
         case .stitch:
             "Stitch"
+        }
+    }
+
+    public var rewardTrackingMode: PetRewardTrackingMode {
+        switch self {
+        case .claudeCode, .codex, .githubCopilot:
+            .tokenUsage
+        case .cursor, .ollama, .gemini, .antigravity, .hermes, .t3Code,
+             .openDesign, .kiro, .zed, .windsurf, .openCode, .pi,
+             .notebookLM, .lmStudio, .stitch:
+            .trackedActivity
         }
     }
 

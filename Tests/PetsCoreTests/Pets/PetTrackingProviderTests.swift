@@ -28,6 +28,21 @@ struct PetTrackingProviderTests {
     }
 
     @Test
+    func everyTrackerDeclaresHowItContributesToKeys() {
+        let tokenProviders: Set<PetTrackingProvider> = [
+            .claudeCode,
+            .codex,
+            .githubCopilot,
+        ]
+
+        for provider in PetTrackingProvider.allCases {
+            #expect(provider.rewardTrackingMode == (
+                tokenProviders.contains(provider) ? .tokenUsage : .trackedActivity
+            ))
+        }
+    }
+
+    @Test
     func bundledProviderIconsAreReadableForEveryTrackerAndAppearance() throws {
         for provider in PetTrackingProvider.allCases {
             for appearance in PetProviderIconAppearance.allCases {

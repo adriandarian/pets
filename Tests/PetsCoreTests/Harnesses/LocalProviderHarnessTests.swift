@@ -50,6 +50,29 @@ struct LocalProviderHarnessTests {
     }
 
     @Test
+    func foregroundApplicationsReportRewardEligibleActivity() throws {
+        let scanner = LocalProviderSessionScanner(
+            descriptor: try #require(descriptor(for: .cursor)),
+            snapshotProvider: {
+                LocalActivitySnapshot(
+                    applications: [
+                        LocalApplicationSnapshot(
+                            bundleIdentifier: "com.todesktop.230313mzl4w4u92",
+                            localizedName: "Cursor",
+                            processID: 42,
+                            isActive: true,
+                            launchedAt: nil
+                        ),
+                    ],
+                    commands: []
+                )
+            }
+        )
+
+        #expect(try #require(scanner.scan().first).status == .busy)
+    }
+
+    @Test
     func scannerTracksCLIProcessesWithoutExposingTheirArguments() throws {
         let scanner = LocalProviderSessionScanner(
             descriptor: try #require(descriptor(for: .gemini)),
@@ -163,7 +186,7 @@ struct LocalProviderHarnessTests {
         #expect(session.sessionID == "app-process:110")
         #expect(session.title == "NotebookLM is open")
         #expect(session.entrypoint == "NotebookLM app")
-        #expect(session.status == .idle)
+        #expect(session.status == .busy)
     }
 
     private func descriptor(for provider: PetTrackingProvider) -> LocalProviderDescriptor? {

@@ -154,6 +154,60 @@ struct PetCollectionStateTests {
     }
 
     @Test
+    func disabledProviderCheckpointPreventsLaterCatchUpRewards() {
+        var state = PetCollectionState()
+        let reading = PetUsageReading(
+            providerID: "codex",
+            periodID: "2026-08-24",
+            tokens: 700_000_000
+        )
+
+        #expect(state.checkpointWithoutReward(reading) == 700_000_000)
+        #expect(state.keyInventory.count(for: .common) == 0)
+        #expect(state.tokenRemainder == 0)
+        #expect(state.apply(reading) == 0)
+    }
+
+    @Test
+    func combinedTrackedActivityEarnsKeysAndKeepsWeeklyProviderTotals() {
+        var state = PetCollectionState()
+
+        #expect(state.applyTrackedActivity(
+            providerID: "cursor",
+            periodID: "2026-08-24",
+            seconds: 5 * 60 * 60
+        ) == 0)
+        #expect(state.applyTrackedActivity(
+            providerID: "gemini",
+            periodID: "2026-08-24",
+            seconds: 4 * 60 * 60
+        ) == 1)
+
+        #expect(state.keyInventory.count(for: .common) == 1)
+        #expect(state.activityRemainderSeconds == 60 * 60)
+        #expect(state.providerActivityCheckpoints["cursor"]?.observedSeconds == Int64(5 * 60 * 60))
+        #expect(state.providerActivityCheckpoints["gemini"]?.observedSeconds == Int64(4 * 60 * 60))
+    }
+
+    @Test
+    func trackedActivityPersistenceIsBackwardCompatible() throws {
+        var state = PetCollectionState()
+        _ = state.applyTrackedActivity(
+            providerID: "ollama",
+            periodID: "2026-08-24",
+            seconds: 90
+        )
+
+        let restored = try JSONDecoder().decode(
+            PetCollectionState.self,
+            from: JSONEncoder().encode(state)
+        )
+
+        #expect(restored.activityRemainderSeconds == 90)
+        #expect(restored.providerActivityCheckpoints["ollama"]?.observedSeconds == 90)
+    }
+
+    @Test
     func keysUpgradeUpwardAtFiveToOne() throws {
         var state = PetCollectionState(
             keyInventory: PetKeyInventory(common: 10, rare: 4)
@@ -324,6 +378,8 @@ struct PetCollectionStateTests {
         #expect(state.ownedPetIDs.contains(.cirrusCloud))
         #expect(state.keyInventory == PetKeyInventory(common: 7))
         #expect(state.tokenRemainder == 25)
+        #expect(state.activityRemainderSeconds == 0)
+        #expect(state.providerActivityCheckpoints.isEmpty)
         #expect(state.claimedReleaseGiftVersions.isEmpty)
     }
 }
