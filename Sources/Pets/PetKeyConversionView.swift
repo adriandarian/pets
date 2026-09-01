@@ -25,19 +25,21 @@ struct PetKeyConversionPopover: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text(conversionCount.formatted())
+                    Text(selectedConversionCount.formatted())
                         .font(.subheadline.weight(.semibold).monospacedDigit())
                 }
-                HStack {
-                    Text("1")
-                    Slider(
-                        value: conversionSliderValue,
-                        in: 1...Double(maxConversionCount),
-                        step: 1
-                    )
-                    .accessibilityLabel("\(targetRarity.displayName) Keys to create")
-                    .accessibilityValue(conversionCount.formatted())
-                    Text(maxConversionCount.formatted())
+                if maximumConversionCount > 1 {
+                    HStack {
+                        Text("1")
+                        Slider(
+                            value: conversionSliderValue,
+                            in: 1...Double(maximumConversionCount),
+                            step: 1
+                        )
+                        .accessibilityLabel("\(targetRarity.displayName) Keys to create")
+                        .accessibilityValue(selectedConversionCount.formatted())
+                        Text(maximumConversionCount.formatted())
+                    }
                 }
                 Text(conversionSummary)
                     .font(.subheadline.weight(.semibold))
@@ -49,11 +51,12 @@ struct PetKeyConversionPopover: View {
                 Button("Cancel", role: .cancel) { isPresented = false }
                 Spacer()
                 Button(confirmButtonTitle) {
-                    store.upgradeKeys(from: sourceRarity, count: conversionCount)
+                    store.upgradeKeys(from: sourceRarity, count: selectedConversionCount)
                     isPresented = false
                 }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.defaultAction)
+                .disabled(maxConversionCount < 1)
             }
         }
         .padding(18)
@@ -62,13 +65,26 @@ struct PetKeyConversionPopover: View {
 
     private var conversionSliderValue: Binding<Double> {
         Binding(
-            get: { Double(conversionCount) },
-            set: { conversionCount = Int($0.rounded()) }
+            get: { Double(selectedConversionCount) },
+            set: {
+                conversionCount = min(
+                    max(1, Int($0.rounded())),
+                    maximumConversionCount
+                )
+            }
         )
     }
 
+    private var maximumConversionCount: Int {
+        max(1, maxConversionCount)
+    }
+
+    private var selectedConversionCount: Int {
+        min(max(1, conversionCount), maximumConversionCount)
+    }
+
     private var sourceKeysUsed: Int {
-        conversionCount * PetRarity.keyUpgradeCost
+        selectedConversionCount * PetRarity.keyUpgradeCost
     }
 
     private var rateDescription: String {
@@ -80,14 +96,14 @@ struct PetKeyConversionPopover: View {
     }
 
     private var conversionSummary: String {
-        "\(sourceKeysUsed) \(sourceRarity.displayName) Keys → \(conversionCount) \(targetRarity.displayName) \(conversionCount == 1 ? "Key" : "Keys")"
+        "\(sourceKeysUsed) \(sourceRarity.displayName) Keys → \(selectedConversionCount) \(targetRarity.displayName) \(selectedConversionCount == 1 ? "Key" : "Keys")"
     }
 
     private var conversionAccessibilityLabel: String {
-        "Use \(sourceKeysUsed) \(sourceRarity.displayName.lowercased()) keys to create \(conversionCount) \(targetRarity.displayName.lowercased()) \(conversionCount == 1 ? "key" : "keys")"
+        "Use \(sourceKeysUsed) \(sourceRarity.displayName.lowercased()) keys to create \(selectedConversionCount) \(targetRarity.displayName.lowercased()) \(selectedConversionCount == 1 ? "key" : "keys")"
     }
 
     private var confirmButtonTitle: String {
-        "Convert \(conversionCount) \(conversionCount == 1 ? "Key" : "Keys")"
+        "Convert \(selectedConversionCount) \(selectedConversionCount == 1 ? "Key" : "Keys")"
     }
 }

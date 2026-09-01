@@ -142,13 +142,16 @@ struct PetCollectionViewSourceTests {
     }
 
     @Test
-    func conversionPopoverChoosesAnAffordableBulkAmount() throws {
+    func conversionPopoverHandlesSingleAndBulkAffordableAmounts() throws {
         let popover = try source("Sources/Pets/PetKeyConversionView.swift")
 
         #expect(popover.contains("Slider("))
-        #expect(popover.contains("in: 1...Double(maxConversionCount)"))
+        #expect(popover.contains("if maximumConversionCount > 1"))
+        #expect(popover.contains("in: 1...Double(maximumConversionCount)"))
         #expect(popover.contains("step: 1"))
-        #expect(popover.contains("store.upgradeKeys(from: sourceRarity, count: conversionCount)"))
+        #expect(popover.contains("max(1, maxConversionCount)"))
+        #expect(popover.contains("min(max(1, conversionCount), maximumConversionCount)"))
+        #expect(popover.contains("store.upgradeKeys(from: sourceRarity, count: selectedConversionCount)"))
     }
 
     @Test
