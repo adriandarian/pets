@@ -232,16 +232,33 @@ struct PetChestCard: View {
                 .foregroundStyle(isPrimaryActionDisabled ? .tertiary : .secondary)
                 .lineLimit(1)
 
-            Button {
-                performPrimaryAction()
-            } label: {
-                Label(primaryActionTitle, systemImage: primaryActionSystemImage)
-                    .frame(maxWidth: .infinity)
+            VStack(spacing: 8) {
+                Button {
+                    performPrimaryAction()
+                } label: {
+                    Label(primaryActionTitle, systemImage: primaryActionSystemImage)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(nsColor: .controlAccentColor))
+                .disabled(isPrimaryActionDisabled || store.isRefreshingRewardUsage)
+                .help(primaryActionHelp)
+
+                if hasMatchingKey, canConvert {
+                    Button {
+                        isShowingConversion = true
+                    } label: {
+                        Label(
+                            "Convert to \(rarity.displayName) Key",
+                            systemImage: "arrow.up.circle.fill"
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(remainingPetIDs.isEmpty || store.isRefreshingRewardUsage)
+                    .help(conversionActionHelp)
+                }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Color(nsColor: .controlAccentColor))
-            .disabled(isPrimaryActionDisabled || store.isRefreshingRewardUsage)
-            .help(primaryActionHelp)
             .popover(isPresented: $isShowingConversion, arrowEdge: .bottom) {
                 if let conversionSource {
                     PetKeyConversionPopover(
@@ -338,6 +355,11 @@ struct PetChestCard: View {
             return "Every \(rarity.displayName.lowercased()) pet is already collected"
         }
         return isPrimaryActionDisabled ? statusText : primaryActionTitle
+    }
+
+    private var conversionActionHelp: String {
+        guard let conversionSource else { return "Convert keys" }
+        return "Convert \(conversionSource.displayName.lowercased()) keys to a \(rarity.displayName.lowercased()) key"
     }
 
     private func performPrimaryAction() {

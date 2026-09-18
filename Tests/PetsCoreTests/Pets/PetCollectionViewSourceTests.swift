@@ -142,6 +142,20 @@ struct PetCollectionViewSourceTests {
     }
 
     @Test
+    func chestKeepsConversionAvailableWhenItsMatchingKeyExists() throws {
+        let source = try source("Sources/Pets/PetChestComponents.swift")
+        let chestCard = try sourceSlice(
+            source,
+            from: "struct PetChestCard",
+            to: "struct PetChestArtwork"
+        )
+
+        #expect(chestCard.contains("if hasMatchingKey, canConvert"))
+        #expect(chestCard.contains("Convert to \\(rarity.displayName) Key"))
+        #expect(chestCard.contains("isShowingConversion = true"))
+    }
+
+    @Test
     func conversionPopoverHandlesSingleAndBulkAffordableAmounts() throws {
         let popover = try source("Sources/Pets/PetKeyConversionView.swift")
 
